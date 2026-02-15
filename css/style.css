@@ -1,0 +1,165 @@
+.font-playfair { font-family: 'Playfair Display', serif; }
+.font-inter { font-family: 'Inter', sans-serif; }
+.gradient-gold { background: linear-gradient(135deg, #d4af37 0%, #f4c430 100%); }
+
+/* Tabs */
+.tab-button { transition: all 0.3s ease; }
+.tab-button.active {
+    background: linear-gradient(135deg, #d4af37 0%, #f4c430 100%);
+    color: #0a1628;
+}
+
+/* Period Buttons */
+.period-btn { transition: all 0.2s ease; }
+.active-period {
+    background: linear-gradient(135deg, #d4af37 0%, #f4c430 100%) !important;
+    color: #0a1628 !important;
+    border-color: transparent !important;
+}
+
+/* Week Navigation */
+.week-nav-button { transition: all 0.2s ease; }
+.week-nav-button:hover:not(:disabled) { background: rgba(212, 175, 55, 0.2); border-color: rgba(212, 175, 55, 0.5); }
+.week-nav-button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* Stat Cards */
+.stat-card { transition: all 0.3s ease; }
+.stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(212, 175, 55, 0.2); }
+
+/* Screenshot Container */
+.screenshot-container { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); }
+
+/* Trade Table */
+.trade-table { overflow-x: auto; }
+.trade-table table { width: 100%; border-collapse: collapse; }
+.trade-table th { background: rgba(212, 175, 55, 0.08); padding: 10px 8px; text-align: left; font-weight: 600; border-bottom: 2px solid rgba(212, 175, 55, 0.2); white-space: nowrap; }
+.trade-table td { padding: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); white-space: nowrap; }
+.trade-table tr:hover { background: rgba(212, 175, 55, 0.04); }
+
+/* Risk distribution bars */
+.risk-bar { height: 6px; border-radius: 3px; transition: width 0.8s ease; }
+.risk-bar-bg { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.05); }
+
+/* Animated count */
+.count-up { transition: all 0.5s ease; }
+
+/* Fade-in animation for sections */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.6s ease forwards;
+}
+
+/* Pulse animation for live indicator */
+@keyframes pulse-gold {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(212, 175, 55, 0); }
+}
+
+.pulse-gold {
+    animation: pulse-gold 2s infinite;
+}
+
+/* Chart container hover effect */
+.chart-container:hover {
+    border-color: rgba(212, 175, 55, 0.3);
+}
+
+/* Monthly summary table styling */
+.trade-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(212,175,55,0.5); }
+
+/* Mobile improvements */
+@media (max-width: 640px) {
+    .trade-table { font-size: 11px; }
+    .trade-table th, .trade-table td { padding: 6px 4px; }
+    .stat-card { padding: 12px !important; }
+    .stat-card p.text-2xl { font-size: 1.25rem; }
+}
+
+@media (max-width: 480px) {
+    .stat-card p.text-2xl { font-size: 1.1rem; }
+    .stat-card .text-\[10px\] { font-size: 9px; }
+}
+
+/* Food Chain Section */
+.foodchain-bar {
+    transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Floating Share Sidebar */
+#share-sidebar {
+    transition: opacity 0.3s ease;
+}
+
+/* Toast Notification */
+#share-toast {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Mobile Share FAB pulse */
+@keyframes fab-pulse {
+    0%, 100% { box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3); }
+    50% { box-shadow: 0 4px 25px rgba(212, 175, 55, 0.5); }
+}
+#share-fab { animation: fab-pulse 3s infinite; }
+
+/* Share bottom sheet slide-up */
+#share-sheet > div:last-child {
+    animation: sheetUp 0.25s ease-out;
+}
+@keyframes sheetUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+.foodchain-highlight-row {
+    background: rgba(212, 175, 55, 0.06);
+    border-radius: 8px;
+    padding: 4px 6px;
+    margin: -4px -6px;
+    border: 1px solid rgba(212, 175, 55, 0.15);
+}
+
+/* Food chain table — your strategy row glow */
+#foodchain-active tr:last-child,
+#foodchain-discord tr:last-child {
+    position: relative;
+}
+
+@keyframes foodchain-glow {
+    0%, 100% { box-shadow: 0 0 8px rgba(212, 175, 55, 0.15); }
+    50% { box-shadow: 0 0 16px rgba(212, 175, 55, 0.35); }
+}
+
+#foodchain-active {
+    animation: fadeInUp 0.6s ease forwards;
+}
+
+#foodchain-discord {
+    animation: fadeInUp 0.6s ease forwards;
+}
+
+/* Food chain chart containers */
+#fc-position-chart,
+#dfc-position-chart {
+    min-height: 200px;
+}
+
+/* Print styling for PDF export */
+@media print {
+    header, .tab-button, .week-nav-button, .period-btn, label, button { display: none !important; }
+    body { background: white; color: #333; }
+    .stat-card { border: 1px solid #ddd; }
+    .bg-gradient-to-br { background: white !important; }
+}

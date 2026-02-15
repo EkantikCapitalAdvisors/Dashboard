@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Dashboard - Weekly Results | Ekantik Capital</title>
+    <meta name="description" content="Live trading performance dashboard. Weekly updates showing real results for ECFS Active and Discord Selective execution. Full transparency.">
+    <meta name="keywords" content="trading performance, weekly results, ECFS performance, Discord trading, trading dashboard">
+    <meta name="robots" content="index, follow">
+    <meta property="og:title" content="Performance Dashboard - Weekly Trading Results | Ekantik Capital">
+    <meta property="og:description" content="Live trading performance with 30+ KPIs, equity curves, and edge analysis. Real Tradovate fills — updated weekly. Past performance is not indicative of future results.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://cashflow.ekantikcapital.com/performance">
+    <meta property="og:site_name" content="Ekantik Capital Advisors">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Performance Dashboard — Ekantik Capital">
+    <meta name="twitter:description" content="Live trading performance with 30+ KPIs. Real Tradovate fills, updated weekly. Past performance ≠ future results.">
+    <meta property="og:image" content="https://cashflow.ekantikcapital.com/images/og-dashboard.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Ekantik Capital Live Performance Dashboard - 30+ KPIs updated weekly">
+    <meta name="twitter:image" content="https://cashflow.ekantikcapital.com/images/og-dashboard.png">
+    <meta name="twitter:image:alt" content="Ekantik Capital Live Performance Dashboard">
+    <!-- WhatsApp/Telegram/Discord preview optimization -->
+    <meta property="og:locale" content="en_US">
+    <meta name="theme-color" content="#0a1628">
+    <link rel="canonical" href="https://cashflow.ekantikcapital.com/performance">
+
+    <!-- Structured Data for SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Performance Dashboard - Ekantik Capital",
+        "description": "Live trading performance dashboard with 30+ KPIs, updated weekly with full transparency.",
+        "url": "https://cashflow.ekantikcapital.com/performance",
+        "publisher": {
+            "@type": "Organization",
+            "name": "Ekantik Capital Advisors LLC",
+            "url": "https://cashflow.ekantikcapital.com"
+        }
+    }
+    </script>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { 'playfair': ['Playfair Display', 'serif'], 'inter': ['Inter', 'sans-serif'] },
+                    colors: { 'navy': '#0a1628', 'gold': '#d4af37' }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="font-inter antialiased bg-[#0a1628] text-gray-100">
+
+    <!-- Floating Share Sidebar (desktop) -->
+    <div id="share-sidebar" class="fixed left-0 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col gap-2 pl-3 pr-1 py-3 bg-[#0d1d35]/90 backdrop-blur-md border border-gray-700/30 border-l-0 rounded-r-xl shadow-xl transition-all">
+        <span class="text-[9px] text-gray-500 font-bold tracking-widest text-center mb-1">SHARE</span>
+        <button onclick="shareToTwitter()" class="w-9 h-9 rounded-lg bg-[#1DA1F2]/10 hover:bg-[#1DA1F2]/25 flex items-center justify-center transition-all" title="X / Twitter">
+            <i class="fab fa-x-twitter text-[#1DA1F2] text-sm"></i>
+        </button>
+        <button onclick="shareToLinkedIn()" class="w-9 h-9 rounded-lg bg-[#0A66C2]/10 hover:bg-[#0A66C2]/25 flex items-center justify-center transition-all" title="LinkedIn">
+            <i class="fab fa-linkedin-in text-[#0A66C2] text-sm"></i>
+        </button>
+        <button onclick="shareToFacebook()" class="w-9 h-9 rounded-lg bg-[#1877F2]/10 hover:bg-[#1877F2]/25 flex items-center justify-center transition-all" title="Facebook">
+            <i class="fab fa-facebook-f text-[#1877F2] text-sm"></i>
+        </button>
+        <button onclick="shareToWhatsApp()" class="w-9 h-9 rounded-lg bg-[#25D366]/10 hover:bg-[#25D366]/25 flex items-center justify-center transition-all" title="WhatsApp">
+            <i class="fab fa-whatsapp text-[#25D366] text-sm"></i>
+        </button>
+        <button onclick="shareViaEmail()" class="w-9 h-9 rounded-lg bg-gray-600/10 hover:bg-gray-500/25 flex items-center justify-center transition-all" title="Email">
+            <i class="fas fa-envelope text-gray-400 text-sm"></i>
+        </button>
+        <div class="h-px bg-gray-700/50 my-1"></div>
+        <button onclick="copyShareLink()" class="w-9 h-9 rounded-lg bg-[#d4af37]/10 hover:bg-[#d4af37]/25 flex items-center justify-center transition-all" title="Copy link" id="copy-link-sidebar">
+            <i class="fas fa-link text-[#d4af37] text-sm"></i>
+        </button>
+    </div>
+
+    <!-- Mobile Share FAB -->
+    <button onclick="shareMobile()" id="share-fab" class="fixed bottom-6 right-6 z-40 lg:hidden w-14 h-14 rounded-full gradient-gold shadow-lg shadow-[#d4af37]/30 flex items-center justify-center hover:scale-110 transition-transform">
+        <i class="fas fa-share-nodes text-[#0a1628] text-lg"></i>
+    </button>
+
+    <!-- Toast Notification -->
+    <div id="share-toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-green-500/90 text-white px-6 py-3 rounded-xl shadow-lg text-sm font-semibold flex items-center gap-2 transition-all opacity-0 pointer-events-none" style="transform: translate(-50%, 20px);">
+        <i class="fas fa-check-circle"></i><span id="toast-text">Link copied!</span>
+    </div>
+
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 z-50 bg-[#0a1628]/95 backdrop-blur-md border-b border-[#d4af37]/20">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <div class="flex items-center">
+                    <a href="https://cashflow.ekantikcapital.com/" class="flex items-center space-x-3">
+                        <div class="w-12 h-12 gradient-gold rounded-lg flex items-center justify-center">
+                            <span class="text-[#0a1628] font-bold text-xl">ECA</span>
+                        </div>
+                        <div class="hidden sm:block">
+                            <div class="text-[#d4af37] font-playfair font-bold text-lg">Ekantik Capital</div>
+                            <div class="text-gray-400 text-xs tracking-wider">ADVISORS LLC</div>
+                        </div>
+                    </a>
+                </div>
+                <nav class="flex items-center space-x-4 sm:space-x-6">
+                    <!-- Strategies Dropdown -->
+                    <div class="relative group hidden sm:block">
+                        <button class="text-gray-300 hover:text-[#d4af37] transition-colors text-sm font-medium flex items-center gap-1">
+                            Strategies <i class="fas fa-chevron-down text-[8px] mt-0.5 group-hover:rotate-180 transition-transform"></i>
+                        </button>
+                        <div class="absolute top-full left-1/2 -translate-x-1/2 pt-3 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200">
+                            <div class="bg-[#0d1d35] border border-[#d4af37]/20 rounded-xl shadow-2xl shadow-black/40 p-2 w-72">
+                                <a href="https://cashflow.ekantikcapital.com/" class="flex items-start gap-3 px-3 py-3 rounded-lg hover:bg-[#d4af37]/10 transition-colors group/item">
+                                    <div class="w-9 h-9 rounded-lg bg-[#d4af37]/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <i class="fas fa-bolt text-[#d4af37] text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-white font-semibold text-sm group-hover/item:text-[#d4af37] transition-colors">Cash Flow Strategy</p>
+                                        <p class="text-gray-500 text-[11px] leading-snug mt-0.5">Active futures trading with systematic edge. For hands-on traders.</p>
+                                    </div>
+                                </a>
+                                <a href="https://founding.ekantikcapital.com/" class="flex items-start gap-3 px-3 py-3 rounded-lg hover:bg-emerald-500/10 transition-colors group/item">
+                                    <div class="w-9 h-9 rounded-lg bg-emerald-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <i class="fas fa-shield-alt text-emerald-400 text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-white font-semibold text-sm group-hover/item:text-emerald-400 transition-colors">Principal Protection</p>
+                                        <p class="text-gray-500 text-[11px] leading-snug mt-0.5">Income & growth with downside protection. For passive investors.</p>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="https://cashflow.ekantikcapital.com/#how-it-works" class="text-gray-300 hover:text-[#d4af37] transition-colors text-sm font-medium hidden sm:inline">How It Works</a>
+                    <a href="#" class="text-[#d4af37] font-semibold text-sm flex items-center">
+                        <i class="fas fa-chart-line mr-1.5 text-xs"></i>Performance
+                    </a>
+                    <a href="https://cashflow.ekantikcapital.com/#validation" class="text-gray-300 hover:text-[#d4af37] transition-colors text-sm font-medium hidden sm:inline">Validate</a>
+                    <a href="https://cashflow.ekantikcapital.com/" class="hidden sm:inline-flex items-center px-5 py-2.5 gradient-gold text-[#0a1628] font-bold text-sm rounded-lg hover:shadow-lg hover:shadow-[#d4af37]/50 transition-all">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Home
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="pt-28 pb-8 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-br from-[#0a1628] via-[#0d1d35] to-[#0a1628]"></div>
+        <div class="absolute inset-0 opacity-20">
+            <div class="absolute top-20 left-10 w-72 h-72 bg-[#d4af37]/30 rounded-full blur-3xl"></div>
+            <div class="absolute bottom-20 right-10 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl"></div>
+        </div>
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="max-w-5xl mx-auto text-center">
+                <div class="inline-block bg-green-500/10 border border-green-400 rounded-full px-6 py-2 mb-5">
+                    <span class="text-green-400 font-semibold text-sm"><i class="fas fa-sync-alt mr-2"></i>UPDATED WEEKLY</span>
+                </div>
+                <h1 class="font-playfair text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight">
+                    Live Performance <span class="text-[#d4af37]">Dashboard</span>
+                </h1>
+                <p class="text-lg text-gray-300 mb-6 max-w-3xl mx-auto leading-relaxed">
+                    Real results. Full transparency. Both wins and losses. Updated every Monday morning.
+                </p>
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-3 mb-1">
+                    <div class="bg-blue-900/20 border border-blue-400/40 rounded-lg px-6 py-3">
+                        <p class="text-blue-200 text-sm">
+                            <i class="fas fa-clock mr-2"></i><strong>Last Updated:</strong> <span id="last-updated">Loading...</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Inline Share Row -->
+                <div class="flex items-center justify-center gap-2 mt-4">
+                    <span class="text-gray-500 text-xs">Share:</span>
+                    <button onclick="shareToTwitter()" class="w-7 h-7 rounded-md bg-white/5 hover:bg-[#1DA1F2]/20 flex items-center justify-center transition-all" title="X / Twitter"><i class="fab fa-x-twitter text-gray-400 hover:text-[#1DA1F2] text-xs"></i></button>
+                    <button onclick="shareToLinkedIn()" class="w-7 h-7 rounded-md bg-white/5 hover:bg-[#0A66C2]/20 flex items-center justify-center transition-all" title="LinkedIn"><i class="fab fa-linkedin-in text-gray-400 hover:text-[#0A66C2] text-xs"></i></button>
+                    <button onclick="shareToWhatsApp()" class="w-7 h-7 rounded-md bg-white/5 hover:bg-[#25D366]/20 flex items-center justify-center transition-all" title="WhatsApp"><i class="fab fa-whatsapp text-gray-400 hover:text-[#25D366] text-xs"></i></button>
+                    <button onclick="copyShareLink()" class="w-7 h-7 rounded-md bg-white/5 hover:bg-[#d4af37]/20 flex items-center justify-center transition-all" title="Copy link"><i class="fas fa-link text-gray-400 hover:text-[#d4af37] text-xs"></i></button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Execution Method Tabs -->
+    <section class="py-6 bg-[#0d1d35]/30">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-6xl mx-auto">
+                <div class="flex flex-wrap justify-center gap-3 mb-0">
+                    <button onclick="switchExecution('active')" id="tab-active" class="tab-button active px-6 py-3 rounded-lg font-bold text-sm transition-all border-2 border-transparent">
+                        <i class="fas fa-bolt mr-2"></i>ECFS Active (MES)
+                    </button>
+                    <button onclick="switchExecution('discord')" id="tab-discord" class="tab-button px-6 py-3 bg-[#0d1d35] text-gray-300 rounded-lg font-bold text-sm border-2 border-gray-600 hover:border-[#d4af37]">
+                        <i class="fas fa-comments mr-2"></i>Discord Selective (ES)
+                    </button>
+                    <button onclick="switchExecution('compare')" id="tab-compare" class="tab-button px-6 py-3 bg-[#0d1d35] text-gray-300 rounded-lg font-bold text-sm border-2 border-gray-600 hover:border-[#d4af37]">
+                        <i class="fas fa-balance-scale mr-2"></i>Compare Both
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== ECFS ACTIVE PANEL ==================== -->
+    <section class="py-8">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-6xl mx-auto">
+
+                <div id="panel-active" class="execution-panel">
+                    <!-- Info Card -->
+                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-[#d4af37]/30 rounded-2xl p-6 mb-6">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                            <div class="mb-3 md:mb-0">
+                                <h2 class="font-playfair text-2xl sm:text-3xl font-bold text-white mb-1">ECFS Active Execution</h2>
+                                <p class="text-gray-400 text-sm">Automatic copy-trading with real-time execution</p>
+                                <p class="text-[#d4af37] text-xs mt-1"><i class="fas fa-chart-line mr-1"></i>Micro E-mini S&P 500 (MES) Futures | $5/point | Starting: $20,000</p>
+                            </div>
+                            <div class="bg-[#d4af37]/10 border border-[#d4af37]/30 rounded-lg px-4 py-2">
+                                <p class="text-[#d4af37] font-semibold text-xs"><i class="fas fa-shield-alt mr-1"></i>Risk Budget: $100/trade (0.5%)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CSV Upload -->
+                    <div class="bg-gradient-to-br from-[#d4af37]/5 to-[#0d1d35] border border-[#d4af37]/20 rounded-xl p-5 mb-6">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                            <div class="flex-1">
+                                <h3 class="text-sm font-bold text-white mb-1"><i class="fas fa-file-csv mr-2 text-[#d4af37]"></i>Upload Tradovate Orders CSV</h3>
+                                <p class="text-xs text-gray-400">Export from Tradovate → Orders → Download CSV. Auto-parses round-trips, stops, and all KPIs.</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <label class="cursor-pointer px-5 py-2.5 gradient-gold text-[#0a1628] font-bold text-sm rounded-lg hover:shadow-lg hover:shadow-[#d4af37]/50 transition-all inline-flex items-center">
+                                    <i class="fas fa-upload mr-2"></i>Upload CSV
+                                    <input type="file" id="csv-upload-active" accept=".csv" class="hidden" onchange="handleCSVUpload(event, 'active')">
+                                </label>
+                                <button onclick="clearData('active')" class="px-4 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="upload-status-active" class="mt-3 hidden"></div>
+                    </div>
+
+                    <!-- Period Toggle -->
+                    <div class="flex flex-col sm:flex-row items-center justify-between mb-6 gap-3">
+                        <div class="flex items-center gap-2">
+                            <button onclick="setPeriod('active','weekly')" id="period-active-weekly" class="period-btn active-period px-4 py-2 rounded-lg text-xs font-bold transition-all">This Week</button>
+                            <button onclick="setPeriod('active','monthly')" id="period-active-monthly" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-[#d4af37]/50 transition-all">This Month</button>
+                            <button onclick="setPeriod('active','alltime')" id="period-active-alltime" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-[#d4af37]/50 transition-all">All-Time</button>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="prevPeriod('active')" class="week-nav-button px-3 py-1.5 bg-[#0d1d35] border border-gray-600 text-gray-300 rounded-lg text-xs font-semibold"><i class="fas fa-chevron-left"></i></button>
+                            <select id="week-selector-active" onchange="selectWeek('active')" class="px-4 py-1.5 bg-[#0d1d35] border border-[#d4af37]/30 text-white rounded-lg text-xs font-semibold"></select>
+                            <button onclick="nextPeriod('active')" class="week-nav-button px-3 py-1.5 bg-[#0d1d35] border border-gray-600 text-gray-300 rounded-lg text-xs font-semibold"><i class="fas fa-chevron-right"></i></button>
+                            <span class="text-gray-500 text-xs ml-2" id="period-range-active"></span>
+                        </div>
+                    </div>
+
+                    <!-- ===== HERO STATS BAR ===== -->
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+                        <div class="stat-card bg-gradient-to-br from-green-900/20 to-green-950/40 border border-green-500/30 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-1"><span class="text-[10px] text-green-400 font-bold tracking-wider">NET P&L</span><i class="fas fa-dollar-sign text-green-400/60 text-sm"></i></div>
+                            <p class="text-2xl font-bold text-white" id="active-hero-pnl">—</p>
+                            <p class="text-[10px] text-gray-500 mt-0.5" id="active-hero-pnl-sub"></p>
+                        </div>
+                        <div class="stat-card bg-gradient-to-br from-emerald-900/20 to-emerald-950/40 border border-emerald-500/30 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-1"><span class="text-[10px] text-emerald-400 font-bold tracking-wider">RETURN</span><i class="fas fa-percent text-emerald-400/60 text-sm"></i></div>
+                            <p class="text-2xl font-bold text-white" id="active-hero-return">—</p>
+                            <p class="text-[10px] text-gray-500 mt-0.5">on $20,000</p>
+                        </div>
+                        <div class="stat-card bg-gradient-to-br from-[#d4af37]/10 to-yellow-950/40 border border-[#d4af37]/30 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-1"><span class="text-[10px] text-[#d4af37] font-bold tracking-wider">EV / TRADE</span><i class="fas fa-crosshairs text-[#d4af37]/60 text-sm"></i></div>
+                            <p class="text-2xl font-bold text-white" id="active-hero-ev">—</p>
+                            <p class="text-[10px] text-gray-500 mt-0.5" id="active-hero-ev-sub"></p>
+                        </div>
+                        <div class="stat-card bg-gradient-to-br from-blue-900/20 to-blue-950/40 border border-blue-500/30 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-1"><span class="text-[10px] text-blue-400 font-bold tracking-wider">WIN RATE</span><i class="fas fa-percentage text-blue-400/60 text-sm"></i></div>
+                            <p class="text-2xl font-bold text-white" id="active-hero-wr">—</p>
+                            <p class="text-[10px] text-gray-500 mt-0.5" id="active-hero-wr-sub"></p>
+                        </div>
+                        <div class="stat-card bg-gradient-to-br from-purple-900/20 to-purple-950/40 border border-purple-500/30 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-1"><span class="text-[10px] text-purple-400 font-bold tracking-wider">PROFIT FACTOR</span><i class="fas fa-chart-line text-purple-400/60 text-sm"></i></div>
+                            <p class="text-2xl font-bold text-white" id="active-hero-pf">—</p>
+                            <p class="text-[10px] text-gray-500 mt-0.5" id="active-hero-pf-sub"></p>
+                        </div>
+                        <div class="stat-card bg-gradient-to-br from-red-900/20 to-red-950/40 border border-red-500/30 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-1"><span class="text-[10px] text-red-400 font-bold tracking-wider">MAX DRAWDOWN</span><i class="fas fa-arrow-trend-down text-red-400/60 text-sm"></i></div>
+                            <p class="text-2xl font-bold text-white" id="active-hero-dd">—</p>
+                            <p class="text-[10px] text-gray-500 mt-0.5" id="active-hero-dd-sub"></p>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 text-[10px] -mt-6 mb-6 text-center">Results reflect actual fills via Tradovate, net of $0 commissions (free tier). Past performance is not indicative of future results. <a href="#compliance-footer" class="underline hover:text-gray-400">Full disclosure</a></p>
+
+                    <!-- ===== THE EDGE — Simplified EV ===== -->
+                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-[#d4af37]/20 rounded-2xl p-6 mb-8">
+                        <h3 class="text-lg font-bold text-white mb-5 flex items-center"><i class="fas fa-crosshairs text-[#d4af37] mr-2"></i>The Edge — Expected Value Analysis</h3>
+                        <div class="grid md:grid-cols-3 gap-6 items-center">
+                            <!-- Hero EV -->
+                            <div class="text-center md:text-left">
+                                <p class="text-gray-400 text-xs mb-1 uppercase tracking-wider">Your Edge Per Trade</p>
+                                <p class="text-4xl font-bold text-[#d4af37]" id="active-ev-hero-big">—</p>
+                                <p class="text-sm text-gray-400 mt-1" id="active-ev-hero-sub"></p>
+                                <div class="mt-3 bg-[#d4af37]/10 border border-[#d4af37]/20 rounded-lg p-3">
+                                    <p class="text-[#d4af37] text-xs" id="active-ev-actual-risk"></p>
+                                </div>
+                            </div>
+                            <!-- Building Blocks -->
+                            <div class="space-y-3">
+                                <p class="text-gray-400 text-xs uppercase tracking-wider mb-2">How The Edge Is Built</p>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="bg-green-900/15 border border-green-500/20 rounded-lg p-3 text-center">
+                                        <p class="text-[10px] text-green-400 font-bold">AVG WIN</p>
+                                        <p class="text-xl font-bold text-green-400" id="active-edge-avgwin">—</p>
+                                        <p class="text-[10px] text-gray-500" id="active-edge-avgwin-pts"></p>
+                                    </div>
+                                    <div class="bg-red-900/15 border border-red-500/20 rounded-lg p-3 text-center">
+                                        <p class="text-[10px] text-red-400 font-bold">AVG LOSS</p>
+                                        <p class="text-xl font-bold text-red-400" id="active-edge-avgloss">—</p>
+                                        <p class="text-[10px] text-gray-500" id="active-edge-avgloss-pts"></p>
+                                    </div>
+                                </div>
+                                <div class="bg-blue-900/15 border border-blue-500/20 rounded-lg p-3 text-center">
+                                    <p class="text-[10px] text-blue-400 font-bold">WIN RATE</p>
+                                    <p class="text-lg font-bold text-white" id="active-edge-wr">—</p>
+                                </div>
+                            </div>
+                            <!-- Plain English -->
+                            <div>
+                                <div class="bg-[#0a1628]/60 border border-gray-700/50 rounded-lg p-4">
+                                    <p class="text-gray-300 text-sm leading-relaxed" id="active-edge-explanation">Upload your Tradovate CSV to see your edge analysis.</p>
+                                </div>
+                                <div class="mt-3 space-y-2">
+                                    <div class="flex justify-between text-xs">
+                                        <span class="text-gray-400">Avg Risk Taken</span>
+                                        <span class="text-white font-semibold" id="active-edge-avgrisk">—</span>
+                                    </div>
+                                    <div class="flex justify-between text-xs">
+                                        <span class="text-gray-400">Risk Budget</span>
+                                        <span class="text-[#d4af37] font-semibold">$100 (0.5%)</span>
+                                    </div>
+                                    <div class="flex justify-between text-xs">
+                                        <span class="text-gray-400">Risk Adherence (≤$120)</span>
+                                        <span class="text-white font-semibold" id="active-edge-adherence">—</span>
+                                    </div>
+                                    <div class="flex justify-between text-xs">
+                                        <span class="text-gray-400">Avg Loss Cut at</span>
+                                        <span class="text-white font-semibold" id="active-edge-losscut">—</span>
+                                    </div>
+                                </div>
+                                <!-- Expandable details -->
+                                <button onclick="toggleDetails('active')" class="mt-3 text-[#d4af37] text-xs font-semibold hover:underline"><i class="fas fa-chevron-down mr-1" id="active-details-icon"></i>Detailed Breakdown</button>
+                                <div id="active-edge-details" class="hidden mt-3 space-y-1.5 border-t border-gray-700/50 pt-3">
+                                    <div class="flex justify-between text-xs"><span class="text-gray-400">Gross Wins</span><span class="text-green-400 font-semibold" id="active-detail-grosswins">—</span></div>
+                                    <div class="flex justify-between text-xs"><span class="text-gray-400">Gross Losses</span><span class="text-red-400 font-semibold" id="active-detail-grosslosses">—</span></div>
+                                    <div class="flex justify-between text-xs"><span class="text-gray-400">Win/Loss Ratio</span><span class="text-white font-semibold" id="active-detail-wlratio">—</span></div>
+                                    <div class="flex justify-between text-xs"><span class="text-gray-400">Expectancy (R)</span><span class="text-white font-semibold" id="active-detail-expectancy">—</span></div>
+                                    <div class="flex justify-between text-xs"><span class="text-gray-400">Net Points</span><span class="text-white font-semibold" id="active-detail-netpts">—</span></div>
+                                    <div class="flex justify-between text-xs"><span class="text-gray-400">Avg R:R (Winners)</span><span class="text-green-400 font-semibold" id="active-detail-rr-wins">—</span></div>
+                                    <div class="flex justify-between text-xs"><span class="text-gray-400">Avg R:R (Losers)</span><span class="text-red-400 font-semibold" id="active-detail-rr-losses">—</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===== EDGE ON THE FOOD CHAIN (Dynamic) ===== -->
+                    <div id="foodchain-active" class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-[#d4af37]/25 rounded-2xl p-6 mb-8 hidden">
+                        <h3 class="text-lg font-bold text-white mb-1 flex items-center">
+                            <i class="fas fa-trophy text-[#d4af37] mr-2"></i>Where Your Edge Sits on the Food Chain
+                        </h3>
+                        <p class="text-gray-400 text-xs mb-5">Real performance vs. industry benchmarks — updated live from your data</p>
+
+                        <div class="grid lg:grid-cols-2 gap-6">
+                            <!-- LEFT: Comparison Table -->
+                            <div>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-xs border-collapse">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-left text-gray-400 font-bold px-3 py-2.5 border-b-2 border-[#d4af37]/20 bg-[#d4af37]/5">Strategy</th>
+                                                <th class="text-right text-gray-400 font-bold px-3 py-2.5 border-b-2 border-[#d4af37]/20 bg-[#d4af37]/5">Edge/Trade</th>
+                                                <th class="text-right text-gray-400 font-bold px-3 py-2.5 border-b-2 border-[#d4af37]/20 bg-[#d4af37]/5">Trades/Mo</th>
+                                                <th class="text-right text-gray-400 font-bold px-3 py-2.5 border-b-2 border-[#d4af37]/20 bg-[#d4af37]/5">Annual R</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="fc-table-body">
+                                            <!-- Dynamically populated & sorted by Annual R -->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Edge Derivation -->
+                                <div class="mt-5 bg-[#0a1628]/60 border border-[#d4af37]/15 rounded-xl p-4">
+                                    <h4 class="text-sm font-bold text-[#d4af37] mb-3"><i class="fas fa-calculator mr-1.5"></i>How The Edge Is Derived</h4>
+                                    <div class="flex items-center gap-4 mb-3">
+                                        <div class="bg-blue-500/10 border border-blue-400/30 rounded-lg px-3 py-1.5 text-center">
+                                            <p class="text-[9px] text-blue-400 font-bold">WIN RATE</p>
+                                            <p class="text-sm font-bold text-white" id="fc-win-rate">—</p>
+                                        </div>
+                                        <div class="bg-purple-500/10 border border-purple-400/30 rounded-lg px-3 py-1.5 text-center">
+                                            <p class="text-[9px] text-purple-400 font-bold">RISK:REWARD</p>
+                                            <p class="text-sm font-bold text-white" id="fc-risk-reward">—</p>
+                                        </div>
+                                        <div class="text-gray-500 text-lg">=</div>
+                                        <div class="bg-[#d4af37]/10 border border-[#d4af37]/30 rounded-lg px-3 py-1.5 text-center">
+                                            <p class="text-[9px] text-[#d4af37] font-bold">EV / TRADE</p>
+                                            <p class="text-sm font-bold text-[#d4af37]" id="fc-ev-result">—</p>
+                                        </div>
+                                    </div>
+                                    <div class="bg-[#0a1628] rounded-lg p-3 font-mono text-xs space-y-0.5">
+                                        <p class="text-gray-400">EV = (Win% × Avg Win) − (Loss% × Avg Loss)</p>
+                                        <p class="text-gray-300" id="fc-formula-line1">EV = ...</p>
+                                        <p class="text-gray-300" id="fc-formula-line2">EV = ...</p>
+                                        <p class="text-[#d4af37] font-bold" id="fc-formula-result">EV = ...</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- RIGHT: Returns Scaling + Why It Matters -->
+                            <div class="space-y-5">
+                                <!-- Returns Scale -->
+                                <div class="bg-[#0a1628]/60 border border-[#d4af37]/15 rounded-xl p-4">
+                                    <h4 class="text-sm font-bold text-[#d4af37] mb-3"><i class="fas fa-chart-bar mr-1.5"></i>Returns Scale With Risk Per Trade</h4>
+                                    <p class="text-gray-400 text-[10px] mb-3" id="fc-scale-subtitle">Based on your validated edge, returns multiply with risk taken:</p>
+                                    <div class="space-y-3" id="fc-returns-bars">
+                                        <!-- Dynamically populated -->
+                                    </div>
+                                    <div class="mt-3 bg-[#d4af37]/8 border border-[#d4af37]/20 rounded-lg p-2.5">
+                                        <p class="text-[10px] text-gray-300"><i class="fas fa-calculator text-[#d4af37] mr-1"></i><strong class="text-white">The Math:</strong> <span id="fc-math-formula">Return = Edge × Risk Per Trade × # of Trades</span></p>
+                                    </div>
+                                </div>
+
+                                <!-- What R Means -->
+                                <div class="bg-[#0a1628]/60 border border-[#d4af37]/15 rounded-xl p-4">
+                                    <h4 class="text-sm font-bold text-[#d4af37] mb-3"><i class="fas fa-info-circle mr-1.5"></i>What "<span id="fc-annual-r-label">— R</span>" Means</h4>
+                                    <div class="space-y-2 text-xs">
+                                        <div class="flex items-start gap-2"><i class="fas fa-crown text-[#d4af37] mt-0.5 text-[10px]"></i><p class="text-gray-300"><strong class="text-white">R</strong> = fixed dollar amount risked per trade</p></div>
+                                        <div class="flex items-start gap-2"><i class="fas fa-crown text-[#d4af37] mt-0.5 text-[10px]"></i><p class="text-gray-300" id="fc-r-example1">For 0.5% risk on $20K account, R = $100</p></div>
+                                        <div class="flex items-start gap-2"><i class="fas fa-crown text-[#d4af37] mt-0.5 text-[10px]"></i><p class="text-gray-300" id="fc-r-example2">— R × $100 = —/year with 0.5% risk</p></div>
+                                    </div>
+                                    <div class="mt-3 bg-[#d4af37]/8 border border-[#d4af37]/20 rounded-lg p-2.5">
+                                        <p class="text-[10px] text-[#d4af37] text-center font-semibold" id="fc-key-insight">Returns grow proportionally with risk taken if the edge is truly validated.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Why It Matters -->
+                                <div class="bg-[#0a1628]/60 border border-[#d4af37]/15 rounded-xl p-4">
+                                    <h4 class="text-sm font-bold text-[#d4af37] mb-3"><i class="fas fa-lightbulb mr-1.5"></i>Why The Numbers Matter</h4>
+                                    <div class="space-y-3">
+                                        <div class="flex items-start gap-2.5">
+                                            <span class="flex-shrink-0 w-5 h-5 bg-[#d4af37] rounded-full flex items-center justify-center text-[10px] font-bold text-[#0a1628]">1</span>
+                                            <div><p class="text-white text-xs font-semibold">Magnitude</p><p class="text-gray-400 text-[11px]" id="fc-why-magnitude">Your edge is — × a casino's edge and >100× what HFT firms scalp per trade.</p></div>
+                                        </div>
+                                        <div class="flex items-start gap-2.5">
+                                            <span class="flex-shrink-0 w-5 h-5 bg-[#d4af37] rounded-full flex items-center justify-center text-[10px] font-bold text-[#0a1628]">2</span>
+                                            <div><p class="text-white text-xs font-semibold">Frequency × Edge = Dollars</p><p class="text-gray-400 text-[11px]" id="fc-why-frequency">E[Profit] ≈ — R × (— trades × 12) ≈ — R</p></div>
+                                        </div>
+                                        <div class="flex items-start gap-2.5">
+                                            <span class="flex-shrink-0 w-5 h-5 bg-[#d4af37] rounded-full flex items-center justify-center text-[10px] font-bold text-[#0a1628]">3</span>
+                                            <div><p class="text-white text-xs font-semibold">Leverage as Multiplier, Not Crutch</p><p class="text-gray-400 text-[11px]">With a validated edge, modest position sizing (0.5% risk) already compounds quickly.</p></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Visual Position Chart -->
+                        <div class="mt-6 bg-[#0a1628]/60 border border-[#d4af37]/15 rounded-xl p-4">
+                            <h4 class="text-sm font-bold text-[#d4af37] mb-2"><i class="fas fa-signal mr-1.5"></i>Edge Position vs. Industry</h4>
+                            <p class="text-gray-400 text-[10px] mb-2">Horizontal bar shows where your edge ranks against known benchmarks</p>
+                            <div id="fc-position-chart" style="height: 220px; width: 100%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- ===== RISK MANAGEMENT ===== -->
+                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-red-500/15 rounded-2xl p-6 mb-8">
+                        <h3 class="text-lg font-bold text-white mb-5 flex items-center"><i class="fas fa-shield-alt text-red-400 mr-2"></i>Risk Management</h3>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <!-- Drawdown & Risk Stats -->
+                            <div class="space-y-3">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="bg-red-900/10 border border-red-500/20 rounded-lg p-3">
+                                        <p class="text-[10px] text-red-400 font-bold">MAX DRAWDOWN</p>
+                                        <p class="text-lg font-bold text-red-400" id="active-risk-maxdd">—</p>
+                                        <p class="text-[10px] text-gray-500" id="active-risk-maxdd-pct">—</p>
+                                    </div>
+                                    <div class="bg-orange-900/10 border border-orange-500/20 rounded-lg p-3">
+                                        <p class="text-[10px] text-orange-400 font-bold">CURRENT DD</p>
+                                        <p class="text-lg font-bold text-orange-400" id="active-risk-curdd">—</p>
+                                        <p class="text-[10px] text-gray-500" id="active-risk-curdd-status"></p>
+                                    </div>
+                                    <div class="bg-green-900/10 border border-green-500/20 rounded-lg p-3">
+                                        <p class="text-[10px] text-green-400 font-bold">RECOVERY FACTOR</p>
+                                        <p class="text-lg font-bold text-green-400" id="active-risk-recovery">—</p>
+                                        <p class="text-[10px] text-gray-500">Net Profit / Max DD</p>
+                                    </div>
+                                    <div class="bg-blue-900/10 border border-blue-500/20 rounded-lg p-3">
+                                        <p class="text-[10px] text-blue-400 font-bold">STREAKS</p>
+                                        <p class="text-sm font-bold text-white mt-1"><span class="text-green-400" id="active-risk-maxcw">—</span> W / <span class="text-red-400" id="active-risk-maxcl">—</span> L</p>
+                                        <p class="text-[10px] text-gray-500">Current: <span id="active-risk-curstreak">—</span></p>
+                                    </div>
+                                </div>
+                                <!-- Risk Distribution -->
+                                <div class="bg-[#0a1628]/60 border border-gray-700/30 rounded-lg p-4">
+                                    <p class="text-xs text-gray-400 font-bold mb-3 uppercase tracking-wider">Risk Distribution per Trade</p>
+                                    <div id="active-risk-distribution" class="space-y-1.5"></div>
+                                </div>
+                            </div>
+                            <!-- Equity Curve with Drawdown -->
+                            <div>
+                                <div id="chart-equity-active" style="height: 320px; width: 100%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===== WEEKLY TREND + P&L DISTRIBUTION (NEW) ===== -->
+                    <div class="grid md:grid-cols-2 gap-6 mb-8">
+                        <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-[#d4af37]/15 rounded-2xl p-6">
+                            <h3 class="text-sm font-bold text-white mb-3 flex items-center"><i class="fas fa-chart-line text-[#d4af37] mr-2"></i>Weekly P&L Trend</h3>
+                            <div id="chart-weekly-trend-active" style="height: 280px; width: 100%;"></div>
+                        </div>
+                        <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-gray-700/30 rounded-2xl p-6">
+                            <h3 class="text-sm font-bold text-white mb-3 flex items-center"><i class="fas fa-chart-bar text-purple-400 mr-2"></i>P&L Distribution</h3>
+                            <div id="chart-pldist-active" style="height: 280px; width: 100%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- ===== CHARTS ===== -->
+                    <div class="grid md:grid-cols-2 gap-6 mb-8">
+                        <!-- Daily P&L Bar Chart -->
+                        <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-gray-700/30 rounded-2xl p-6">
+                            <h3 class="text-sm font-bold text-white mb-3 flex items-center"><i class="fas fa-chart-bar text-blue-400 mr-2"></i>Daily P&L</h3>
+                            <div id="chart-daily-active" style="height: 250px; width: 100%;"></div>
+                        </div>
+                        <!-- Win/Loss + Efficiency Stats -->
+                        <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-gray-700/30 rounded-2xl p-6">
+                            <h3 class="text-sm font-bold text-white mb-3 flex items-center"><i class="fas fa-chart-pie text-purple-400 mr-2"></i>Efficiency & Consistency</h3>
+                            <div class="grid grid-cols-2 gap-3 mb-4">
+                                <div class="bg-[#0a1628]/60 border border-gray-700/30 rounded-lg p-3 text-center">
+                                    <p class="text-[10px] text-gray-400 font-bold">PROFIT/DAY</p>
+                                    <p class="text-lg font-bold text-white" id="active-eff-ppd">—</p>
+                                </div>
+                                <div class="bg-[#0a1628]/60 border border-gray-700/30 rounded-lg p-3 text-center">
+                                    <p class="text-[10px] text-gray-400 font-bold">TRADES/DAY</p>
+                                    <p class="text-lg font-bold text-white" id="active-eff-tpd">—</p>
+                                </div>
+                                <div class="bg-[#0a1628]/60 border border-gray-700/30 rounded-lg p-3 text-center">
+                                    <p class="text-[10px] text-gray-400 font-bold">WINNING DAYS</p>
+                                    <p class="text-lg font-bold text-white" id="active-eff-wdays">—</p>
+                                </div>
+                                <div class="bg-[#0a1628]/60 border border-gray-700/30 rounded-lg p-3 text-center">
+                                    <p class="text-[10px] text-gray-400 font-bold">BEST / WORST</p>
+                                    <p class="text-xs font-bold mt-1"><span class="text-green-400" id="active-eff-best">—</span> / <span class="text-red-400" id="active-eff-worst">—</span></p>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-gray-400">Long Trades</span>
+                                    <span class="text-white" id="active-eff-longs">—</span>
+                                </div>
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-gray-400">Short Trades</span>
+                                    <span class="text-white" id="active-eff-shorts">—</span>
+                                </div>
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-gray-400">Trading Days</span>
+                                    <span class="text-white" id="active-eff-days">—</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===== INCEPTION-TO-DATE SUMMARY (NEW) ===== -->
+                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-[#d4af37]/20 rounded-2xl p-6 mb-8">
+                        <h3 class="text-sm font-bold text-white mb-4 flex items-center"><i class="fas fa-flag-checkered text-[#d4af37] mr-2"></i>Inception-to-Date Summary</h3>
+                        <div id="inception-active">
+                            <p class="text-gray-500 text-sm text-center py-4">Upload data to see inception summary</p>
+                        </div>
+                    </div>
+
+                    <!-- ===== MONTHLY PERFORMANCE (NEW) ===== -->
+                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-gray-700/30 rounded-2xl p-6 mb-8">
+                        <h3 class="text-sm font-bold text-white mb-4 flex items-center"><i class="fas fa-calendar-alt text-[#d4af37] mr-2"></i>Monthly Performance Summary</h3>
+                        <div class="trade-table" id="monthly-summary-active">
+                            <p class="text-gray-500 text-sm text-center py-4">Upload data to see monthly breakdown</p>
+                        </div>
+                    </div>
+
+                    <!-- ===== TRADE LOG ===== -->
+                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-gray-700/30 rounded-2xl p-6 mb-8">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-bold text-white flex items-center"><i class="fas fa-list-alt text-[#d4af37] mr-2"></i>Trade Log</h3>
+                            <span class="text-xs text-gray-500" id="active-trade-count"></span>
+                        </div>
+                        <div class="trade-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th class="text-gray-400 text-[10px]">#</th>
+                                        <th class="text-gray-400 text-[10px]">Entry Time</th>
+                                        <th class="text-gray-400 text-[10px]">Dir</th>
+                                        <th class="text-gray-400 text-[10px]">Cts</th>
+                                        <th class="text-gray-400 text-[10px]">Entry</th>
+                                        <th class="text-gray-400 text-[10px]">Stop</th>
+                                        <th class="text-gray-400 text-[10px]">Exit</th>
+                                        <th class="text-gray-400 text-[10px]">Risk($)</th>
+                                        <th class="text-gray-400 text-[10px]">Pts</th>
+                                        <th class="text-gray-400 text-[10px]">P&L</th>
+                                        <th class="text-gray-400 text-[10px]">%R</th>
+                                        <th class="text-gray-400 text-[10px]">R:R</th>
+                                        <th class="text-gray-400 text-[10px]">Result</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="active-trades-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Disclaimer -->
+                    <div class="border border-gray-700/30 rounded-lg px-4 py-3 flex items-center gap-2">
+                        <i class="fas fa-info-circle text-gray-500 text-xs flex-shrink-0"></i>
+                        <p class="text-gray-500 text-[10px] leading-relaxed">Past performance is not indicative of future results. Results based on real MES fills; individual results may vary. <a href="#compliance-footer" class="text-gray-400 underline hover:text-[#d4af37]">Full disclosure</a></p>
+                    </div>
+                </div>
+
+                <!-- ==================== DISCORD PANEL ==================== -->
+                <div id="panel-discord" class="execution-panel hidden">
+                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-blue-400/30 rounded-2xl p-6 mb-6">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                            <div class="mb-3 md:mb-0">
+                                <h2 class="font-playfair text-2xl sm:text-3xl font-bold text-white mb-1">Discord Selective Execution</h2>
+                                <p class="text-gray-400 text-sm">Manual execution from Discord alerts | Selective high-probability trades</p>
+                                <p class="text-blue-400 text-xs mt-1"><i class="fas fa-chart-bar mr-1"></i>E-mini S&P 500 (ES) Futures | $50/point | 1 Contract | Starting: $20,000</p>
+                            </div>
+                            <div class="bg-blue-500/10 border border-blue-400/30 rounded-lg px-4 py-2">
+                                <p class="text-blue-400 font-semibold text-xs"><i class="fas fa-shield-alt mr-1"></i>Risk Budget: $500/trade</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Excel Upload -->
+                    <div class="bg-gradient-to-br from-blue-900/10 to-[#0d1d35] border border-blue-400/20 rounded-xl p-5 mb-6">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                            <div class="flex-1">
+                                <h3 class="text-sm font-bold text-white mb-1"><i class="fas fa-file-excel mr-2 text-blue-400"></i>Upload Weekly Excel Report</h3>
+                                <p class="text-xs text-gray-400">10-column format: Date, Trade#, B/S, Entry, Stop, Trail, Net Pts, Risk, Net$, Win/Lose</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <label class="cursor-pointer px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold text-sm rounded-lg transition-all inline-flex items-center">
+                                    <i class="fas fa-upload mr-2"></i>Upload Excel
+                                    <input type="file" id="excel-upload-discord" accept=".xlsx,.xls" class="hidden" onchange="handleExcelUpload(event, 'discord')">
+                                </label>
+                                <button onclick="clearData('discord')" class="px-4 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="upload-status-discord" class="mt-3 hidden"></div>
+                    </div>
+
+                    <!-- Period Toggle -->
+                    <div class="flex flex-col sm:flex-row items-center justify-between mb-6 gap-3">
+                        <div class="flex items-center gap-2">
+                            <button onclick="setPeriod('discord','weekly')" id="period-discord-weekly" class="period-btn active-period px-4 py-2 rounded-lg text-xs font-bold transition-all">This Week</button>
+                            <button onclick="setPeriod('discord','monthly')" id="period-discord-monthly" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-blue-400/50 transition-all">This Month</button>
+                            <button onclick="setPeriod('discord','alltime')" id="period-discord-alltime" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-blue-400/50 transition-all">All-Time</button>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="prevPeriod('discord')" class="week-nav-button px-3 py-1.5 bg-[#0d1d35] border border-gray-600 text-gray-300 rounded-lg text-xs font-semibold"><i class="fas fa-chevron-left"></i></button>
+                            <select id="week-selector-discord" onchange="selectWeek('discord')" class="px-4 py-1.5 bg-[#0d1d35] border border-blue-400/30 text-white rounded-lg text-xs font-semibold"></select>
+                            <button onclick="nextPeriod('discord')" class="week-nav-button px-3 py-1.5 bg-[#0d1d35] border border-gray-600 text-gray-300 rounded-lg text-xs font-semibold"><i class="fas fa-chevron-right"></i></button>
+                            <span class="text-gray-500 text-xs ml-2" id="period-range-discord"></span>
+                        </div>
+                    </div>
+
+                    <!-- Hero Stats (Discord) -->
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+                        <div class="stat-card bg-gradient-to-br from-green-900/20 to-green-950/40 border border-green-500/30 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-1"><span class="text-[10px] text-green-400 font-bold tracking-wider">NET P&L</span></div>
+                            <p class="text-2xl font-bold text-white" id="discord-hero-pnl">—</p>
+                            <p class="text-[10px] text-gray-500 mt-0.5" id="discord-hero-pnl-sub"></p>
+                        </div>
+                        <div class="stat-card bg-gradient-to-br from-emerald-900/20 to-emerald-950/40 border border-emerald-500/30 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-1"><span class="text-[10px] text-emerald-400 font-bold tracking-wider">RETURN</span></div>
+                            <p class="text-2xl font-bold text-white" id="discord-hero-return">—</p>
+                            <p class="text-[10px] text-gray-500 mt-0.5">on $20,000</p>
+                        </div>
+                        <div class="stat-card bg-gradient-to-br from-blue-900/20 to-blue-950/40 border border-blue-500/30 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-1"><span class="text-[10px] text-blue-400 font-bold tracking-wider">EV / TRADE</span></div>
+                            <p class="text-2xl font-bold text-white" id="discord-hero-ev">—</p>
+                            <p class="text-[10px] text-gray-500 mt-0.5" id="discord-hero-ev-sub"></p>
+                        </div>
+                        <div class="stat-card bg-gradient-to-br from-blue-900/20 to-blue-950/40 border border-blue-500/30 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-1"><span class="text-[10px] text-blue-400 font-bold tracking-wider">WIN RATE</span></div>
+                            <p class="text-2xl font-bold text-white" id="discord-hero-wr">—</p>
+                            <p class="text-[10px] text-gray-500 mt-0.5" id="discord-hero-wr-sub"></p>
+                        </div>
+                        <div class="stat-card bg-gradient-to-br from-purple-900/20 to-purple-950/40 border border-purple-500/30 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-1"><span class="text-[10px] text-purple-400 font-bold tracking-wider">PROFIT FACTOR</span></div>
+                            <p class="text-2xl font-bold text-white" id="discord-hero-pf">—</p>
+                            <p class="text-[10px] text-gray-500 mt-0.5" id="discord-hero-pf-sub"></p>
+                        </div>
+                        <div class="stat-card bg-gradient-to-br from-red-900/20 to-red-950/40 border border-red-500/30 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-1"><span class="text-[10px] text-red-400 font-bold tracking-wider">MAX DRAWDOWN</span></div>
+                            <p class="text-2xl font-bold text-white" id="discord-hero-dd">—</p>
+                            <p class="text-[10px] text-gray-500 mt-0.5" id="discord-hero-dd-sub"></p>
+                        </div>
+                    </div>
+
+                    <p class="text-gray-600 text-[10px] -mt-6 mb-6 text-center">Results reflect selective manual execution from Discord alerts. Individual results will vary. Past performance is not indicative of future results. <a href="#compliance-footer" class="underline hover:text-gray-400">Full disclosure</a></p>
+
+                    <!-- The Edge (Discord) -->
+                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-blue-400/20 rounded-2xl p-6 mb-8">
+                        <h3 class="text-lg font-bold text-white mb-5 flex items-center"><i class="fas fa-crosshairs text-blue-400 mr-2"></i>The Edge — Expected Value Analysis</h3>
+                        <div class="grid md:grid-cols-3 gap-6 items-center">
+                            <div class="text-center md:text-left">
+                                <p class="text-gray-400 text-xs mb-1 uppercase tracking-wider">Your Edge Per Trade</p>
+                                <p class="text-4xl font-bold text-blue-400" id="discord-ev-hero-big">—</p>
+                                <p class="text-sm text-gray-400 mt-1" id="discord-ev-hero-sub"></p>
+                                <div class="mt-3 bg-blue-500/10 border border-blue-400/20 rounded-lg p-3">
+                                    <p class="text-blue-400 text-xs" id="discord-ev-actual-risk"></p>
+                                </div>
+                            </div>
+                            <div class="space-y-3">
+                                <p class="text-gray-400 text-xs uppercase tracking-wider mb-2">How The Edge Is Built</p>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="bg-green-900/15 border border-green-500/20 rounded-lg p-3 text-center">
+                                        <p class="text-[10px] text-green-400 font-bold">AVG WIN</p>
+                                        <p class="text-xl font-bold text-green-400" id="discord-edge-avgwin">—</p>
+                                        <p class="text-[10px] text-gray-500" id="discord-edge-avgwin-pts"></p>
+                                    </div>
+                                    <div class="bg-red-900/15 border border-red-500/20 rounded-lg p-3 text-center">
+                                        <p class="text-[10px] text-red-400 font-bold">AVG LOSS</p>
+                                        <p class="text-xl font-bold text-red-400" id="discord-edge-avgloss">—</p>
+                                        <p class="text-[10px] text-gray-500" id="discord-edge-avgloss-pts"></p>
+                                    </div>
+                                </div>
+                                <div class="bg-blue-900/15 border border-blue-500/20 rounded-lg p-3 text-center">
+                                    <p class="text-[10px] text-blue-400 font-bold">WIN RATE</p>
+                                    <p class="text-lg font-bold text-white" id="discord-edge-wr">—</p>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="bg-[#0a1628]/60 border border-gray-700/50 rounded-lg p-4">
+                                    <p class="text-gray-300 text-sm leading-relaxed" id="discord-edge-explanation">Upload your Excel file to see your edge analysis.</p>
+                                </div>
+                                <div class="mt-3 space-y-2">
+                                    <div class="flex justify-between text-xs"><span class="text-gray-400">Risk Budget</span><span class="text-blue-400 font-semibold">$500/trade</span></div>
+                                </div>
+                                <button onclick="toggleDetails('discord')" class="mt-3 text-blue-400 text-xs font-semibold hover:underline"><i class="fas fa-chevron-down mr-1" id="discord-details-icon"></i>Detailed Breakdown</button>
+                                <div id="discord-edge-details" class="hidden mt-3 space-y-1.5 border-t border-gray-700/50 pt-3">
+                                    <div class="flex justify-between text-xs"><span class="text-gray-400">Gross Wins</span><span class="text-green-400 font-semibold" id="discord-detail-grosswins">—</span></div>
+                                    <div class="flex justify-between text-xs"><span class="text-gray-400">Gross Losses</span><span class="text-red-400 font-semibold" id="discord-detail-grosslosses">—</span></div>
+                                    <div class="flex justify-between text-xs"><span class="text-gray-400">Win/Loss Ratio</span><span class="text-white font-semibold" id="discord-detail-wlratio">—</span></div>
+                                    <div class="flex justify-between text-xs"><span class="text-gray-400">Net Points</span><span class="text-white font-semibold" id="discord-detail-netpts">—</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===== EDGE ON THE FOOD CHAIN — Discord (Simplified) ===== -->
+                    <div id="foodchain-discord" class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-blue-400/25 rounded-2xl p-6 mb-8 hidden">
+                        <h3 class="text-lg font-bold text-white mb-1 flex items-center">
+                            <i class="fas fa-trophy text-blue-400 mr-2"></i>Where Your Edge Sits on the Food Chain
+                        </h3>
+                        <p class="text-gray-400 text-xs mb-5">Discord Selective performance vs. industry benchmarks — <span id="dfc-period-label">(All-Time)</span></p>
+
+                        <div class="grid lg:grid-cols-2 gap-6">
+                            <!-- LEFT: Position Chart + Quick Stats -->
+                            <div>
+                                <div class="bg-[#0a1628]/60 border border-blue-400/15 rounded-xl p-4 mb-4">
+                                    <div id="dfc-position-chart" style="height: 220px; width: 100%;"></div>
+                                </div>
+                                <!-- Quick edge stats -->
+                                <div class="grid grid-cols-3 gap-3">
+                                    <div class="bg-blue-900/10 border border-blue-400/20 rounded-lg p-3 text-center">
+                                        <p class="text-[9px] text-blue-400 font-bold">EDGE/TRADE</p>
+                                        <p class="text-lg font-bold text-blue-400" id="dfc-edge-per-trade">—</p>
+                                    </div>
+                                    <div class="bg-blue-900/10 border border-blue-400/20 rounded-lg p-3 text-center">
+                                        <p class="text-[9px] text-blue-400 font-bold">TRADES/MO</p>
+                                        <p class="text-lg font-bold text-white" id="dfc-trades-month">—</p>
+                                    </div>
+                                    <div class="bg-blue-900/10 border border-blue-400/20 rounded-lg p-3 text-center">
+                                        <p class="text-[9px] text-blue-400 font-bold">ANNUAL R</p>
+                                        <p class="text-lg font-bold text-white" id="dfc-annual-r">—</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- RIGHT: Simplified Formula + Returns -->
+                            <div class="space-y-4">
+                                <!-- Edge derivation (compact) -->
+                                <div class="bg-[#0a1628]/60 border border-blue-400/15 rounded-xl p-4">
+                                    <h4 class="text-sm font-bold text-blue-400 mb-3"><i class="fas fa-calculator mr-1.5"></i>Edge Formula</h4>
+                                    <div class="flex items-center gap-3 mb-3">
+                                        <div class="bg-blue-500/10 border border-blue-400/30 rounded-lg px-3 py-1.5 text-center">
+                                            <p class="text-[9px] text-blue-400 font-bold">WIN RATE</p>
+                                            <p class="text-sm font-bold text-white" id="dfc-win-rate">—</p>
+                                        </div>
+                                        <div class="bg-purple-500/10 border border-purple-400/30 rounded-lg px-3 py-1.5 text-center">
+                                            <p class="text-[9px] text-purple-400 font-bold">R:R</p>
+                                            <p class="text-sm font-bold text-white" id="dfc-risk-reward">—</p>
+                                        </div>
+                                        <div class="text-gray-500 text-lg">=</div>
+                                        <div class="bg-blue-500/10 border border-blue-400/30 rounded-lg px-3 py-1.5 text-center">
+                                            <p class="text-[9px] text-blue-400 font-bold">EV</p>
+                                            <p class="text-sm font-bold text-blue-400" id="dfc-ev-result">—</p>
+                                        </div>
+                                    </div>
+                                    <div class="bg-[#0a1628] rounded-lg p-2.5 font-mono text-[11px] space-y-0.5">
+                                        <p class="text-gray-400" id="dfc-formula-line1">EV = ...</p>
+                                        <p class="text-gray-300" id="dfc-formula-line2">EV = ...</p>
+                                        <p class="text-blue-400 font-bold" id="dfc-formula-result">EV = ...</p>
+                                    </div>
+                                </div>
+
+                                <!-- Returns scaling (compact) -->
+                                <div class="bg-[#0a1628]/60 border border-blue-400/15 rounded-xl p-4">
+                                    <h4 class="text-sm font-bold text-blue-400 mb-3"><i class="fas fa-chart-bar mr-1.5"></i>Returns Scale</h4>
+                                    <div class="space-y-3" id="dfc-returns-bars"></div>
+                                    <div class="mt-3 bg-blue-500/8 border border-blue-400/20 rounded-lg p-2.5">
+                                        <p class="text-[10px] text-gray-300"><i class="fas fa-calculator text-blue-400 mr-1"></i><strong class="text-white">Math:</strong> <span id="dfc-math-formula">Return = Edge × Risk × Trades</span></p>
+                                    </div>
+                                </div>
+
+                                <!-- What R Means -->
+                                <div class="bg-[#0a1628]/60 border border-blue-400/15 rounded-xl p-4">
+                                    <h4 class="text-sm font-bold text-blue-400 mb-2"><i class="fas fa-info-circle mr-1.5"></i>What "<span id="dfc-annual-r-label">— R</span>" Means</h4>
+                                    <div class="space-y-1.5 text-xs">
+                                        <p class="text-gray-300" id="dfc-r-example1">R = fixed dollar risk per trade</p>
+                                        <p class="text-gray-300" id="dfc-r-example2">— R × $500 = —/year</p>
+                                    </div>
+                                    <div class="mt-2 bg-blue-500/8 border border-blue-400/20 rounded-lg p-2">
+                                        <p class="text-[10px] text-blue-400 text-center font-semibold" id="dfc-key-insight">Upload data to see edge analysis.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Why It Matters (simplified) -->
+                                <div class="bg-[#0a1628]/60 border border-blue-400/15 rounded-xl p-4">
+                                    <h4 class="text-sm font-bold text-blue-400 mb-2"><i class="fas fa-lightbulb mr-1.5"></i>Key Takeaways</h4>
+                                    <div class="space-y-2">
+                                        <div class="flex items-start gap-2">
+                                            <span class="flex-shrink-0 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-[9px] font-bold text-white">1</span>
+                                            <p class="text-gray-400 text-[11px]" id="dfc-why-magnitude">Upload data to see how your edge compares.</p>
+                                        </div>
+                                        <div class="flex items-start gap-2">
+                                            <span class="flex-shrink-0 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-[9px] font-bold text-white">2</span>
+                                            <p class="text-gray-400 text-[11px]" id="dfc-why-frequency">E[Profit] ≈ —</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Weekly Trend + P&L Distribution (Discord) -->
+                    <div class="grid md:grid-cols-2 gap-6 mb-8">
+                        <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-blue-400/15 rounded-2xl p-6">
+                            <h3 class="text-sm font-bold text-white mb-3 flex items-center"><i class="fas fa-chart-line text-blue-400 mr-2"></i>Weekly P&L Trend</h3>
+                            <div id="chart-weekly-trend-discord" style="height: 280px; width: 100%;"></div>
+                        </div>
+                        <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-gray-700/30 rounded-2xl p-6">
+                            <h3 class="text-sm font-bold text-white mb-3 flex items-center"><i class="fas fa-chart-bar text-purple-400 mr-2"></i>P&L Distribution</h3>
+                            <div id="chart-pldist-discord" style="height: 280px; width: 100%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Charts (Discord) -->
+                    <div class="grid md:grid-cols-2 gap-6 mb-8">
+                        <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-gray-700/30 rounded-2xl p-6">
+                            <h3 class="text-sm font-bold text-white mb-3"><i class="fas fa-chart-area text-blue-400 mr-2"></i>Equity Curve</h3>
+                            <div id="chart-equity-discord" style="height: 280px; width: 100%;"></div>
+                        </div>
+                        <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-gray-700/30 rounded-2xl p-6">
+                            <h3 class="text-sm font-bold text-white mb-3"><i class="fas fa-chart-bar text-blue-400 mr-2"></i>Daily P&L</h3>
+                            <div id="chart-daily-discord" style="height: 280px; width: 100%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Inception-to-Date (Discord) -->
+                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-blue-400/20 rounded-2xl p-6 mb-8">
+                        <h3 class="text-sm font-bold text-white mb-4 flex items-center"><i class="fas fa-flag-checkered text-blue-400 mr-2"></i>Inception-to-Date Summary</h3>
+                        <div id="inception-discord">
+                            <p class="text-gray-500 text-sm text-center py-4">Upload data to see inception summary</p>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Summary (Discord) -->
+                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-gray-700/30 rounded-2xl p-6 mb-8">
+                        <h3 class="text-sm font-bold text-white mb-4 flex items-center"><i class="fas fa-calendar-alt text-blue-400 mr-2"></i>Monthly Performance Summary</h3>
+                        <div class="trade-table" id="monthly-summary-discord">
+                            <p class="text-gray-500 text-sm text-center py-4">Upload data to see monthly breakdown</p>
+                        </div>
+                    </div>
+
+                    <!-- Trade Log (Discord) -->
+                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-gray-700/30 rounded-2xl p-6 mb-8">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-bold text-white flex items-center"><i class="fas fa-list-alt text-blue-400 mr-2"></i>Trade Log</h3>
+                            <span class="text-xs text-gray-500" id="discord-trade-count"></span>
+                        </div>
+                        <div class="trade-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th class="text-gray-400 text-[10px]">Date/Time</th>
+                                        <th class="text-gray-400 text-[10px]">Trade#</th>
+                                        <th class="text-gray-400 text-[10px]">B/S</th>
+                                        <th class="text-gray-400 text-[10px]">Entry</th>
+                                        <th class="text-gray-400 text-[10px]">Stop</th>
+                                        <th class="text-gray-400 text-[10px]">Trail</th>
+                                        <th class="text-gray-400 text-[10px]">Net Pts</th>
+                                        <th class="text-gray-400 text-[10px]">Risk(Pts)</th>
+                                        <th class="text-gray-400 text-[10px]">Net$ (1ES)</th>
+                                        <th class="text-gray-400 text-[10px]">Result</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="discord-trades-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Disclaimer -->
+                    <div class="border border-gray-700/30 rounded-lg px-4 py-3 flex items-center gap-2">
+                        <i class="fas fa-info-circle text-gray-500 text-xs flex-shrink-0"></i>
+                        <p class="text-gray-500 text-[10px] leading-relaxed">Past performance is not indicative of future results. Selective execution from Discord alerts; individual results will vary. <a href="#compliance-footer" class="text-gray-400 underline hover:text-blue-400">Full disclosure</a></p>
+                    </div>
+                </div>
+
+                <!-- ==================== COMPARE PANEL ==================== -->
+                <div id="panel-compare" class="execution-panel hidden">
+                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-[#d4af37]/30 rounded-2xl p-6 mb-6">
+                        <h2 class="font-playfair text-2xl sm:text-3xl font-bold text-white mb-2 text-center">ECFS Active vs Discord Selective</h2>
+                        <p class="text-gray-400 text-center text-sm mb-4">Same edge, different execution — all metrics normalized to R (risk units) for true comparison</p>
+
+                        <!-- Risk Context Callout -->
+                        <div class="grid sm:grid-cols-2 gap-3 max-w-lg mx-auto">
+                            <div class="bg-[#d4af37]/8 border border-[#d4af37]/30 rounded-lg px-4 py-2 text-center">
+                                <p class="text-[10px] text-[#d4af37] font-bold tracking-wider">ECFS ACTIVE</p>
+                                <p class="text-white text-sm font-bold">1R = $100 <span class="text-gray-400 font-normal text-xs">(0.5% of $20K)</span></p>
+                                <p class="text-gray-400 text-[10px]">MES · $5/pt · Auto-copy</p>
+                            </div>
+                            <div class="bg-blue-500/8 border border-blue-400/30 rounded-lg px-4 py-2 text-center">
+                                <p class="text-[10px] text-blue-400 font-bold tracking-wider">DISCORD SELECTIVE</p>
+                                <p class="text-white text-sm font-bold">1R = $500 <span class="text-gray-400 font-normal text-xs">(2.5% of $20K)</span></p>
+                                <p class="text-gray-400 text-[10px]">ES · $50/pt · Manual alerts</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Period Toggle for Compare -->
+                    <div class="flex flex-col sm:flex-row items-center justify-between mb-6 gap-3">
+                        <div class="flex items-center gap-2">
+                            <button onclick="setComparePeriod('weekly')" id="period-compare-weekly" class="period-btn active-period px-4 py-2 rounded-lg text-xs font-bold transition-all">This Week</button>
+                            <button onclick="setComparePeriod('monthly')" id="period-compare-monthly" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-[#d4af37]/50 transition-all">This Month</button>
+                            <button onclick="setComparePeriod('alltime')" id="period-compare-alltime" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-[#d4af37]/50 transition-all">All-Time</button>
+                        </div>
+                        <span class="text-gray-500 text-xs" id="compare-period-label"></span>
+                    </div>
+
+                    <!-- R-Normalized Head-to-Head -->
+                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-[#d4af37]/20 rounded-2xl p-6 mb-8">
+                        <h3 class="text-sm font-bold text-white mb-4 flex items-center"><i class="fas fa-exchange-alt text-[#d4af37] mr-2"></i>R-Normalized Head-to-Head <span class="text-gray-500 text-[10px] ml-2 font-normal">(apples-to-apples comparison)</span></h3>
+                        <div class="trade-table" id="compare-r-table">
+                            <p class="text-gray-500 text-sm text-center py-4">Upload data for both methods to compare</p>
+                        </div>
+                    </div>
+
+                    <!-- Side-by-Side Dollar Stats -->
+                    <div class="grid md:grid-cols-2 gap-6 mb-8">
+                        <!-- ECFS Column -->
+                        <div class="bg-gradient-to-br from-yellow-900/10 to-[#0a1628] border-2 border-[#d4af37]/50 rounded-2xl p-6">
+                            <div class="flex items-center justify-between mb-5">
+                                <div><h3 class="text-lg font-bold text-white">ECFS Active</h3><p class="text-[#d4af37] text-xs">MES | $5/pt | 1R = $100</p></div>
+                                <i class="fas fa-bolt text-[#d4af37] text-xl"></i>
+                            </div>
+                            <div class="space-y-3" id="compare-active-stats">
+                                <p class="text-gray-500 text-sm text-center py-8">Upload ECFS CSV data first</p>
+                            </div>
+                        </div>
+                        <!-- Discord Column -->
+                        <div class="bg-gradient-to-br from-blue-900/10 to-[#0a1628] border-2 border-blue-400/50 rounded-2xl p-6">
+                            <div class="flex items-center justify-between mb-5">
+                                <div><h3 class="text-lg font-bold text-white">Discord Selective</h3><p class="text-blue-400 text-xs">ES | $50/pt | 1R = $500</p></div>
+                                <i class="fas fa-comments text-blue-400 text-xl"></i>
+                            </div>
+                            <div class="space-y-3" id="compare-discord-stats">
+                                <p class="text-gray-500 text-sm text-center py-8">Upload Discord Excel data first</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Radar Chart -->
+                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-[#d4af37]/20 rounded-2xl p-6 mb-8">
+                        <h3 class="text-lg font-bold text-white mb-4 flex items-center text-center justify-center"><i class="fas fa-spider text-[#d4af37] mr-2"></i>Performance Radar <span class="text-gray-500 text-xs ml-2 font-normal">(R-Normalized)</span></h3>
+                        <div id="chart-radar-compare" style="height: 400px; width: 100%;"></div>
+                    </div>
+
+                    <!-- Key Insights -->
+                    <div class="bg-[#0d1d35]/50 border border-[#d4af37]/20 rounded-xl p-6 mb-6" id="compare-insights">
+                        <h3 class="text-lg font-bold text-white mb-4 flex items-center"><i class="fas fa-lightbulb text-[#d4af37] mr-2"></i>Key Insights</h3>
+                        <p class="text-gray-400 text-sm">Upload data for both execution methods to see comparative insights.</p>
+                    </div>
+
+                    <!-- Compare Disclaimer -->
+                    <div class="border border-gray-700/30 rounded-lg px-4 py-3 flex items-center gap-2">
+                        <i class="fas fa-info-circle text-gray-500 text-xs flex-shrink-0"></i>
+                        <p class="text-gray-500 text-[10px] leading-relaxed">Past performance is not indicative of future results. R-normalized metrics are for comparison purposes only; actual dollar results depend on position sizing and market conditions. <a href="#compliance-footer" class="text-gray-400 underline hover:text-[#d4af37]">Full disclosure</a></p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section — Strategy Chooser -->
+    <section class="py-16 bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border-t border-b border-[#d4af37]/20 relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10">
+            <div class="absolute top-10 left-1/4 w-64 h-64 bg-[#d4af37]/20 rounded-full blur-3xl"></div>
+            <div class="absolute bottom-10 right-1/4 w-64 h-64 bg-emerald-500/15 rounded-full blur-3xl"></div>
+        </div>
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="max-w-5xl mx-auto">
+
+                <!-- Section Header -->
+                <div class="text-center mb-12">
+                    <div class="inline-block bg-[#d4af37]/10 border border-[#d4af37]/30 rounded-full px-6 py-2 mb-6">
+                        <span class="text-[#d4af37] font-semibold text-sm"><i class="fas fa-chart-line mr-2"></i>REAL RESULTS · FULL TRANSPARENCY</span>
+                    </div>
+                    <h2 class="font-playfair text-3xl sm:text-4xl font-bold text-white mb-4">Two Ways to Access This Edge</h2>
+                    <p class="text-gray-400 max-w-2xl mx-auto">The same research, the same systematic approach — choose the path that matches how you want to participate.</p>
+                </div>
+
+                <!-- Dual Cards -->
+                <div class="grid md:grid-cols-2 gap-6 mb-10">
+
+                    <!-- Card 1: Cash Flow Strategy -->
+                    <div class="group relative bg-gradient-to-br from-[#d4af37]/5 to-[#0a1628] border-2 border-[#d4af37]/30 rounded-2xl p-8 hover:border-[#d4af37]/60 transition-all duration-300 hover:shadow-xl hover:shadow-[#d4af37]/10">
+                        <div class="flex items-center gap-3 mb-5">
+                            <div class="w-12 h-12 rounded-xl gradient-gold flex items-center justify-center">
+                                <i class="fas fa-bolt text-[#0a1628] text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-playfair text-xl font-bold text-white">Cash Flow Strategy</h3>
+                                <p class="text-[#d4af37] text-xs font-semibold tracking-wider">ACTIVE TRADING</p>
+                            </div>
+                        </div>
+
+                        <p class="text-gray-300 text-sm leading-relaxed mb-6">Trade alongside us with systematic futures execution. Auto-copy our trades into your own Tradovate account — you maintain full control of your capital.</p>
+
+                        <div class="space-y-3 mb-8">
+                            <div class="flex items-center gap-2.5">
+                                <i class="fas fa-check-circle text-[#d4af37] text-xs"></i>
+                                <span class="text-gray-300 text-sm">MES & ES futures — real-time copy execution</span>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <i class="fas fa-check-circle text-[#d4af37] text-xs"></i>
+                                <span class="text-gray-300 text-sm">Your money stays in your brokerage account</span>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <i class="fas fa-check-circle text-[#d4af37] text-xs"></i>
+                                <span class="text-gray-300 text-sm">Start with as little as $20K</span>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <i class="fas fa-check-circle text-[#d4af37] text-xs"></i>
+                                <span class="text-gray-300 text-sm">Full transparency — every trade shown above</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 mb-6 text-gray-500 text-xs">
+                            <i class="fas fa-user-check"></i>
+                            <span>Best for: Active traders who want to manage their own accounts</span>
+                        </div>
+
+                        <a href="https://cashflow.ekantikcapital.com/" class="w-full inline-flex items-center justify-center px-6 py-3.5 gradient-gold text-[#0a1628] font-bold text-sm rounded-xl hover:shadow-lg hover:shadow-[#d4af37]/40 transition-all">
+                            <i class="fas fa-rocket mr-2"></i>Explore Cash Flow Strategy
+                        </a>
+                    </div>
+
+                    <!-- Card 2: Principal Protection -->
+                    <div class="group relative bg-gradient-to-br from-emerald-500/5 to-[#0a1628] border-2 border-emerald-500/25 rounded-2xl p-8 hover:border-emerald-400/50 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/10">
+                        <div class="absolute top-4 right-4">
+                            <span class="bg-emerald-500/15 border border-emerald-400/30 text-emerald-400 text-[10px] font-bold tracking-wider px-3 py-1 rounded-full">FOUNDING MEMBER</span>
+                        </div>
+                        <div class="flex items-center gap-3 mb-5">
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
+                                <i class="fas fa-shield-alt text-white text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-playfair text-xl font-bold text-white">Principal Protection</h3>
+                                <p class="text-emerald-400 text-xs font-semibold tracking-wider">INCOME & GROWTH</p>
+                            </div>
+                        </div>
+
+                        <p class="text-gray-300 text-sm leading-relaxed mb-6">Prefer a managed approach? Our income & growth strategy targets consistent returns with built-in principal protection — designed for investors who want results without the screen time.</p>
+
+                        <div class="space-y-3 mb-8">
+                            <div class="flex items-center gap-2.5">
+                                <i class="fas fa-check-circle text-emerald-400 text-xs"></i>
+                                <span class="text-gray-300 text-sm">Built-in downside protection mechanisms</span>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <i class="fas fa-check-circle text-emerald-400 text-xs"></i>
+                                <span class="text-gray-300 text-sm">Income generation + capital appreciation</span>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <i class="fas fa-check-circle text-emerald-400 text-xs"></i>
+                                <span class="text-gray-300 text-sm">Hands-off — fully managed execution</span>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <i class="fas fa-check-circle text-emerald-400 text-xs"></i>
+                                <span class="text-gray-300 text-sm">Founding member rates — limited availability</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 mb-6 text-gray-500 text-xs">
+                            <i class="fas fa-user-tie"></i>
+                            <span>Best for: Investors seeking managed income with capital preservation</span>
+                        </div>
+
+                        <a href="https://founding.ekantikcapital.com/" class="w-full inline-flex items-center justify-center px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold text-sm rounded-xl hover:shadow-lg hover:shadow-emerald-500/40 transition-all">
+                            <i class="fas fa-shield-alt mr-2"></i>Explore Principal Protection
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Bottom trust line -->
+                <div class="text-center">
+                    <p class="text-gray-500 text-xs mb-2">Both strategies built on the same systematic research powering the performance data above.</p>
+                    <p class="text-gray-600 text-[10px]">Trading futures involves substantial risk. Past results do not guarantee future performance. These are informational links, not solicitations. <a href="#compliance-footer" class="underline hover:text-gray-400">See full disclosure</a></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="compliance-footer" class="py-10 bg-[#0d1d35]/80 border-t border-[#d4af37]/20">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-5xl mx-auto">
+
+                <!-- Share Bar -->
+                <div class="flex flex-col sm:flex-row items-center justify-between mb-8 pb-6 border-b border-gray-700/30">
+                    <p class="text-gray-400 text-sm mb-3 sm:mb-0"><i class="fas fa-share-alt mr-2 text-[#d4af37]"></i>Share this dashboard</p>
+                    <div class="flex items-center gap-2">
+                        <button onclick="shareToTwitter()" class="w-9 h-9 rounded-lg bg-[#1DA1F2]/15 border border-[#1DA1F2]/30 flex items-center justify-center hover:bg-[#1DA1F2]/25 transition-all" title="X / Twitter">
+                            <i class="fab fa-x-twitter text-[#1DA1F2] text-sm"></i>
+                        </button>
+                        <button onclick="shareToLinkedIn()" class="w-9 h-9 rounded-lg bg-[#0A66C2]/15 border border-[#0A66C2]/30 flex items-center justify-center hover:bg-[#0A66C2]/25 transition-all" title="LinkedIn">
+                            <i class="fab fa-linkedin-in text-[#0A66C2] text-sm"></i>
+                        </button>
+                        <button onclick="shareToFacebook()" class="w-9 h-9 rounded-lg bg-[#1877F2]/15 border border-[#1877F2]/30 flex items-center justify-center hover:bg-[#1877F2]/25 transition-all" title="Facebook">
+                            <i class="fab fa-facebook-f text-[#1877F2] text-sm"></i>
+                        </button>
+                        <button onclick="shareToWhatsApp()" class="w-9 h-9 rounded-lg bg-[#25D366]/15 border border-[#25D366]/30 flex items-center justify-center hover:bg-[#25D366]/25 transition-all" title="WhatsApp">
+                            <i class="fab fa-whatsapp text-[#25D366] text-sm"></i>
+                        </button>
+                        <button onclick="shareToTelegram()" class="w-9 h-9 rounded-lg bg-[#229ED9]/15 border border-[#229ED9]/30 flex items-center justify-center hover:bg-[#229ED9]/25 transition-all" title="Telegram">
+                            <i class="fab fa-telegram-plane text-[#229ED9] text-sm"></i>
+                        </button>
+                        <button onclick="shareViaEmail()" class="w-9 h-9 rounded-lg bg-gray-600/15 border border-gray-600/30 flex items-center justify-center hover:bg-gray-500/25 transition-all" title="Email">
+                            <i class="fas fa-envelope text-gray-400 text-sm"></i>
+                        </button>
+                        <div class="w-px h-6 bg-gray-700/50 mx-1"></div>
+                        <button onclick="copyShareLink()" class="w-9 h-9 rounded-lg bg-[#d4af37]/10 border border-[#d4af37]/30 flex items-center justify-center hover:bg-[#d4af37]/20 transition-all" title="Copy link" id="copy-link-btn">
+                            <i class="fas fa-link text-[#d4af37] text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Company Info -->
+                <div class="text-center mb-6">
+                    <div class="flex items-center justify-center gap-2 mb-2">
+                        <div class="w-8 h-8 gradient-gold rounded-md flex items-center justify-center">
+                            <span class="text-[#0a1628] font-bold text-xs">ECA</span>
+                        </div>
+                        <span class="text-[#d4af37] font-playfair font-bold">Ekantik Capital Advisors LLC</span>
+                    </div>
+                    <p class="text-gray-500 text-xs mb-1">© 2026 Ekantik Capital Advisors LLC. All rights reserved.</p>
+                    <p class="text-gray-600 text-[10px]">Past performance is not indicative of future results. For informational purposes only.</p>
+                </div>
+
+                <!-- Regulatory Disclosure — Collapsible -->
+                <div class="text-center mb-4">
+                    <button onclick="document.getElementById('full-disclosure').classList.toggle('hidden'); this.querySelector('i').classList.toggle('fa-chevron-down'); this.querySelector('i').classList.toggle('fa-chevron-up');" class="text-gray-500 text-[10px] hover:text-gray-400 transition-colors">
+                        <i class="fas fa-chevron-down mr-1 text-[8px]"></i>Full Regulatory Disclosure
+                    </button>
+                </div>
+                <div id="full-disclosure" class="hidden bg-[#0a1628]/60 border border-gray-700/30 rounded-lg p-5 mb-6">
+                    <div class="space-y-2.5 text-gray-600 text-[10px] leading-relaxed">
+                        <p><strong class="text-gray-500">Risk Disclosure:</strong> Futures trading involves substantial risk of loss and is not suitable for all investors. Past performance is not necessarily indicative of future results.</p>
+                        <p><strong class="text-gray-500">Not Investment Advice:</strong> This dashboard is for informational and educational purposes only. Nothing herein constitutes investment advice or a recommendation to trade.</p>
+                        <p><strong class="text-gray-500">Hypothetical Projections:</strong> Annual R estimates and returns scaling are mathematical extrapolations of observed data, not guarantees. Actual results may differ materially.</p>
+                        <p><strong class="text-gray-500">Real Execution Data:</strong> Trade results are based on actual fills via Tradovate. Execution quality, slippage, commissions, and fees may vary by account.</p>
+                        <p><strong class="text-gray-500">Not a Solicitation:</strong> Nothing on this page constitutes an offer to sell or a solicitation of an offer to buy any futures contract or other financial instrument. Any decision to trade should be based on your own due diligence.</p>
+                        <p><strong class="text-gray-500">CFTC Rule 4.41:</strong> Hypothetical or simulated performance results have certain limitations. The Annual R projections and returns-scaling estimates shown on this dashboard are mathematical extrapolations, not actual results. Unlike actual trading records, simulated results do not represent real trading and may not account for market factors such as liquidity. Simulated programs are also subject to the benefit of hindsight. No representation is being made that any account will or is likely to achieve profits or losses similar to those projected.</p>
+                    </div>
+                </div>
+
+                <!-- Quick Links -->
+                <div class="flex flex-wrap items-center justify-center gap-3 text-[10px] text-gray-600">
+                    <a href="https://cashflow.ekantikcapital.com/" class="hover:text-[#d4af37] transition-colors">Home</a>
+                    <span>·</span>
+                    <a href="https://cashflow.ekantikcapital.com/#how-it-works" class="hover:text-[#d4af37] transition-colors">How It Works</a>
+                    <span>·</span>
+                    <a href="https://cashflow.ekantikcapital.com/#pricing" class="hover:text-[#d4af37] transition-colors">Cash Flow Pricing</a>
+                    <span>·</span>
+                    <a href="https://founding.ekantikcapital.com/" class="hover:text-emerald-400 transition-colors">Principal Protection</a>
+                    <span>·</span>
+                    <a href="https://cashflow.ekantikcapital.com/#validation" class="hover:text-[#d4af37] transition-colors">Validate</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Welcome Acknowledgment -->
+    <div id="disclaimer-modal" class="fixed inset-0 z-[100] hidden">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+        <div class="relative flex items-center justify-center min-h-screen p-4">
+            <div class="bg-[#0d1d35] border border-[#d4af37]/30 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl shadow-black/40">
+                <div class="text-center mb-4">
+                    <div class="w-12 h-12 gradient-gold rounded-xl flex items-center justify-center mx-auto mb-3">
+                        <span class="text-[#0a1628] font-bold text-lg">ECA</span>
+                    </div>
+                    <h3 class="font-playfair text-xl font-bold text-white">Welcome</h3>
+                    <p class="text-gray-400 text-sm mt-1">Live performance dashboard</p>
+                </div>
+
+                <p class="text-gray-400 text-xs leading-relaxed text-center mb-5">
+                    This dashboard shows real trading results updated weekly. Trading futures involves substantial risk of loss. Past performance is not indicative of future results and all projections are estimates only.
+                </p>
+
+                <button onclick="acceptDisclaimer()" class="w-full py-3 rounded-lg font-bold text-sm gradient-gold text-[#0a1628] hover:shadow-lg hover:shadow-[#d4af37]/30 transition-all">
+                    <i class="fas fa-chart-line mr-2"></i>View Dashboard
+                </button>
+
+                <p class="text-gray-600 text-[9px] text-center mt-3">By continuing you acknowledge this is for informational purposes only. <a href="#compliance-footer" onclick="acceptDisclaimer()" class="underline">Full disclosure</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/parser.js"></script>
+    <script src="js/dashboard.js"></script>
+
+    <!-- Sharing & Disclaimer Functions -->
+    <script>
+    const shareUrl = 'https://cashflow.ekantikcapital.com/performance';
+    const shareTitle = 'Live Trading Performance Dashboard — Ekantik Capital';
+    const shareText = 'Live trading performance — 30+ KPIs, equity curves & edge analysis. Real Tradovate fills, updated weekly. Past performance does not guarantee future results.';
+    const shareTextShort = 'Live trading dashboard — real fills, 30+ KPIs, updated weekly. Past performance ≠ future results.';
+
+    function shareToTwitter() {
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTextShort)}&url=${encodeURIComponent(shareUrl)}`, '_blank', 'width=600,height=400');
+    }
+    function shareToLinkedIn() {
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`, '_blank', 'width=600,height=400');
+    }
+    function shareToFacebook() {
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank', 'width=600,height=400');
+    }
+    function shareToWhatsApp() {
+        const msg = `${shareText}\n${shareUrl}`;
+        // Use web API (works desktop + mobile)
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+    function shareToTelegram() {
+        window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`, '_blank', 'width=600,height=400');
+    }
+    function shareViaEmail() {
+        const subject = encodeURIComponent(shareTitle);
+        const body = encodeURIComponent(`${shareText}\n\nView the dashboard: ${shareUrl}`);
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    }
+    function copyShareLink() {
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            // Update all copy-link button icons
+            document.querySelectorAll('#copy-link-btn, #copy-link-sidebar').forEach(btn => {
+                if (btn) { btn.innerHTML = '<i class="fas fa-check text-green-400 text-sm"></i>'; }
+            });
+            showToast('Link copied to clipboard!');
+            setTimeout(() => {
+                document.querySelectorAll('#copy-link-btn, #copy-link-sidebar').forEach(btn => {
+                    if (btn) { btn.innerHTML = '<i class="fas fa-link text-[#d4af37] text-sm"></i>'; }
+                });
+            }, 2500);
+        }).catch(() => {
+            // Fallback for older browsers
+            const ta = document.createElement('textarea');
+            ta.value = shareUrl;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('Link copied!');
+        });
+    }
+    function shareMobile() {
+        if (navigator.share) {
+            navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
+        } else {
+            // Fallback: show bottom sheet with options
+            const actions = [
+                { label: 'WhatsApp', fn: shareToWhatsApp, icon: 'fab fa-whatsapp', color: '#25D366' },
+                { label: 'X / Twitter', fn: shareToTwitter, icon: 'fab fa-x-twitter', color: '#1DA1F2' },
+                { label: 'LinkedIn', fn: shareToLinkedIn, icon: 'fab fa-linkedin-in', color: '#0A66C2' },
+                { label: 'Telegram', fn: shareToTelegram, icon: 'fab fa-telegram-plane', color: '#229ED9' },
+                { label: 'Email', fn: shareViaEmail, icon: 'fas fa-envelope', color: '#9CA3AF' },
+                { label: 'Copy Link', fn: copyShareLink, icon: 'fas fa-link', color: '#d4af37' },
+            ];
+            let sheet = document.getElementById('share-sheet');
+            if (!sheet) {
+                sheet = document.createElement('div');
+                sheet.id = 'share-sheet';
+                sheet.className = 'fixed inset-0 z-[90] flex items-end justify-center';
+                sheet.innerHTML = `
+                    <div class="absolute inset-0 bg-black/40" onclick="this.parentElement.remove()"></div>
+                    <div class="relative w-full max-w-md bg-[#0d1d35] border-t border-[#d4af37]/30 rounded-t-2xl p-6 pb-8">
+                        <div class="w-10 h-1 bg-gray-600 rounded-full mx-auto mb-5"></div>
+                        <p class="text-white font-bold text-sm mb-4 text-center">Share Dashboard</p>
+                        <div class="grid grid-cols-3 gap-3" id="sheet-actions"></div>
+                    </div>`;
+                const grid = sheet.querySelector('#sheet-actions');
+                actions.forEach(a => {
+                    const btn = document.createElement('button');
+                    btn.className = 'flex flex-col items-center gap-2 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all';
+                    btn.innerHTML = `<i class="${a.icon} text-lg" style="color:${a.color}"></i><span class="text-gray-300 text-[10px]">${a.label}</span>`;
+                    btn.onclick = () => { a.fn(); sheet.remove(); };
+                    grid.appendChild(btn);
+                });
+                document.body.appendChild(sheet);
+            }
+        }
+    }
+    function showToast(msg) {
+        const t = document.getElementById('share-toast');
+        const txt = document.getElementById('toast-text');
+        if (!t) return;
+        txt.textContent = msg;
+        t.style.opacity = '1';
+        t.style.transform = 'translate(-50%, 0)';
+        t.style.pointerEvents = 'auto';
+        clearTimeout(t._timer);
+        t._timer = setTimeout(() => {
+            t.style.opacity = '0';
+            t.style.transform = 'translate(-50%, 20px)';
+            t.style.pointerEvents = 'none';
+        }, 2500);
+    }
+
+    // Show floating sidebar after scrolling past hero
+    window.addEventListener('scroll', () => {
+        const sidebar = document.getElementById('share-sidebar');
+        if (sidebar) {
+            sidebar.style.opacity = window.scrollY > 400 ? '1' : '0';
+            sidebar.style.pointerEvents = window.scrollY > 400 ? 'auto' : 'none';
+        }
+    }, { passive: true });
+
+    function acceptDisclaimer() {
+        localStorage.setItem('eca-disclaimer-accepted', Date.now());
+        document.getElementById('disclaimer-modal').classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        if (!localStorage.getItem('eca-disclaimer-accepted')) {
+            document.getElementById('disclaimer-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        // Init sidebar opacity
+        const sidebar = document.getElementById('share-sidebar');
+        if (sidebar) { sidebar.style.opacity = '0'; sidebar.style.pointerEvents = 'none'; sidebar.style.transition = 'opacity 0.3s ease'; }
+    });
+    </script>
+</body>
+</html>
