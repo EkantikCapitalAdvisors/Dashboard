@@ -113,13 +113,28 @@
                         </div>
                     </a>
                 </div>
-                <nav class="flex items-center space-x-4 sm:space-x-6">
-                    <!-- Strategies Dropdown -->
-                    <div class="relative group hidden sm:block">
-                        <button class="text-gray-300 hover:text-[#d4af37] transition-colors text-sm font-medium flex items-center gap-1">
-                            Strategies <i class="fas fa-chevron-down text-[8px] mt-0.5 group-hover:rotate-180 transition-transform"></i>
+                <nav class="flex items-center space-x-3 sm:space-x-5">
+                    <!-- Tab: ECFS Active -->
+                    <a href="#" onclick="switchExecution('active'); return false;" class="text-[#d4af37] font-semibold text-sm flex items-center hover:text-[#d4af37] transition-colors" id="nav-active">
+                        <i class="fas fa-bolt mr-1.5 text-xs"></i><span class="hidden sm:inline">ECFS Active</span><span class="sm:hidden">ECFS</span>
+                    </a>
+                    <!-- Tab: Discord Selective -->
+                    <a href="#" onclick="switchExecution('discord'); return false;" class="text-gray-300 hover:text-blue-400 transition-colors text-sm font-medium flex items-center" id="nav-discord">
+                        <i class="fas fa-comments mr-1.5 text-xs"></i><span class="hidden sm:inline">Discord</span><span class="sm:hidden">Disc</span>
+                    </a>
+                    <!-- Tab: Comparison -->
+                    <a href="#" onclick="switchExecution('compare'); return false;" class="text-gray-300 hover:text-[#d4af37] transition-colors text-sm font-medium flex items-center" id="nav-compare">
+                        <i class="fas fa-exchange-alt mr-1.5 text-xs"></i><span class="hidden sm:inline">Comparison</span><span class="sm:hidden">Compare</span>
+                    </a>
+                    <!-- Divider -->
+                    <div class="hidden sm:block w-px h-5 bg-gray-700"></div>
+                    <!-- Ekantik Investment Strategies Dropdown -->
+                    <div class="relative group">
+                        <button class="inline-flex items-center px-4 py-2 sm:px-5 sm:py-2.5 gradient-gold text-[#0a1628] font-bold text-xs sm:text-sm rounded-lg hover:shadow-lg hover:shadow-[#d4af37]/50 transition-all">
+                            <i class="fas fa-landmark mr-1.5 text-xs"></i><span class="hidden sm:inline">Ekantik Investment Strategies</span><span class="sm:hidden">Strategies</span>
+                            <i class="fas fa-chevron-down text-[8px] ml-1.5 group-hover:rotate-180 transition-transform"></i>
                         </button>
-                        <div class="absolute top-full left-1/2 -translate-x-1/2 pt-3 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200">
+                        <div class="absolute top-full right-0 pt-3 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200">
                             <div class="bg-[#0d1d35] border border-[#d4af37]/20 rounded-xl shadow-2xl shadow-black/40 p-2 w-72">
                                 <a href="https://cashflow.ekantikcapital.com/" class="flex items-start gap-3 px-3 py-3 rounded-lg hover:bg-[#d4af37]/10 transition-colors group/item">
                                     <div class="w-9 h-9 rounded-lg bg-[#d4af37]/15 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -127,7 +142,7 @@
                                     </div>
                                     <div>
                                         <p class="text-white font-semibold text-sm group-hover/item:text-[#d4af37] transition-colors">Cash Flow Strategy</p>
-                                        <p class="text-gray-500 text-[11px] leading-snug mt-0.5">Active futures trading with systematic edge. For hands-on traders.</p>
+                                        <p class="text-gray-500 text-[11px] leading-snug mt-0.5">Active futures trading · Auto-copy · MES/ES</p>
                                     </div>
                                 </a>
                                 <a href="https://founding.ekantikcapital.com/" class="flex items-start gap-3 px-3 py-3 rounded-lg hover:bg-emerald-500/10 transition-colors group/item">
@@ -135,21 +150,13 @@
                                         <i class="fas fa-shield-alt text-emerald-400 text-sm"></i>
                                     </div>
                                     <div>
-                                        <p class="text-white font-semibold text-sm group-hover/item:text-emerald-400 transition-colors">Principal Protection</p>
-                                        <p class="text-gray-500 text-[11px] leading-snug mt-0.5">Income & growth with downside protection. For passive investors.</p>
+                                        <p class="text-white font-semibold text-sm group-hover/item:text-emerald-400 transition-colors">Principal Protection — Income & Growth</p>
+                                        <p class="text-gray-500 text-[11px] leading-snug mt-0.5">Managed strategy · Founding member · Passive</p>
                                     </div>
                                 </a>
                             </div>
                         </div>
                     </div>
-                    <a href="https://cashflow.ekantikcapital.com/#how-it-works" class="text-gray-300 hover:text-[#d4af37] transition-colors text-sm font-medium hidden sm:inline">How It Works</a>
-                    <a href="#" class="text-[#d4af37] font-semibold text-sm flex items-center">
-                        <i class="fas fa-chart-line mr-1.5 text-xs"></i>Performance
-                    </a>
-                    <a href="https://cashflow.ekantikcapital.com/#validation" class="text-gray-300 hover:text-[#d4af37] transition-colors text-sm font-medium hidden sm:inline">Validate</a>
-                    <a href="https://cashflow.ekantikcapital.com/" class="hidden sm:inline-flex items-center px-5 py-2.5 gradient-gold text-[#0a1628] font-bold text-sm rounded-lg hover:shadow-lg hover:shadow-[#d4af37]/50 transition-all">
-                        <i class="fas fa-arrow-left mr-2"></i>Back to Home
-                    </a>
                 </nav>
             </div>
         </div>

@@ -165,12 +165,32 @@ function switchExecution(method) {
     tab.classList.add('active');
     tab.classList.remove('bg-[#0d1d35]', 'text-gray-300', 'border-gray-600');
 
+    // Update header nav link highlighting
+    const navLinks = { active: 'nav-active', discord: 'nav-discord', compare: 'nav-compare' };
+    Object.entries(navLinks).forEach(([key, id]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (key === method) {
+            el.classList.remove('text-gray-300');
+            el.classList.add(key === 'discord' ? 'text-blue-400' : 'text-[#d4af37]', 'font-semibold');
+        } else {
+            el.classList.remove('text-[#d4af37]', 'text-blue-400', 'font-semibold');
+            el.classList.add('text-gray-300');
+        }
+    });
+
     if (method === 'compare') renderCompare();
 
     // Resize charts after tab switch
     setTimeout(() => {
         Object.values(chartInstances).forEach(c => { if (c && c.resize) c.resize(); });
     }, 100);
+
+    // Scroll to panel area
+    const panelArea = document.getElementById(`panel-${method}`);
+    if (panelArea) {
+        panelArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 
 // ===== PERIOD CONTROLS =====
