@@ -1,0 +1,12 @@
+[
+  {"datetime":"2/4/2026 09:40","tradeNum":"F1","direction":"Sell","entryPrice":6940,"stopPrice":6952,"trailingProfit":"6901","pointsPL":12.5,"riskPoints":12,"dollarPL":625,"riskDollars":600,"isWin":true,"outcome":"Win","date":"2/4/2026"},
+  {"datetime":"2/4/2026 10:16","tradeNum":"F2","direction":"Sell","entryPrice":6927,"stopPrice":6932,"trailingProfit":"6911","pointsPL":8,"riskPoints":5,"dollarPL":400,"riskDollars":250,"isWin":true,"outcome":"Win","date":"2/4/2026"},
+  {"datetime":"2/4/2026 14:16","tradeNum":"F3","direction":"Sell","entryPrice":6922,"stopPrice":6931,"trailingProfit":"—","pointsPL":-2,"riskPoints":9,"dollarPL":-100,"riskDollars":450,"isWin":false,"outcome":"Loss","date":"2/4/2026"},
+  {"datetime":"2/5/2026 08:01","tradeNum":"F4","direction":"Sell","entryPrice":6864,"stopPrice":6871,"trailingProfit":"6854","pointsPL":5,"riskPoints":7,"dollarPL":250,"riskDollars":350,"isWin":true,"outcome":"Win","date":"2/5/2026"},
+  {"datetime":"2/5/2026 08:30","tradeNum":"F5","direction":"Sell","entryPrice":6849,"stopPrice":6861,"trailingProfit":"—","pointsPL":-5,"riskPoints":12,"dollarPL":-250,"riskDollars":600,"isWin":false,"outcome":"Loss","date":"2/5/2026"},
+  {"datetime":"2/6/2026 07:20","tradeNum":"F6","direction":"Sell","entryPrice":6859,"stopPrice":6866,"trailingProfit":"6851","pointsPL":8,"riskPoints":7,"dollarPL":400,"riskDollars":350,"isWin":true,"outcome":"Win","date":"2/6/2026"},
+  {"datetime":"2/9/2026 09:03","tradeNum":"F7","direction":"Sell","entryPrice":6948,"stopPrice":6956,"trailingProfit":"—","pointsPL":-7,"riskPoints":8,"dollarPL":-350,"riskDollars":400,"isWin":false,"outcome":"Loss","date":"2/9/2026"},
+  {"datetime":"2/11/2026 10:35","tradeNum":"F8","direction":"Sell","entryPrice":6964,"stopPrice":6977,"trailingProfit":"6955","pointsPL":9,"riskPoints":13,"dollarPL":450,"riskDollars":650,"isWin":true,"outcome":"Win","date":"2/11/2026"},
+  {"datetime":"2/12/2026 13:25","tradeNum":"F9","direction":"Sell","entryPrice":6889,"stopPrice":6901,"trailingProfit":"6871","pointsPL":8,"riskPoints":12,"dollarPL":400,"riskDollars":600,"isWin":true,"outcome":"Win","date":"2/12/2026"},
+  {"datetime":"2/13/2026 07:29","tradeNum":"F10","direction":"Sell","entryPrice":6849,"stopPrice":6859,"trailingProfit":"—","pointsPL":-10,"riskPoints":10,"dollarPL":-500,"riskDollars":500,"isWin":false,"outcome":"Loss","date":"2/13/2026"}
+]

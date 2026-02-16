@@ -1,4 +1,4 @@
-# Ekantik Capital — Performance Dashboard v2.6
+# Ekantik Capital — Performance Dashboard v2.8
 
 ## Project Overview
 A professional, data-driven performance dashboard for demonstrating weekly trading performance of **ECFS Active** (MES futures) and **Discord Selective** (ES futures) trading strategies. Built for Ekantik Capital Advisors LLC.
@@ -71,7 +71,13 @@ A professional, data-driven performance dashboard for demonstrating weekly tradi
 ### New Sections
 - **Inception-to-Date Summary** — Total P&L, Return %, Total Trades, Best/Worst Week
 - **Monthly Performance Summary Table** — Collapsible table with Trades, W/L, Win%, P&L, Return, EV, PF, Cumulative
-- **Enhanced Compare Tab** — Side-by-side KPIs + radar chart + key insights
+- **Enhanced Compare Tab (v2.8)** — Fully R-normalized apples-to-apples comparison:
+  - R-Normalized Head-to-Head table (EV, Win Rate, Avg Win/Loss, PF, DD, Recovery — all in R)
+  - Side-by-side R-normalized strategy cards (zero raw dollar display in comparison context)
+  - R-normalized radar chart (6-axis spider)
+  - Dynamic key insights (risk context, EV comparison, win rate, drawdown, data confidence)
+  - Dollar translation shown only as small footnote (`1R = $100` / `1R = $500`)
+  - Trophy indicators for winning metric per row
 - **Edge on the Food Chain (ECFS Active)** — Full interactive section showing:
   - Comparison table: ECFS vs Casino Roulette, HFT, Stat-Arb, CTAs, Retail (dynamically populated)
   - Edge derivation formula with win rate × R:R breakdown
@@ -131,9 +137,10 @@ A professional, data-driven performance dashboard for demonstrating weekly tradi
 index.html              Main dashboard page
 css/style.css           Custom styles (tabs, cards, tables, animations)
 js/parser.js            Tradovate CSV parser + Excel parser + KPI calculator + DB API
-js/dashboard.js         Dashboard rendering engine + charts + tab switching + DB persistence
+js/dashboard.js         Dashboard rendering engine + charts + export + DB persistence
 images/og-dashboard.png OG image for social media sharing previews
-orders_sample.csv       Sample Tradovate export (Feb 2-13, 2026)
+orders_sample.csv       Cumulative Tradovate export (grows weekly — full ECFS history)
+discord_trades.json     Cumulative Discord trades (grows weekly — full Discord history)
 README.md               This file
 ```
 
@@ -153,17 +160,75 @@ README.md               This file
 ## 📊 Data Flow
 
 ### Auto-Load / Demo Mode (v2.6)
-- **3-tier data loading**: localStorage (fastest) → Database API → Sample CSV fallback
-- When a cold visitor arrives via shared link with no cached data and empty DB, the dashboard **automatically fetches and parses `orders_sample.csv`** to show a fully populated dashboard
-- All 30+ KPIs, equity curves, charts, food chain, period toggles work immediately
+- **3-tier data loading for BOTH tabs**: localStorage (fastest) → Database API → Static file fallback
+- **ECFS Active**: Falls back to `orders_sample.csv` (full cumulative Tradovate export)
+- **Discord Selective**: Falls back to `discord_trades.json` (cumulative trade history)
+- All 30+ KPIs, equity curves, charts, food chain, period toggles work immediately on both tabs
 - Shows a green "Live Results Loaded" banner with trade count
-- When the user uploads their own CSV, it replaces the sample data and saves to localStorage + DB
-- **Result**: Shared links always land on a live, data-rich dashboard — never empty placeholders
+- When the user uploads their own CSV/Excel, it replaces the sample data and saves to localStorage + DB
+- **Result**: Shared links always land on a fully populated dashboard — never empty placeholders
 
-### Weekly Workflow (~30 seconds)
-1. **ECFS Active**: Export Tradovate CSV → Upload on ECFS tab → Auto-parse → All KPIs populate
-2. **Discord Selective**: Prepare 10-column Excel → Upload on Discord tab → Auto-parse → All KPIs populate
-3. Data is saved to database and localStorage simultaneously
+### Export for GitHub Deployment (v2.7)
+- **Export buttons** appear after any successful data load (upload, cache, or DB)
+- **ECFS Active → Export**: Downloads the raw Tradovate CSV as `orders_sample.csv` — commit to GitHub
+- **Discord Selective → Export**: Downloads all accumulated trades as `discord_trades.json` — commit to GitHub
+- **Discord merge logic**: Uploading a new weekly Excel **merges** new trades with existing data (deduplication by trade ID). This means the dashboard accumulates history over time:
+  - Week 1: Upload Excel (10 trades) → Export = 10 trades
+  - Week 2: Upload Excel (8 new trades) → Export = 18 trades
+  - Week 12: Upload Excel (6 new trades) → Export = ~120 trades
+  - Year 1: → Export = ~500+ trades (full history)
+
+### Long-Term Data Architecture
+
+**The #1 asset is the historical track record.** The data files grow cumulatively:
+
+| Time | `orders_sample.csv` (ECFS) | `discord_trades.json` (Discord) |
+|------|---------------------------|----------------------------------|
+| Week 2 | 55 trades | 10 trades |
+| Month 3 | ~300 trades | ~80 trades |
+| Month 6 | ~600 trades | ~160 trades |
+| Year 1 | ~1,200 trades | ~350 trades |
+| Year 2 | ~2,400 trades | ~700 trades |
+
+**Why this works forever:**
+- **ECFS**: Tradovate's CSV export already includes ALL historical orders. Each week you export the full history and replace the file. Zero data-loss risk.
+- **Discord**: The dashboard merges new Excel uploads with existing trades. The export button downloads the full cumulative JSON. Replace the file in GitHub.
+- **GitHub Pages** serves these static files → visitors always see the complete track record.
+- **No database dependency** for the public site. The Genspark DB is a convenience layer; the static files are the source of truth.
+
+### Weekly Workflow (~2 minutes, every Monday)
+
+#### Step 1: ECFS Active
+1. Open Tradovate → Orders → History → **Export ALL** (full date range)
+2. Save as CSV (this file contains the entire trading history)
+3. Go to the dashboard → ECFS Active tab → Upload CSV
+4. Verify KPIs update correctly
+5. Click the green **Export** button → downloads `orders_sample.csv`
+
+#### Step 2: Discord Selective
+1. Open your weekly Excel (10-column format) with only the **new** week's trades
+2. Go to the dashboard → Discord Selective tab → Upload Excel
+3. The dashboard **merges** new trades with existing history (duplicates are skipped)
+4. Verify the total trade count increased
+5. Click the green **Export** button → downloads `discord_trades.json` (full cumulative history)
+
+#### Step 3: Deploy to GitHub
+```bash
+cd path/to/cashflow-repo/performance
+
+# Replace the two data files with exported versions
+cp ~/Downloads/orders_sample.csv .
+cp ~/Downloads/discord_trades.json .
+
+git add orders_sample.csv discord_trades.json
+git commit -m "Weekly update: trades through [DATE] — [N] ECFS, [M] Discord trades"
+git push
+```
+GitHub Pages redeploys in 1–2 minutes. Done.
+
+#### Step 4: (Optional) Share Update
+- WhatsApp/Telegram: "📊 Weekly update — real Tradovate fills through [DATE]. 30+ KPIs, equity curves & edge analysis. https://cashflow.ekantikcapital.com/performance"
+- Use the dashboard's built-in share buttons
 
 ### Tradovate CSV Parsing
 - Filters `Status = Filled` orders only

@@ -21,10 +21,14 @@ async function handleCSVUpload(event, method) {
     const reader = new FileReader();
     reader.onload = async function (e) {
         try {
-            const trades = parseTradovateCSV(e.target.result);
+            const csvText = e.target.result;
+            const trades = parseTradovateCSV(csvText);
             state.active.allTrades = trades;
+            state.active.isSampleData = false;
             localStorage.setItem('ecfs-trades', JSON.stringify(trades));
             localStorage.setItem('ecfs-filename', file.name);
+            // Store raw CSV for export to GitHub
+            localStorage.setItem('ecfs-raw-csv', csvText);
 
             const weeks = getWeeksList(trades);
             state.active.selectedWeek = weeks[0];
@@ -46,6 +50,7 @@ async function handleCSVUpload(event, method) {
             state.active.snapshots = snapshots;
 
             showUploadSuccess('active', `${file.name} — ${trades.length} trades parsed & saved`);
+            showExportButton('active');
         } catch (err) {
             showUploadError('active', 'Error parsing CSV: ' + err.message);
             console.error(err);
@@ -64,8 +69,20 @@ async function handleExcelUpload(event, method) {
     reader.onload = async function (e) {
         try {
             const data = new Uint8Array(e.target.result);
-            const trades = parseDiscordExcel(data);
+            const newTrades = parseDiscordExcel(data);
+
+            // MERGE: Combine new trades with existing historical data
+            // Dedup by tradeNum to avoid duplicates on re-upload
+            const existingTrades = state.discord.allTrades.filter(t => !t._isSample);
+            const existingNums = new Set(existingTrades.map(t => t.tradeNum));
+            const uniqueNew = newTrades.filter(t => !existingNums.has(t.tradeNum));
+            const trades = [...existingTrades, ...uniqueNew].sort((a, b) => {
+                const da = new Date(a.datetime), db = new Date(b.datetime);
+                return da - db;
+            });
+
             state.discord.allTrades = trades;
+            state.discord.isSampleData = false;
             localStorage.setItem('discord-trades', JSON.stringify(trades));
             localStorage.setItem('discord-filename', file.name);
 
@@ -87,7 +104,11 @@ async function handleExcelUpload(event, method) {
             }
             state.discord.snapshots = snapshots;
 
-            showUploadSuccess('discord', `${file.name} — ${trades.length} trades parsed & saved`);
+            const addedMsg = uniqueNew.length < newTrades.length 
+                ? ` (${uniqueNew.length} new, ${newTrades.length - uniqueNew.length} duplicates skipped)`
+                : '';
+            showUploadSuccess('discord', `${file.name} — ${trades.length} total trades${addedMsg}`);
+            showExportButton('discord');
         } catch (err) {
             showUploadError('discord', 'Error parsing Excel: ' + err.message);
             console.error(err);
@@ -496,6 +517,17 @@ function renderFoodChain(method, k, allK, allTrades) {
     setEl(`${prefix}-trades-month`, `≈${Math.round(tradesPerMonth)}`);
     setEl(`${prefix}-annual-r`, `≈${annualR.toFixed(0)} R`);
 
+    // Summary callout: explicit math so the user knows exactly how Annual R was derived
+    const strategyLabel = method === 'active' ? 'ECFS Active (MES)' : 'Discord Selective (ES)';
+    const riskLabel = method === 'active' ? '$100' : '$500';
+    setHTML(`${prefix}-summary-text`,
+        `<strong style="color:${accentColor}">${strategyLabel}</strong> · ${periodLabel}: ` +
+        `<strong>${edgeSign}${edgeR.toFixed(1)}%R</strong> edge/trade × ` +
+        `<strong>${Math.round(tradesPerMonth)}</strong> trades/mo × 12 = ` +
+        `<strong style="color:${accentColor}">≈${annualR.toFixed(0)} R/year</strong> ` +
+        `(${annualR.toFixed(0)}R × ${riskLabel} = $${Math.abs(annualR * riskBudget).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')})`
+    );
+
     // --- Edge Derivation ---
     setEl(`${prefix}-win-rate`, `${winRate.toFixed(1)}%`);
     setEl(`${prefix}-risk-reward`, rr > 0 ? `1:${rr.toFixed(2)}` : '—');
@@ -838,7 +870,7 @@ function renderCompare() {
     const labelEl = document.getElementById('compare-period-label');
     if (labelEl) labelEl.textContent = periodLabels[comparePeriod] || 'All-Time';
 
-    // Side-by-side dollar stats (keep for raw context)
+    // Side-by-side R-normalized stats (no raw dollars — apples-to-apples)
     ['active', 'discord'].forEach(method => {
         const k = method === 'active' ? ak : dk;
         const container = document.getElementById(`compare-${method}-stats`);
@@ -847,24 +879,35 @@ function renderCompare() {
         const color = method === 'active' ? '#d4af37' : '#60a5fa';
         const riskBudget = method === 'active' ? ECFS_RISK : DISCORD_RISK;
 
-        // Convert to R for display alongside $
+        // All values in R-multiples
+        const netR = riskBudget > 0 ? (k.netPL / riskBudget) : 0;
         const avgWinR = riskBudget > 0 ? (k.avgWinDollar / riskBudget) : 0;
         const avgLossR = riskBudget > 0 ? (Math.abs(k.avgLossDollar) / riskBudget) : 0;
-        const netR = riskBudget > 0 ? (k.netPL / riskBudget) : 0;
         const maxDDR = riskBudget > 0 ? (k.maxDD / riskBudget) : 0;
+        const bestR = riskBudget > 0 ? (k.bestTrade / riskBudget) : 0;
+        const worstR = riskBudget > 0 ? (Math.abs(k.worstTrade) / riskBudget) : 0;
+        const grossWinsR = riskBudget > 0 ? (k.grossWins / riskBudget) : 0;
+        const grossLossesR = riskBudget > 0 ? (k.grossLosses / riskBudget) : 0;
+
+        const fmtR = (v, sign = true) => {
+            const s = sign && v > 0 ? '+' : v < 0 ? '' : '';
+            return `${s}${v.toFixed(2)}R`;
+        };
 
         container.innerHTML = `
             <div class="space-y-2.5">
-                <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">Net P&L</span><span class="text-lg font-bold" style="color: ${k.netPL >= 0 ? '#4ade80' : '#f87171'}">${fmtDollar(k.netPL)} <span class="text-xs text-gray-500">(${netR >= 0 ? '+' : ''}${netR.toFixed(1)}R)</span></span></div>
-                <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">Return</span><span class="text-sm font-semibold text-white">${fmtPct(k.returnPct)}</span></div>
-                <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">EV/Trade</span><span class="text-sm font-semibold" style="color:${color}">${k.evPlannedR >= 0 ? '+' : ''}${k.evPlannedR.toFixed(1)}%R <span class="text-xs text-gray-500">(${fmtDollar(k.evPerTrade)})</span></span></div>
+                <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">Net P&L</span><span class="text-lg font-bold" style="color: ${netR >= 0 ? '#4ade80' : '#f87171'}">${fmtR(netR)}</span></div>
+                <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">EV / Trade</span><span class="text-sm font-semibold" style="color:${color}">${k.evPlannedR >= 0 ? '+' : ''}${k.evPlannedR.toFixed(1)}%R</span></div>
                 <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">Win Rate</span><span class="text-sm font-semibold text-white">${k.winRate.toFixed(1)}% <span class="text-xs text-gray-500">(${k.winCount}W / ${k.lossCount}L)</span></span></div>
                 <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">Profit Factor</span><span class="text-sm font-semibold text-white">${k.profitFactor === Infinity ? '∞' : k.profitFactor.toFixed(2)}</span></div>
+                <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">Avg Win</span><span class="text-sm font-semibold" style="color:#4ade80">${fmtR(avgWinR)}</span></div>
+                <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">Avg Loss</span><span class="text-sm font-semibold" style="color:#f87171">${fmtR(-avgLossR)}</span></div>
+                <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">Max Drawdown</span><span class="text-sm font-semibold" style="color:#f87171">-${maxDDR.toFixed(1)}R</span></div>
+                <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">Best Trade</span><span class="text-sm font-semibold" style="color:#4ade80">+${bestR.toFixed(2)}R</span></div>
+                <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">Worst Trade</span><span class="text-sm font-semibold" style="color:#f87171">-${worstR.toFixed(2)}R</span></div>
                 <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">Total Trades</span><span class="text-sm font-semibold text-white">${k.totalTrades}</span></div>
-                <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">Avg Win</span><span class="text-sm font-semibold" style="color:#4ade80">${fmtDollar(k.avgWinDollar)} <span class="text-xs text-gray-500">(${avgWinR.toFixed(2)}R)</span></span></div>
-                <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">Avg Loss</span><span class="text-sm font-semibold" style="color:#f87171">${fmtDollar(k.avgLossDollar)} <span class="text-xs text-gray-500">(${avgLossR.toFixed(2)}R)</span></span></div>
-                <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">Max Drawdown</span><span class="text-sm font-semibold" style="color:#f87171">-${fmtDollar(k.maxDD)} <span class="text-xs text-gray-500">(${maxDDR.toFixed(1)}R)</span></span></div>
                 <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">Winning Days</span><span class="text-sm font-semibold text-white">${k.profitableDays}/${k.tradingDays.length}</span></div>
+                <div class="mt-3 pt-3 border-t border-gray-700/30 flex justify-between items-center"><span class="text-gray-500 text-[10px]">1R = $${riskBudget}</span><span class="text-gray-500 text-[10px]">${fmtR(netR)} = ${k.netPL >= 0 ? '+' : ''}$${Math.abs(k.netPL).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</span></div>
             </div>
         `;
     });
@@ -1608,6 +1651,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             if (savedECFSName) {
                 showUploadSuccess('active', `${savedECFSName} — ${state.active.allTrades.length} trades (cached)`);
             }
+            showExportButton('active');
         } catch (e) { console.error('Error loading ECFS data:', e); }
     }
     
@@ -1623,6 +1667,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                 refreshDashboard('active');
                 ecfsLoaded = true;
                 showUploadSuccess('active', `${state.active.allTrades.length} trades loaded from database`);
+                showExportButton('active');
             }
         } catch (e) { console.error('Error loading ECFS from DB:', e); }
     }
@@ -1651,6 +1696,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     // Load Discord data
+    let discordLoaded = false;
     const savedDiscord = localStorage.getItem('discord-trades');
     const savedDiscordName = localStorage.getItem('discord-filename');
     if (savedDiscord) {
@@ -1660,11 +1706,15 @@ document.addEventListener('DOMContentLoaded', async function () {
             state.discord.selectedWeek = weeks[0];
             populateWeekSelector('discord', weeks);
             refreshDashboard('discord');
+            discordLoaded = true;
             if (savedDiscordName) {
                 showUploadSuccess('discord', `${savedDiscordName} — ${state.discord.allTrades.length} trades (cached)`);
             }
+            showExportButton('discord');
         } catch (e) { console.error('Error loading Discord data:', e); }
-    } else {
+    }
+    
+    if (!discordLoaded) {
         try {
             const dbTrades = await DB.loadTrades('discord_trades');
             if (dbTrades.length > 0) {
@@ -1673,9 +1723,31 @@ document.addEventListener('DOMContentLoaded', async function () {
                 state.discord.selectedWeek = weeks[0];
                 populateWeekSelector('discord', weeks);
                 refreshDashboard('discord');
+                discordLoaded = true;
                 showUploadSuccess('discord', `${state.discord.allTrades.length} trades loaded from database`);
+                showExportButton('discord');
             }
         } catch (e) { console.error('Error loading Discord from DB:', e); }
+    }
+
+    if (!discordLoaded) {
+        // Auto-load Discord trades from JSON file so all visitors see historical data
+        try {
+            const resp = await fetch('discord_trades.json');
+            if (resp.ok) {
+                const trades = await resp.json();
+                if (trades.length > 0) {
+                    state.discord.allTrades = trades;
+                    state.discord.isSampleData = true;
+                    const weeks = getWeeksList(trades);
+                    state.discord.selectedWeek = weeks[0];
+                    populateWeekSelector('discord', weeks);
+                    refreshDashboard('discord');
+                    discordLoaded = true;
+                    showSampleDataBanner('discord', trades.length);
+                }
+            }
+        } catch (e) { console.error('Error loading Discord JSON:', e); }
     }
 
     // Load weekly snapshots for historical charts
@@ -1704,4 +1776,92 @@ function showSampleDataBanner(method, tradeCount) {
                 </div>
             </div>
         </div>`;
+}
+
+// ===== EXPORT FUNCTIONS FOR GITHUB DEPLOYMENT =====
+
+// Show export button when data is available
+function showExportButton(method) {
+    const btn = document.getElementById(`export-btn-${method}`);
+    if (btn) btn.classList.remove('hidden');
+}
+
+// Export ECFS Active data as the raw CSV stored during upload
+// (The full Tradovate CSV is what GitHub Pages serves — cumulative history)
+function exportECFSData() {
+    const trades = state.active.allTrades;
+    if (!trades || trades.length === 0) {
+        alert('No ECFS Active data to export. Upload a CSV first.');
+        return;
+    }
+
+    // If we have the original raw CSV in localStorage, export that directly
+    const rawCSV = localStorage.getItem('ecfs-raw-csv');
+    if (rawCSV) {
+        downloadFile(rawCSV, 'orders_sample.csv', 'text/csv');
+        showExportToast('ECFS CSV exported — replace orders_sample.csv in your GitHub repo');
+        return;
+    }
+
+    // Otherwise, reconstruct a simplified JSON export
+    const json = JSON.stringify(trades, null, 2);
+    downloadFile(json, 'ecfs_trades.json', 'application/json');
+    showExportToast('ECFS JSON exported — for best results, use the raw Tradovate CSV');
+}
+
+// Export Discord Selective data as JSON (the canonical format for GitHub)
+function exportDiscordData() {
+    const trades = state.discord.allTrades;
+    if (!trades || trades.length === 0) {
+        alert('No Discord Selective data to export. Upload an Excel file first.');
+        return;
+    }
+
+    // Clean export: only the fields needed for the parser
+    const cleanTrades = trades.map(t => ({
+        datetime: t.datetime,
+        tradeNum: t.tradeNum,
+        direction: t.direction,
+        entryPrice: t.entryPrice,
+        stopPrice: t.stopPrice,
+        trailingProfit: t.trailingProfit || '—',
+        pointsPL: t.pointsPL,
+        riskPoints: t.riskPoints,
+        dollarPL: t.dollarPL,
+        riskDollars: t.riskDollars,
+        isWin: t.isWin,
+        outcome: t.outcome,
+        date: t.date
+    }));
+
+    const json = JSON.stringify(cleanTrades, null, 2);
+    downloadFile(json, 'discord_trades.json', 'application/json');
+    showExportToast(`Discord JSON exported — ${cleanTrades.length} trades → replace discord_trades.json in GitHub repo`);
+}
+
+// Helper: trigger browser download
+function downloadFile(content, filename, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// Helper: brief toast notification for export
+function showExportToast(msg) {
+    const toast = document.getElementById('share-toast');
+    if (toast) {
+        toast.querySelector('span').textContent = msg;
+        toast.classList.remove('hidden');
+        toast.classList.add('animate-fade-in');
+        setTimeout(() => {
+            toast.classList.add('hidden');
+            toast.classList.remove('animate-fade-in');
+        }, 4000);
+    }
 }
