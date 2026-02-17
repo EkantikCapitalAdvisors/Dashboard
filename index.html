@@ -262,12 +262,277 @@
                         <div id="upload-status-active" class="mt-3 hidden"></div>
                     </div>
 
+                    <!-- ╔══════════════════════════════════════════════════════╗ -->
+                    <!-- ║  SECTION 1: UNDERSTANDING THE EDGE                  ║ -->
+                    <!-- ╚══════════════════════════════════════════════════════╝ -->
+
+                    <!-- Live Update Banner -->
+                    <div class="bg-gradient-to-r from-emerald-900/20 to-[#0a1628] border border-emerald-500/20 rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="relative flex-shrink-0">
+                                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
+                                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 absolute top-0 animate-ping"></div>
+                            </div>
+                            <div>
+                                <p class="text-white text-sm font-semibold">Live Edge — Updated Weekly</p>
+                                <p class="text-gray-400 text-[11px]">Every number below is calculated from <strong class="text-emerald-400" id="active-live-trade-count">—</strong> real trades. New data loaded every Monday — watch the edge evolve over time.</p>
+                            </div>
+                        </div>
+                        <div class="bg-[#0a1628] border border-gray-700/40 rounded-lg px-3 py-1.5 flex-shrink-0">
+                            <p class="text-[10px] text-gray-500">Last updated</p>
+                            <p class="text-xs text-white font-semibold" id="active-live-last-updated">—</p>
+                        </div>
+                    </div>
+
+                    <!-- 1A. How Is The Edge Calculated? -->
+                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-[#d4af37]/25 rounded-2xl p-6 sm:p-8 mb-6">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-full bg-[#d4af37]/15 flex items-center justify-center flex-shrink-0">
+                                <span class="text-[#d4af37] font-bold text-lg">1</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white">How Is The Edge Calculated?</h3>
+                                <p class="text-gray-400 text-xs mt-0.5">The mathematical formula behind every trading decision</p>
+                            </div>
+                        </div>
+
+                        <!-- The Formula — Visual -->
+                        <div class="bg-[#0a1628] border border-[#d4af37]/15 rounded-xl p-5 mb-6">
+                            <p class="text-gray-500 text-[10px] uppercase tracking-widest mb-3 text-center">EXPECTED VALUE FORMULA</p>
+                            <div class="flex flex-wrap items-center justify-center gap-3 mb-4">
+                                <div class="bg-blue-500/10 border border-blue-400/30 rounded-lg px-4 py-2 text-center">
+                                    <p class="text-[9px] text-blue-400 font-bold">WIN RATE</p>
+                                    <p class="text-lg font-bold text-white" id="fc-win-rate">—</p>
+                                </div>
+                                <span class="text-gray-500 text-xl">×</span>
+                                <div class="bg-green-500/10 border border-green-400/30 rounded-lg px-4 py-2 text-center">
+                                    <p class="text-[9px] text-green-400 font-bold">AVG WIN</p>
+                                    <p class="text-lg font-bold text-green-400" id="active-edge-avgwin">—</p>
+                                    <p class="text-[9px] text-gray-500" id="active-edge-avgwin-pts"></p>
+                                </div>
+                                <span class="text-gray-500 text-xl">−</span>
+                                <div class="bg-red-500/10 border border-red-400/30 rounded-lg px-4 py-2 text-center">
+                                    <p class="text-[9px] text-red-400 font-bold">LOSS RATE × AVG LOSS</p>
+                                    <p class="text-lg font-bold text-red-400" id="active-edge-avgloss">—</p>
+                                    <p class="text-[9px] text-gray-500" id="active-edge-avgloss-pts"></p>
+                                </div>
+                                <span class="text-gray-500 text-xl">=</span>
+                                <div class="bg-[#d4af37]/10 border border-[#d4af37]/40 rounded-lg px-5 py-2 text-center">
+                                    <p class="text-[9px] text-[#d4af37] font-bold">EDGE PER TRADE</p>
+                                    <p class="text-2xl font-bold text-[#d4af37]" id="active-ev-hero-big">—</p>
+                                    <p class="text-[9px] text-gray-400" id="active-ev-hero-sub"></p>
+                                </div>
+                            </div>
+                            <div class="bg-[#0a1628]/80 rounded-lg p-3 font-mono text-xs space-y-0.5 max-w-lg mx-auto">
+                                <p class="text-gray-400">EV = (Win% × Avg Win) − (Loss% × Avg Loss)</p>
+                                <p class="text-gray-300" id="fc-formula-line1">EV = ...</p>
+                                <p class="text-gray-300" id="fc-formula-line2">EV = ...</p>
+                                <p class="text-[#d4af37] font-bold" id="fc-formula-result">EV = ...</p>
+                            </div>
+                        </div>
+
+                        <!-- Plain English Explanation -->
+                        <div class="bg-[#0a1628]/60 border border-gray-700/50 rounded-lg p-4 mb-4">
+                            <p class="text-gray-300 text-sm leading-relaxed" id="active-edge-explanation">Upload your Tradovate CSV to see your edge analysis — every number below is derived from real Tradovate fills.</p>
+                        </div>
+
+                        <!-- Win Rate + Risk Details -->
+                        <div class="grid sm:grid-cols-3 gap-3">
+                            <div class="bg-blue-900/15 border border-blue-500/20 rounded-lg p-3 text-center">
+                                <p class="text-[10px] text-blue-400 font-bold">WIN RATE</p>
+                                <p class="text-lg font-bold text-white" id="active-edge-wr">—</p>
+                            </div>
+                            <div class="bg-[#d4af37]/8 border border-[#d4af37]/20 rounded-lg p-3 text-center">
+                                <p class="text-[10px] text-[#d4af37] font-bold">RISK BUDGET</p>
+                                <p class="text-lg font-bold text-white">$100 <span class="text-xs text-gray-500">(0.5%)</span></p>
+                            </div>
+                            <div class="bg-gray-800/40 border border-gray-700/30 rounded-lg p-3 text-center">
+                                <p class="text-[10px] text-gray-400 font-bold">RISK ADHERENCE</p>
+                                <p class="text-lg font-bold text-white" id="active-edge-adherence">—</p>
+                            </div>
+                        </div>
+                        <!-- Hidden elements for JS compatibility -->
+                        <div class="hidden">
+                            <span id="active-ev-actual-risk"></span>
+                            <span id="active-edge-avgrisk"></span>
+                            <span id="active-edge-losscut"></span>
+                            <span id="active-detail-grosswins"></span>
+                            <span id="active-detail-grosslosses"></span>
+                            <span id="active-detail-wlratio"></span>
+                            <span id="active-detail-expectancy"></span>
+                            <span id="active-detail-netpts"></span>
+                            <span id="active-detail-rr-wins"></span>
+                            <span id="active-detail-rr-losses"></span>
+                            <span id="active-edge-details"></span>
+                            <span id="active-details-icon"></span>
+                            <span id="fc-ev-result"></span>
+                        </div>
+                    </div>
+
+                    <!-- 1B. What Makes It Powerful? -->
+                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-[#d4af37]/25 rounded-2xl p-6 sm:p-8 mb-6" id="foodchain-active">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-full bg-[#d4af37]/15 flex items-center justify-center flex-shrink-0">
+                                <span class="text-[#d4af37] font-bold text-lg">2</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white">What Makes This Edge Powerful?</h3>
+                                <p class="text-gray-400 text-xs mt-0.5">Edge × frequency = annual returns <span class="text-gray-600" id="fc-period-label"></span></p>
+                            </div>
+                        </div>
+
+                        <!-- Food Chain Comparison Table -->
+                        <div class="overflow-x-auto mb-5">
+                            <table class="w-full text-xs border-collapse">
+                                <thead>
+                                    <tr>
+                                        <th class="text-left text-gray-400 font-bold px-3 py-2.5 border-b-2 border-[#d4af37]/20 bg-[#d4af37]/5">Strategy</th>
+                                        <th class="text-right text-gray-400 font-bold px-3 py-2.5 border-b-2 border-[#d4af37]/20 bg-[#d4af37]/5">Edge/Trade</th>
+                                        <th class="text-right text-gray-400 font-bold px-3 py-2.5 border-b-2 border-[#d4af37]/20 bg-[#d4af37]/5">Trades/Mo</th>
+                                        <th class="text-right text-gray-400 font-bold px-3 py-2.5 border-b-2 border-[#d4af37]/20 bg-[#d4af37]/5">Annual R <span id="fc-annual-r-header-note" class="text-[9px] font-normal text-gray-500 block">extrapolated · all-time</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="fc-table-body"></tbody>
+                            </table>
+                        </div>
+
+                        <!-- Summary Callout -->
+                        <div id="fc-summary-callout" class="bg-[#d4af37]/8 border border-[#d4af37]/25 rounded-lg p-3 text-center mb-6">
+                            <p class="text-xs text-gray-300" id="fc-summary-text">Upload data to see your edge position</p>
+                        </div>
+
+                        <!-- Why It Matters -->
+                        <div class="grid sm:grid-cols-3 gap-4 mb-6">
+                            <div class="bg-[#0a1628]/60 border border-[#d4af37]/15 rounded-xl p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="w-6 h-6 bg-[#d4af37] rounded-full flex items-center justify-center text-[10px] font-bold text-[#0a1628]">1</span>
+                                    <p class="text-white text-xs font-semibold">Magnitude</p>
+                                </div>
+                                <p class="text-gray-400 text-[11px] leading-relaxed" id="fc-why-magnitude">Your edge per trade is significantly larger than a casino's edge.</p>
+                            </div>
+                            <div class="bg-[#0a1628]/60 border border-[#d4af37]/15 rounded-xl p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="w-6 h-6 bg-[#d4af37] rounded-full flex items-center justify-center text-[10px] font-bold text-[#0a1628]">2</span>
+                                    <p class="text-white text-xs font-semibold">Frequency</p>
+                                </div>
+                                <p class="text-gray-400 text-[11px] leading-relaxed" id="fc-why-frequency">Edge × trades × 12 months = Annual R</p>
+                            </div>
+                            <div class="bg-[#0a1628]/60 border border-[#d4af37]/15 rounded-xl p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="w-6 h-6 bg-[#d4af37] rounded-full flex items-center justify-center text-[10px] font-bold text-[#0a1628]">3</span>
+                                    <p class="text-white text-xs font-semibold">Compounding</p>
+                                </div>
+                                <p class="text-gray-400 text-[11px] leading-relaxed">With a validated edge, even 0.5% risk per trade compounds dramatically over time.</p>
+                            </div>
+                        </div>
+
+                        <!-- Edge Position Chart -->
+                        <div class="bg-[#0a1628]/60 border border-[#d4af37]/15 rounded-xl p-4">
+                            <h4 class="text-sm font-bold text-[#d4af37] mb-2"><i class="fas fa-signal mr-1.5"></i>Edge Position vs. Industry</h4>
+                            <div id="fc-position-chart" style="height: 220px; width: 100%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- 1C. Returns Multiplier Potential -->
+                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-[#d4af37]/25 rounded-2xl p-6 sm:p-8 mb-8">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-full bg-[#d4af37]/15 flex items-center justify-center flex-shrink-0">
+                                <span class="text-[#d4af37] font-bold text-lg">3</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white">Returns Multiplier — A Function of Risk</h3>
+                                <p class="text-gray-400 text-xs mt-0.5">Same edge, different returns — you choose the risk level</p>
+                            </div>
+                        </div>
+
+                        <!-- Returns Scaling Bars -->
+                        <div class="bg-[#0a1628]/60 border border-[#d4af37]/15 rounded-xl p-5 mb-5">
+                            <p class="text-gray-400 text-[10px] mb-4" id="fc-scale-subtitle">Based on your validated edge, returns multiply with risk taken:</p>
+                            <div class="space-y-3" id="fc-returns-bars"></div>
+                            <div class="mt-4 bg-[#d4af37]/8 border border-[#d4af37]/20 rounded-lg p-3">
+                                <p class="text-[11px] text-gray-300 text-center"><i class="fas fa-calculator text-[#d4af37] mr-1"></i><strong class="text-white">The Math:</strong> <span id="fc-math-formula">Return = Edge × Risk Per Trade × # of Trades</span></p>
+                            </div>
+                        </div>
+
+                        <!-- What R Means -->
+                        <div class="bg-[#0a1628]/60 border border-[#d4af37]/15 rounded-xl p-5">
+                            <h4 class="text-sm font-bold text-[#d4af37] mb-3"><i class="fas fa-info-circle mr-1.5"></i>What "<span id="fc-annual-r-label">— R</span>" Means</h4>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex items-start gap-2"><i class="fas fa-crown text-[#d4af37] mt-0.5 text-[10px]"></i><p class="text-gray-300"><strong class="text-white">R</strong> = the fixed dollar amount risked per trade</p></div>
+                                <div class="flex items-start gap-2"><i class="fas fa-crown text-[#d4af37] mt-0.5 text-[10px]"></i><p class="text-gray-300" id="fc-r-example1">For 0.5% risk on $20K account, R = $100</p></div>
+                                <div class="flex items-start gap-2"><i class="fas fa-crown text-[#d4af37] mt-0.5 text-[10px]"></i><p class="text-gray-300" id="fc-r-example2">— R × $100 = —/year at minimum risk</p></div>
+                            </div>
+                            <div class="mt-3 bg-[#d4af37]/8 border border-[#d4af37]/20 rounded-lg p-2.5">
+                                <p class="text-[10px] text-[#d4af37] text-center font-semibold" id="fc-key-insight">Returns grow proportionally with risk taken if the edge is truly validated.</p>
+                            </div>
+                        </div>
+                        <!-- Hidden for JS compatibility -->
+                        <div class="hidden"><span id="fc-risk-reward"></span></div>
+                    </div>
+
+
+                    <!-- ╔══════════════════════════════════════════════════════╗ -->
+                    <!-- ║  SECTION 2: $100 GROWTH COMPARISON                  ║ -->
+                    <!-- ╚══════════════════════════════════════════════════════╝ -->
+
+                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-emerald-400/25 rounded-2xl p-6 sm:p-8 mb-8">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-chart-area text-emerald-400"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white">$100 Invested — Where Does It Go?</h3>
+                                <p class="text-gray-400 text-xs mt-0.5">Projected 5-year growth: S&P 500 vs ECFS Active vs Discord Selective</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-500 text-[10px] mb-5 ml-13" id="growth-subtitle-active">Annual R extrapolated from all-time data as of last update. Compounded weekly at minimum 0.5% risk per trade. S&P 500 uses 14.6% CAGR (15-year avg total return with dividends, 2011–2025).</p>
+
+                        <div id="chart-growth-comparison-active" style="height: 400px; width: 100%;"></div>
+
+                        <div class="grid grid-cols-3 gap-3 mt-5">
+                            <div class="bg-gray-800/40 border border-gray-600/30 rounded-lg p-3 text-center">
+                                <p class="text-[10px] text-gray-400 font-bold">S&P 500</p>
+                                <p class="text-sm font-bold text-gray-300" id="growth-spy-active">$100 → $200</p>
+                                <p class="text-[10px] text-gray-500">14.6% CAGR (15yr avg)</p>
+                                <p class="text-[9px] text-red-400/70 mt-0.5"><i class="fas fa-exclamation-triangle mr-0.5"></i>Avg drawdown: −14%</p>
+                            </div>
+                            <div class="bg-[#d4af37]/8 border border-[#d4af37]/30 rounded-lg p-3 text-center">
+                                <p class="text-[10px] text-[#d4af37] font-bold">ECFS ACTIVE</p>
+                                <p class="text-sm font-bold text-[#d4af37]" id="growth-ecfs-active">$100 → —</p>
+                                <p class="text-[10px] text-gray-500">at 0.5% risk</p>
+                                <p class="text-[9px] text-emerald-400/70 mt-0.5" id="growth-dd-ecfs-active"><i class="fas fa-dice mr-0.5"></i>Est. Max DD: calculating…</p>
+                            </div>
+                            <div class="bg-blue-500/8 border border-blue-400/30 rounded-lg p-3 text-center">
+                                <p class="text-[10px] text-blue-400 font-bold">DISCORD SELECTIVE</p>
+                                <p class="text-sm font-bold text-blue-400" id="growth-discord-active">$100 → —</p>
+                                <p class="text-[10px] text-gray-500">at 0.5% risk</p>
+                                <p class="text-[9px] text-emerald-400/70 mt-0.5" id="growth-dd-discord-active"><i class="fas fa-dice mr-0.5"></i>Est. Max DD: calculating…</p>
+                            </div>
+                        </div>
+
+                        <p class="text-gray-600 text-[10px] mt-4 text-center">Projections are mathematical extrapolations based on current edge, not guarantees. Past performance is not indicative of future results. <a href="#compliance-footer" class="underline hover:text-gray-400">Full disclosure</a></p>
+                    </div>
+
+
+                    <!-- ╔══════════════════════════════════════════════════════╗ -->
+                    <!-- ║  SECTION 3: DETAILED PERFORMANCE NUMBERS            ║ -->
+                    <!-- ╚══════════════════════════════════════════════════════╝ -->
+
+                    <div class="text-center mb-6">
+                        <button onclick="toggleDetailedDashboard('active')" id="btn-details-active" class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-[#d4af37]/20 to-[#d4af37]/5 border-2 border-[#d4af37]/40 text-white font-bold text-sm rounded-xl hover:border-[#d4af37]/80 hover:shadow-lg hover:shadow-[#d4af37]/20 transition-all">
+                            <i class="fas fa-table mr-2 text-[#d4af37]"></i>See Detailed Numbers — By Week, Month, or All Time
+                            <i class="fas fa-chevron-down ml-3 text-[#d4af37] text-xs transition-transform" id="icon-details-active"></i>
+                        </button>
+                    </div>
+
+                    <div id="detailed-dashboard-active" class="hidden">
+
                     <!-- Period Toggle -->
                     <div class="flex flex-col sm:flex-row items-center justify-between mb-6 gap-3">
                         <div class="flex items-center gap-2">
-                            <button onclick="setPeriod('active','weekly')" id="period-active-weekly" class="period-btn active-period px-4 py-2 rounded-lg text-xs font-bold transition-all">This Week</button>
+                            <button onclick="setPeriod('active','weekly')" id="period-active-weekly" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-[#d4af37]/50 transition-all">This Week</button>
                             <button onclick="setPeriod('active','monthly')" id="period-active-monthly" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-[#d4af37]/50 transition-all">This Month</button>
-                            <button onclick="setPeriod('active','alltime')" id="period-active-alltime" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-[#d4af37]/50 transition-all">All-Time</button>
+                            <button onclick="setPeriod('active','alltime')" id="period-active-alltime" class="period-btn active-period px-4 py-2 rounded-lg text-xs font-bold transition-all">All-Time</button>
                         </div>
                         <div class="flex items-center gap-2">
                             <button onclick="prevPeriod('active')" class="week-nav-button px-3 py-1.5 bg-[#0d1d35] border border-gray-600 text-gray-300 rounded-lg text-xs font-semibold"><i class="fas fa-chevron-left"></i></button>
@@ -277,7 +542,7 @@
                         </div>
                     </div>
 
-                    <!-- ===== HERO STATS BAR ===== -->
+                    <!-- HERO STATS BAR -->
                     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
                         <div class="stat-card bg-gradient-to-br from-green-900/20 to-green-950/40 border border-green-500/30 rounded-xl p-4">
                             <div class="flex items-center justify-between mb-1"><span class="text-[10px] text-green-400 font-bold tracking-wider">NET P&L</span><i class="fas fa-dollar-sign text-green-400/60 text-sm"></i></div>
@@ -312,198 +577,10 @@
                     </div>
                     <p class="text-gray-600 text-[10px] -mt-6 mb-6 text-center">Results reflect actual fills via Tradovate, net of $0 commissions (free tier). Past performance is not indicative of future results. <a href="#compliance-footer" class="underline hover:text-gray-400">Full disclosure</a></p>
 
-                    <!-- ===== THE EDGE — Simplified EV ===== -->
-                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-[#d4af37]/20 rounded-2xl p-6 mb-8">
-                        <h3 class="text-lg font-bold text-white mb-5 flex items-center"><i class="fas fa-crosshairs text-[#d4af37] mr-2"></i>The Edge — Expected Value Analysis</h3>
-                        <div class="grid md:grid-cols-3 gap-6 items-center">
-                            <!-- Hero EV -->
-                            <div class="text-center md:text-left">
-                                <p class="text-gray-400 text-xs mb-1 uppercase tracking-wider">Your Edge Per Trade</p>
-                                <p class="text-4xl font-bold text-[#d4af37]" id="active-ev-hero-big">—</p>
-                                <p class="text-sm text-gray-400 mt-1" id="active-ev-hero-sub"></p>
-                                <div class="mt-3 bg-[#d4af37]/10 border border-[#d4af37]/20 rounded-lg p-3">
-                                    <p class="text-[#d4af37] text-xs" id="active-ev-actual-risk"></p>
-                                </div>
-                            </div>
-                            <!-- Building Blocks -->
-                            <div class="space-y-3">
-                                <p class="text-gray-400 text-xs uppercase tracking-wider mb-2">How The Edge Is Built</p>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div class="bg-green-900/15 border border-green-500/20 rounded-lg p-3 text-center">
-                                        <p class="text-[10px] text-green-400 font-bold">AVG WIN</p>
-                                        <p class="text-xl font-bold text-green-400" id="active-edge-avgwin">—</p>
-                                        <p class="text-[10px] text-gray-500" id="active-edge-avgwin-pts"></p>
-                                    </div>
-                                    <div class="bg-red-900/15 border border-red-500/20 rounded-lg p-3 text-center">
-                                        <p class="text-[10px] text-red-400 font-bold">AVG LOSS</p>
-                                        <p class="text-xl font-bold text-red-400" id="active-edge-avgloss">—</p>
-                                        <p class="text-[10px] text-gray-500" id="active-edge-avgloss-pts"></p>
-                                    </div>
-                                </div>
-                                <div class="bg-blue-900/15 border border-blue-500/20 rounded-lg p-3 text-center">
-                                    <p class="text-[10px] text-blue-400 font-bold">WIN RATE</p>
-                                    <p class="text-lg font-bold text-white" id="active-edge-wr">—</p>
-                                </div>
-                            </div>
-                            <!-- Plain English -->
-                            <div>
-                                <div class="bg-[#0a1628]/60 border border-gray-700/50 rounded-lg p-4">
-                                    <p class="text-gray-300 text-sm leading-relaxed" id="active-edge-explanation">Upload your Tradovate CSV to see your edge analysis.</p>
-                                </div>
-                                <div class="mt-3 space-y-2">
-                                    <div class="flex justify-between text-xs">
-                                        <span class="text-gray-400">Avg Risk Taken</span>
-                                        <span class="text-white font-semibold" id="active-edge-avgrisk">—</span>
-                                    </div>
-                                    <div class="flex justify-between text-xs">
-                                        <span class="text-gray-400">Risk Budget</span>
-                                        <span class="text-[#d4af37] font-semibold">$100 (0.5%)</span>
-                                    </div>
-                                    <div class="flex justify-between text-xs">
-                                        <span class="text-gray-400">Risk Adherence (≤$120)</span>
-                                        <span class="text-white font-semibold" id="active-edge-adherence">—</span>
-                                    </div>
-                                    <div class="flex justify-between text-xs">
-                                        <span class="text-gray-400">Avg Loss Cut at</span>
-                                        <span class="text-white font-semibold" id="active-edge-losscut">—</span>
-                                    </div>
-                                </div>
-                                <!-- Expandable details -->
-                                <button onclick="toggleDetails('active')" class="mt-3 text-[#d4af37] text-xs font-semibold hover:underline"><i class="fas fa-chevron-down mr-1" id="active-details-icon"></i>Detailed Breakdown</button>
-                                <div id="active-edge-details" class="hidden mt-3 space-y-1.5 border-t border-gray-700/50 pt-3">
-                                    <div class="flex justify-between text-xs"><span class="text-gray-400">Gross Wins</span><span class="text-green-400 font-semibold" id="active-detail-grosswins">—</span></div>
-                                    <div class="flex justify-between text-xs"><span class="text-gray-400">Gross Losses</span><span class="text-red-400 font-semibold" id="active-detail-grosslosses">—</span></div>
-                                    <div class="flex justify-between text-xs"><span class="text-gray-400">Win/Loss Ratio</span><span class="text-white font-semibold" id="active-detail-wlratio">—</span></div>
-                                    <div class="flex justify-between text-xs"><span class="text-gray-400">Expectancy (R)</span><span class="text-white font-semibold" id="active-detail-expectancy">—</span></div>
-                                    <div class="flex justify-between text-xs"><span class="text-gray-400">Net Points</span><span class="text-white font-semibold" id="active-detail-netpts">—</span></div>
-                                    <div class="flex justify-between text-xs"><span class="text-gray-400">Avg R:R (Winners)</span><span class="text-green-400 font-semibold" id="active-detail-rr-wins">—</span></div>
-                                    <div class="flex justify-between text-xs"><span class="text-gray-400">Avg R:R (Losers)</span><span class="text-red-400 font-semibold" id="active-detail-rr-losses">—</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ===== EDGE ON THE FOOD CHAIN (Dynamic) ===== -->
-                    <div id="foodchain-active" class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-[#d4af37]/25 rounded-2xl p-6 mb-8 hidden">
-                        <h3 class="text-lg font-bold text-white mb-1 flex items-center flex-wrap gap-2">
-                            <i class="fas fa-trophy text-[#d4af37] mr-1"></i>Where Your Edge Sits on the Food Chain
-                            <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-[#d4af37]/15 text-[#d4af37] border border-[#d4af37]/30">ECFS ACTIVE · MES</span>
-                            <span class="text-xs font-normal text-gray-500" id="fc-period-label"></span>
-                        </h3>
-                        <p class="text-gray-400 text-xs mb-5">ECFS Active performance ($5/pt MES, $100 risk/trade) vs. industry benchmarks — updated live from your data</p>
-
-                        <div class="grid lg:grid-cols-2 gap-6">
-                            <!-- LEFT: Comparison Table -->
-                            <div>
-                                <div class="overflow-x-auto">
-                                    <table class="w-full text-xs border-collapse">
-                                        <thead>
-                                            <tr>
-                                                <th class="text-left text-gray-400 font-bold px-3 py-2.5 border-b-2 border-[#d4af37]/20 bg-[#d4af37]/5">Strategy</th>
-                                                <th class="text-right text-gray-400 font-bold px-3 py-2.5 border-b-2 border-[#d4af37]/20 bg-[#d4af37]/5">Edge/Trade</th>
-                                                <th class="text-right text-gray-400 font-bold px-3 py-2.5 border-b-2 border-[#d4af37]/20 bg-[#d4af37]/5">Trades/Mo</th>
-                                                <th class="text-right text-gray-400 font-bold px-3 py-2.5 border-b-2 border-[#d4af37]/20 bg-[#d4af37]/5">Annual R</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="fc-table-body">
-                                            <!-- Dynamically populated & sorted by Annual R -->
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                <!-- Dynamic Summary Callout -->
-                                <div id="fc-summary-callout" class="mt-3 bg-[#d4af37]/8 border border-[#d4af37]/25 rounded-lg p-3 text-center">
-                                    <p class="text-xs text-gray-300" id="fc-summary-text">Loading...</p>
-                                </div>
-
-                                <!-- Edge Derivation -->
-                                <div class="mt-5 bg-[#0a1628]/60 border border-[#d4af37]/15 rounded-xl p-4">
-                                    <h4 class="text-sm font-bold text-[#d4af37] mb-3"><i class="fas fa-calculator mr-1.5"></i>How The Edge Is Derived</h4>
-                                    <div class="flex items-center gap-4 mb-3">
-                                        <div class="bg-blue-500/10 border border-blue-400/30 rounded-lg px-3 py-1.5 text-center">
-                                            <p class="text-[9px] text-blue-400 font-bold">WIN RATE</p>
-                                            <p class="text-sm font-bold text-white" id="fc-win-rate">—</p>
-                                        </div>
-                                        <div class="bg-purple-500/10 border border-purple-400/30 rounded-lg px-3 py-1.5 text-center">
-                                            <p class="text-[9px] text-purple-400 font-bold">RISK:REWARD</p>
-                                            <p class="text-sm font-bold text-white" id="fc-risk-reward">—</p>
-                                        </div>
-                                        <div class="text-gray-500 text-lg">=</div>
-                                        <div class="bg-[#d4af37]/10 border border-[#d4af37]/30 rounded-lg px-3 py-1.5 text-center">
-                                            <p class="text-[9px] text-[#d4af37] font-bold">EV / TRADE</p>
-                                            <p class="text-sm font-bold text-[#d4af37]" id="fc-ev-result">—</p>
-                                        </div>
-                                    </div>
-                                    <div class="bg-[#0a1628] rounded-lg p-3 font-mono text-xs space-y-0.5">
-                                        <p class="text-gray-400">EV = (Win% × Avg Win) − (Loss% × Avg Loss)</p>
-                                        <p class="text-gray-300" id="fc-formula-line1">EV = ...</p>
-                                        <p class="text-gray-300" id="fc-formula-line2">EV = ...</p>
-                                        <p class="text-[#d4af37] font-bold" id="fc-formula-result">EV = ...</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- RIGHT: Returns Scaling + Why It Matters -->
-                            <div class="space-y-5">
-                                <!-- Returns Scale -->
-                                <div class="bg-[#0a1628]/60 border border-[#d4af37]/15 rounded-xl p-4">
-                                    <h4 class="text-sm font-bold text-[#d4af37] mb-3"><i class="fas fa-chart-bar mr-1.5"></i>Returns Scale With Risk Per Trade</h4>
-                                    <p class="text-gray-400 text-[10px] mb-3" id="fc-scale-subtitle">Based on your validated edge, returns multiply with risk taken:</p>
-                                    <div class="space-y-3" id="fc-returns-bars">
-                                        <!-- Dynamically populated -->
-                                    </div>
-                                    <div class="mt-3 bg-[#d4af37]/8 border border-[#d4af37]/20 rounded-lg p-2.5">
-                                        <p class="text-[10px] text-gray-300"><i class="fas fa-calculator text-[#d4af37] mr-1"></i><strong class="text-white">The Math:</strong> <span id="fc-math-formula">Return = Edge × Risk Per Trade × # of Trades</span></p>
-                                    </div>
-                                </div>
-
-                                <!-- What R Means -->
-                                <div class="bg-[#0a1628]/60 border border-[#d4af37]/15 rounded-xl p-4">
-                                    <h4 class="text-sm font-bold text-[#d4af37] mb-3"><i class="fas fa-info-circle mr-1.5"></i>What "<span id="fc-annual-r-label">— R</span>" Means</h4>
-                                    <div class="space-y-2 text-xs">
-                                        <div class="flex items-start gap-2"><i class="fas fa-crown text-[#d4af37] mt-0.5 text-[10px]"></i><p class="text-gray-300"><strong class="text-white">R</strong> = fixed dollar amount risked per trade</p></div>
-                                        <div class="flex items-start gap-2"><i class="fas fa-crown text-[#d4af37] mt-0.5 text-[10px]"></i><p class="text-gray-300" id="fc-r-example1">For 0.5% risk on $20K account, R = $100</p></div>
-                                        <div class="flex items-start gap-2"><i class="fas fa-crown text-[#d4af37] mt-0.5 text-[10px]"></i><p class="text-gray-300" id="fc-r-example2">— R × $100 = —/year with 0.5% risk</p></div>
-                                    </div>
-                                    <div class="mt-3 bg-[#d4af37]/8 border border-[#d4af37]/20 rounded-lg p-2.5">
-                                        <p class="text-[10px] text-[#d4af37] text-center font-semibold" id="fc-key-insight">Returns grow proportionally with risk taken if the edge is truly validated.</p>
-                                    </div>
-                                </div>
-
-                                <!-- Why It Matters -->
-                                <div class="bg-[#0a1628]/60 border border-[#d4af37]/15 rounded-xl p-4">
-                                    <h4 class="text-sm font-bold text-[#d4af37] mb-3"><i class="fas fa-lightbulb mr-1.5"></i>Why The Numbers Matter</h4>
-                                    <div class="space-y-3">
-                                        <div class="flex items-start gap-2.5">
-                                            <span class="flex-shrink-0 w-5 h-5 bg-[#d4af37] rounded-full flex items-center justify-center text-[10px] font-bold text-[#0a1628]">1</span>
-                                            <div><p class="text-white text-xs font-semibold">Magnitude</p><p class="text-gray-400 text-[11px]" id="fc-why-magnitude">Your edge is — × a casino's edge and >100× what HFT firms scalp per trade.</p></div>
-                                        </div>
-                                        <div class="flex items-start gap-2.5">
-                                            <span class="flex-shrink-0 w-5 h-5 bg-[#d4af37] rounded-full flex items-center justify-center text-[10px] font-bold text-[#0a1628]">2</span>
-                                            <div><p class="text-white text-xs font-semibold">Frequency × Edge = Dollars</p><p class="text-gray-400 text-[11px]" id="fc-why-frequency">E[Profit] ≈ — R × (— trades × 12) ≈ — R</p></div>
-                                        </div>
-                                        <div class="flex items-start gap-2.5">
-                                            <span class="flex-shrink-0 w-5 h-5 bg-[#d4af37] rounded-full flex items-center justify-center text-[10px] font-bold text-[#0a1628]">3</span>
-                                            <div><p class="text-white text-xs font-semibold">Leverage as Multiplier, Not Crutch</p><p class="text-gray-400 text-[11px]">With a validated edge, modest position sizing (0.5% risk) already compounds quickly.</p></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Visual Position Chart -->
-                        <div class="mt-6 bg-[#0a1628]/60 border border-[#d4af37]/15 rounded-xl p-4">
-                            <h4 class="text-sm font-bold text-[#d4af37] mb-2"><i class="fas fa-signal mr-1.5"></i>Edge Position vs. Industry</h4>
-                            <p class="text-gray-400 text-[10px] mb-2">Horizontal bar shows where your edge ranks against known benchmarks</p>
-                            <div id="fc-position-chart" style="height: 220px; width: 100%;"></div>
-                        </div>
-                    </div>
-
-                    <!-- ===== RISK MANAGEMENT ===== -->
+                    <!-- RISK MANAGEMENT -->
                     <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-red-500/15 rounded-2xl p-6 mb-8">
                         <h3 class="text-lg font-bold text-white mb-5 flex items-center"><i class="fas fa-shield-alt text-red-400 mr-2"></i>Risk Management</h3>
                         <div class="grid md:grid-cols-2 gap-6">
-                            <!-- Drawdown & Risk Stats -->
                             <div class="space-y-3">
                                 <div class="grid grid-cols-2 gap-3">
                                     <div class="bg-red-900/10 border border-red-500/20 rounded-lg p-3">
@@ -527,20 +604,18 @@
                                         <p class="text-[10px] text-gray-500">Current: <span id="active-risk-curstreak">—</span></p>
                                     </div>
                                 </div>
-                                <!-- Risk Distribution -->
                                 <div class="bg-[#0a1628]/60 border border-gray-700/30 rounded-lg p-4">
                                     <p class="text-xs text-gray-400 font-bold mb-3 uppercase tracking-wider">Risk Distribution per Trade</p>
                                     <div id="active-risk-distribution" class="space-y-1.5"></div>
                                 </div>
                             </div>
-                            <!-- Equity Curve with Drawdown -->
                             <div>
                                 <div id="chart-equity-active" style="height: 320px; width: 100%;"></div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- ===== WEEKLY TREND + P&L DISTRIBUTION (NEW) ===== -->
+                    <!-- CHARTS -->
                     <div class="grid md:grid-cols-2 gap-6 mb-8">
                         <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-[#d4af37]/15 rounded-2xl p-6">
                             <h3 class="text-sm font-bold text-white mb-3 flex items-center"><i class="fas fa-chart-line text-[#d4af37] mr-2"></i>Weekly P&L Trend</h3>
@@ -552,14 +627,11 @@
                         </div>
                     </div>
 
-                    <!-- ===== CHARTS ===== -->
                     <div class="grid md:grid-cols-2 gap-6 mb-8">
-                        <!-- Daily P&L Bar Chart -->
                         <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-gray-700/30 rounded-2xl p-6">
                             <h3 class="text-sm font-bold text-white mb-3 flex items-center"><i class="fas fa-chart-bar text-blue-400 mr-2"></i>Daily P&L</h3>
                             <div id="chart-daily-active" style="height: 250px; width: 100%;"></div>
                         </div>
-                        <!-- Win/Loss + Efficiency Stats -->
                         <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-gray-700/30 rounded-2xl p-6">
                             <h3 class="text-sm font-bold text-white mb-3 flex items-center"><i class="fas fa-chart-pie text-purple-400 mr-2"></i>Efficiency & Consistency</h3>
                             <div class="grid grid-cols-2 gap-3 mb-4">
@@ -581,39 +653,24 @@
                                 </div>
                             </div>
                             <div class="space-y-2">
-                                <div class="flex justify-between text-xs">
-                                    <span class="text-gray-400">Long Trades</span>
-                                    <span class="text-white" id="active-eff-longs">—</span>
-                                </div>
-                                <div class="flex justify-between text-xs">
-                                    <span class="text-gray-400">Short Trades</span>
-                                    <span class="text-white" id="active-eff-shorts">—</span>
-                                </div>
-                                <div class="flex justify-between text-xs">
-                                    <span class="text-gray-400">Trading Days</span>
-                                    <span class="text-white" id="active-eff-days">—</span>
-                                </div>
+                                <div class="flex justify-between text-xs"><span class="text-gray-400">Long Trades</span><span class="text-white" id="active-eff-longs">—</span></div>
+                                <div class="flex justify-between text-xs"><span class="text-gray-400">Short Trades</span><span class="text-white" id="active-eff-shorts">—</span></div>
+                                <div class="flex justify-between text-xs"><span class="text-gray-400">Trading Days</span><span class="text-white" id="active-eff-days">—</span></div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- ===== INCEPTION-TO-DATE SUMMARY (NEW) ===== -->
+                    <!-- INCEPTION + MONTHLY + TRADE LOG -->
                     <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-[#d4af37]/20 rounded-2xl p-6 mb-8">
                         <h3 class="text-sm font-bold text-white mb-4 flex items-center"><i class="fas fa-flag-checkered text-[#d4af37] mr-2"></i>Inception-to-Date Summary</h3>
-                        <div id="inception-active">
-                            <p class="text-gray-500 text-sm text-center py-4">Upload data to see inception summary</p>
-                        </div>
+                        <div id="inception-active"><p class="text-gray-500 text-sm text-center py-4">Upload data to see inception summary</p></div>
                     </div>
 
-                    <!-- ===== MONTHLY PERFORMANCE (NEW) ===== -->
                     <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-gray-700/30 rounded-2xl p-6 mb-8">
                         <h3 class="text-sm font-bold text-white mb-4 flex items-center"><i class="fas fa-calendar-alt text-[#d4af37] mr-2"></i>Monthly Performance Summary</h3>
-                        <div class="trade-table" id="monthly-summary-active">
-                            <p class="text-gray-500 text-sm text-center py-4">Upload data to see monthly breakdown</p>
-                        </div>
+                        <div class="trade-table" id="monthly-summary-active"><p class="text-gray-500 text-sm text-center py-4">Upload data to see monthly breakdown</p></div>
                     </div>
 
-                    <!-- ===== TRADE LOG ===== -->
                     <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-gray-700/30 rounded-2xl p-6 mb-8">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-sm font-bold text-white flex items-center"><i class="fas fa-list-alt text-[#d4af37] mr-2"></i>Trade Log</h3>
@@ -643,6 +700,8 @@
                         </div>
                     </div>
 
+                    </div><!-- /detailed-dashboard-active -->
+
                     <!-- Disclaimer -->
                     <div class="border border-gray-700/30 rounded-lg px-4 py-3 flex items-center gap-2">
                         <i class="fas fa-info-circle text-gray-500 text-xs flex-shrink-0"></i>
@@ -652,6 +711,7 @@
 
                 <!-- ==================== DISCORD PANEL ==================== -->
                 <div id="panel-discord" class="execution-panel hidden">
+                    <!-- Info Card -->
                     <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-blue-400/30 rounded-2xl p-6 mb-6">
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div class="mb-3 md:mb-0">
@@ -688,12 +748,271 @@
                         <div id="upload-status-discord" class="mt-3 hidden"></div>
                     </div>
 
+                    <!-- ╔══════════════════════════════════════════════════════╗ -->
+                    <!-- ║  SECTION 1: UNDERSTANDING THE EDGE (Discord)        ║ -->
+                    <!-- ╚══════════════════════════════════════════════════════╝ -->
+
+                    <!-- Live Update Banner (Discord) -->
+                    <div class="bg-gradient-to-r from-emerald-900/20 to-[#0a1628] border border-emerald-500/20 rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="relative flex-shrink-0">
+                                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
+                                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 absolute top-0 animate-ping"></div>
+                            </div>
+                            <div>
+                                <p class="text-white text-sm font-semibold">Live Edge — Updated Weekly</p>
+                                <p class="text-gray-400 text-[11px]">Every number below is calculated from <strong class="text-blue-400" id="discord-live-trade-count">—</strong> real trades. New data loaded every Monday — watch the edge evolve over time.</p>
+                            </div>
+                        </div>
+                        <div class="bg-[#0a1628] border border-gray-700/40 rounded-lg px-3 py-1.5 flex-shrink-0">
+                            <p class="text-[10px] text-gray-500">Last updated</p>
+                            <p class="text-xs text-white font-semibold" id="discord-live-last-updated">—</p>
+                        </div>
+                    </div>
+
+                    <!-- 1A. How Is The Edge Calculated? (Discord) -->
+                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-blue-400/25 rounded-2xl p-6 sm:p-8 mb-6">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-full bg-blue-400/15 flex items-center justify-center flex-shrink-0">
+                                <span class="text-blue-400 font-bold text-lg">1</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white">How Is The Edge Calculated?</h3>
+                                <p class="text-gray-400 text-xs mt-0.5">The mathematical formula behind every trading decision</p>
+                            </div>
+                        </div>
+
+                        <!-- The Formula — Visual -->
+                        <div class="bg-[#0a1628] border border-blue-400/15 rounded-xl p-5 mb-6">
+                            <p class="text-gray-500 text-[10px] uppercase tracking-widest mb-3 text-center">EXPECTED VALUE FORMULA</p>
+                            <div class="flex flex-wrap items-center justify-center gap-3 mb-4">
+                                <div class="bg-blue-500/10 border border-blue-400/30 rounded-lg px-4 py-2 text-center">
+                                    <p class="text-[9px] text-blue-400 font-bold">WIN RATE</p>
+                                    <p class="text-lg font-bold text-white" id="dfc-win-rate">—</p>
+                                </div>
+                                <span class="text-gray-500 text-xl">×</span>
+                                <div class="bg-green-500/10 border border-green-400/30 rounded-lg px-4 py-2 text-center">
+                                    <p class="text-[9px] text-green-400 font-bold">AVG WIN</p>
+                                    <p class="text-lg font-bold text-green-400" id="discord-edge-avgwin">—</p>
+                                    <p class="text-[9px] text-gray-500" id="discord-edge-avgwin-pts"></p>
+                                </div>
+                                <span class="text-gray-500 text-xl">−</span>
+                                <div class="bg-red-500/10 border border-red-400/30 rounded-lg px-4 py-2 text-center">
+                                    <p class="text-[9px] text-red-400 font-bold">LOSS RATE × AVG LOSS</p>
+                                    <p class="text-lg font-bold text-red-400" id="discord-edge-avgloss">—</p>
+                                    <p class="text-[9px] text-gray-500" id="discord-edge-avgloss-pts"></p>
+                                </div>
+                                <span class="text-gray-500 text-xl">=</span>
+                                <div class="bg-blue-400/10 border border-blue-400/40 rounded-lg px-5 py-2 text-center">
+                                    <p class="text-[9px] text-blue-400 font-bold">EDGE PER TRADE</p>
+                                    <p class="text-2xl font-bold text-blue-400" id="discord-ev-hero-big">—</p>
+                                    <p class="text-[9px] text-gray-400" id="discord-ev-hero-sub"></p>
+                                </div>
+                            </div>
+                            <div class="bg-[#0a1628]/80 rounded-lg p-3 font-mono text-xs space-y-0.5 max-w-lg mx-auto">
+                                <p class="text-gray-400">EV = (Win% × Avg Win) − (Loss% × Avg Loss)</p>
+                                <p class="text-gray-300" id="dfc-formula-line1">EV = ...</p>
+                                <p class="text-gray-300" id="dfc-formula-line2">EV = ...</p>
+                                <p class="text-blue-400 font-bold" id="dfc-formula-result">EV = ...</p>
+                            </div>
+                        </div>
+
+                        <!-- Plain English Explanation -->
+                        <div class="bg-[#0a1628]/60 border border-gray-700/50 rounded-lg p-4 mb-4">
+                            <p class="text-gray-300 text-sm leading-relaxed" id="discord-edge-explanation">Upload your weekly Excel report to see your edge analysis — every number below is derived from real trade results.</p>
+                        </div>
+
+                        <!-- Win Rate + Risk Details -->
+                        <div class="grid sm:grid-cols-3 gap-3">
+                            <div class="bg-blue-900/15 border border-blue-500/20 rounded-lg p-3 text-center">
+                                <p class="text-[10px] text-blue-400 font-bold">WIN RATE</p>
+                                <p class="text-lg font-bold text-white" id="discord-edge-wr">—</p>
+                            </div>
+                            <div class="bg-blue-400/8 border border-blue-400/20 rounded-lg p-3 text-center">
+                                <p class="text-[10px] text-blue-400 font-bold">RISK BUDGET</p>
+                                <p class="text-lg font-bold text-white">$500 <span class="text-xs text-gray-500">(2.5%)</span></p>
+                            </div>
+                            <div class="bg-gray-800/40 border border-gray-700/30 rounded-lg p-3 text-center">
+                                <p class="text-[10px] text-gray-400 font-bold">W/L RATIO</p>
+                                <p class="text-lg font-bold text-white" id="discord-detail-wlratio">—</p>
+                            </div>
+                        </div>
+                        <!-- Hidden elements for JS compatibility -->
+                        <div class="hidden">
+                            <span id="discord-ev-actual-risk"></span>
+                            <span id="discord-detail-grosswins"></span>
+                            <span id="discord-detail-grosslosses"></span>
+                            <span id="discord-detail-netpts"></span>
+                            <span id="discord-edge-details"></span>
+                            <span id="discord-details-icon"></span>
+                            <span id="dfc-ev-result"></span>
+                        </div>
+                    </div>
+
+                    <!-- 1B. What Makes It Powerful? (Discord) -->
+                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-blue-400/25 rounded-2xl p-6 sm:p-8 mb-6" id="foodchain-discord">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-full bg-blue-400/15 flex items-center justify-center flex-shrink-0">
+                                <span class="text-blue-400 font-bold text-lg">2</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white">What Makes This Edge Powerful?</h3>
+                                <p class="text-gray-400 text-xs mt-0.5">Edge × frequency = annual returns <span class="text-gray-600" id="dfc-period-label"></span></p>
+                            </div>
+                        </div>
+
+                        <!-- Food Chain Comparison Table -->
+                        <div class="overflow-x-auto mb-5">
+                            <table class="w-full text-xs border-collapse">
+                                <thead>
+                                    <tr>
+                                        <th class="text-left text-gray-400 font-bold px-3 py-2.5 border-b-2 border-blue-400/20 bg-blue-400/5">Strategy</th>
+                                        <th class="text-right text-gray-400 font-bold px-3 py-2.5 border-b-2 border-blue-400/20 bg-blue-400/5">Edge/Trade</th>
+                                        <th class="text-right text-gray-400 font-bold px-3 py-2.5 border-b-2 border-blue-400/20 bg-blue-400/5">Trades/Mo</th>
+                                        <th class="text-right text-gray-400 font-bold px-3 py-2.5 border-b-2 border-blue-400/20 bg-blue-400/5">Annual R <span id="dfc-annual-r-header-note" class="text-[9px] font-normal text-gray-500 block">extrapolated · all-time</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dfc-table-body"></tbody>
+                            </table>
+                        </div>
+
+                        <!-- Summary Callout -->
+                        <div id="dfc-summary-callout" class="bg-blue-400/8 border border-blue-400/25 rounded-lg p-3 text-center mb-6">
+                            <p class="text-xs text-gray-300" id="dfc-summary-text">Upload data to see your edge position</p>
+                        </div>
+
+                        <!-- Why It Matters -->
+                        <div class="grid sm:grid-cols-3 gap-4 mb-6">
+                            <div class="bg-[#0a1628]/60 border border-blue-400/15 rounded-xl p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white">1</span>
+                                    <p class="text-white text-xs font-semibold">Magnitude</p>
+                                </div>
+                                <p class="text-gray-400 text-[11px] leading-relaxed" id="dfc-why-magnitude">Your edge per trade is significantly larger than a casino's edge.</p>
+                            </div>
+                            <div class="bg-[#0a1628]/60 border border-blue-400/15 rounded-xl p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white">2</span>
+                                    <p class="text-white text-xs font-semibold">Frequency</p>
+                                </div>
+                                <p class="text-gray-400 text-[11px] leading-relaxed" id="dfc-why-frequency">Edge × trades × 12 months = Annual R</p>
+                            </div>
+                            <div class="bg-[#0a1628]/60 border border-blue-400/15 rounded-xl p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white">3</span>
+                                    <p class="text-white text-xs font-semibold">Compounding</p>
+                                </div>
+                                <p class="text-gray-400 text-[11px] leading-relaxed">With a validated edge, even 2.5% risk per trade compounds dramatically over time.</p>
+                            </div>
+                        </div>
+
+                        <!-- Edge Position Chart -->
+                        <div class="bg-[#0a1628]/60 border border-blue-400/15 rounded-xl p-4">
+                            <h4 class="text-sm font-bold text-blue-400 mb-2"><i class="fas fa-signal mr-1.5"></i>Edge Position vs. Industry</h4>
+                            <div id="dfc-position-chart" style="height: 220px; width: 100%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- 1C. Returns Multiplier Potential (Discord) -->
+                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-blue-400/25 rounded-2xl p-6 sm:p-8 mb-8">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-full bg-blue-400/15 flex items-center justify-center flex-shrink-0">
+                                <span class="text-blue-400 font-bold text-lg">3</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white">Returns Multiplier — A Function of Risk</h3>
+                                <p class="text-gray-400 text-xs mt-0.5">Same edge, different returns — you choose the risk level</p>
+                            </div>
+                        </div>
+
+                        <!-- Returns Scaling Bars -->
+                        <div class="bg-[#0a1628]/60 border border-blue-400/15 rounded-xl p-5 mb-5">
+                            <p class="text-gray-400 text-[10px] mb-4" id="dfc-scale-subtitle">Based on your validated edge, returns multiply with risk taken:</p>
+                            <div class="space-y-3" id="dfc-returns-bars"></div>
+                            <div class="mt-4 bg-blue-400/8 border border-blue-400/20 rounded-lg p-3">
+                                <p class="text-[11px] text-gray-300 text-center"><i class="fas fa-calculator text-blue-400 mr-1"></i><strong class="text-white">The Math:</strong> <span id="dfc-math-formula">Return = Edge × Risk Per Trade × # of Trades</span></p>
+                            </div>
+                        </div>
+
+                        <!-- What R Means -->
+                        <div class="bg-[#0a1628]/60 border border-blue-400/15 rounded-xl p-5">
+                            <h4 class="text-sm font-bold text-blue-400 mb-3"><i class="fas fa-info-circle mr-1.5"></i>What "<span id="dfc-annual-r-label">— R</span>" Means</h4>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex items-start gap-2"><i class="fas fa-gem text-blue-400 mt-0.5 text-[10px]"></i><p class="text-gray-300"><strong class="text-white">R</strong> = the fixed dollar amount risked per trade</p></div>
+                                <div class="flex items-start gap-2"><i class="fas fa-gem text-blue-400 mt-0.5 text-[10px]"></i><p class="text-gray-300" id="dfc-r-example1">For 2.5% risk on $20K account, R = $500</p></div>
+                                <div class="flex items-start gap-2"><i class="fas fa-gem text-blue-400 mt-0.5 text-[10px]"></i><p class="text-gray-300" id="dfc-r-example2">— R × $500 = —/year at minimum risk</p></div>
+                            </div>
+                            <div class="mt-3 bg-blue-400/8 border border-blue-400/20 rounded-lg p-2.5">
+                                <p class="text-[10px] text-blue-400 text-center font-semibold" id="dfc-key-insight">Returns grow proportionally with risk taken if the edge is truly validated.</p>
+                            </div>
+                        </div>
+                        <!-- Hidden for JS compatibility -->
+                        <div class="hidden"><span id="dfc-risk-reward"></span><span id="dfc-edge-per-trade"></span><span id="dfc-trades-month"></span><span id="dfc-annual-r"></span></div>
+                    </div>
+
+
+                    <!-- ╔══════════════════════════════════════════════════════╗ -->
+                    <!-- ║  SECTION 2: $100 GROWTH COMPARISON (Discord)         ║ -->
+                    <!-- ╚══════════════════════════════════════════════════════╝ -->
+
+                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-emerald-400/25 rounded-2xl p-6 sm:p-8 mb-8">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-chart-area text-emerald-400"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white">$100 Invested — Where Does It Go?</h3>
+                                <p class="text-gray-400 text-xs mt-0.5">Projected 5-year growth: S&P 500 vs ECFS Active vs Discord Selective</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-500 text-[10px] mb-5 ml-13" id="growth-subtitle-discord">Annual R extrapolated from all-time data as of last update. Compounded weekly at minimum 0.5% risk per trade. S&P 500 uses 14.6% CAGR (15-year avg total return with dividends, 2011–2025).</p>
+
+                        <div id="chart-growth-comparison-discord" style="height: 400px; width: 100%;"></div>
+
+                        <div class="grid grid-cols-3 gap-3 mt-5">
+                            <div class="bg-gray-800/40 border border-gray-600/30 rounded-lg p-3 text-center">
+                                <p class="text-[10px] text-gray-400 font-bold">S&P 500</p>
+                                <p class="text-sm font-bold text-gray-300" id="growth-spy-discord">$100 → $200</p>
+                                <p class="text-[10px] text-gray-500">14.6% CAGR (15yr avg)</p>
+                                <p class="text-[9px] text-red-400/70 mt-0.5"><i class="fas fa-exclamation-triangle mr-0.5"></i>Avg drawdown: −14%</p>
+                            </div>
+                            <div class="bg-[#d4af37]/8 border border-[#d4af37]/30 rounded-lg p-3 text-center">
+                                <p class="text-[10px] text-[#d4af37] font-bold">ECFS ACTIVE</p>
+                                <p class="text-sm font-bold text-[#d4af37]" id="growth-ecfs-discord">$100 → —</p>
+                                <p class="text-[10px] text-gray-500">at 0.5% risk</p>
+                                <p class="text-[9px] text-emerald-400/70 mt-0.5" id="growth-dd-ecfs-discord"><i class="fas fa-dice mr-0.5"></i>Est. Max DD: calculating…</p>
+                            </div>
+                            <div class="bg-blue-500/8 border border-blue-400/30 rounded-lg p-3 text-center">
+                                <p class="text-[10px] text-blue-400 font-bold">DISCORD SELECTIVE</p>
+                                <p class="text-sm font-bold text-blue-400" id="growth-discord-discord">$100 → —</p>
+                                <p class="text-[10px] text-gray-500">at 0.5% risk</p>
+                                <p class="text-[9px] text-emerald-400/70 mt-0.5" id="growth-dd-discord-discord"><i class="fas fa-dice mr-0.5"></i>Est. Max DD: calculating…</p>
+                            </div>
+                        </div>
+
+                        <p class="text-gray-600 text-[10px] mt-4 text-center">Projections are mathematical extrapolations based on current edge, not guarantees. Past performance is not indicative of future results. <a href="#compliance-footer" class="underline hover:text-gray-400">Full disclosure</a></p>
+                    </div>
+
+
+                    <!-- ╔══════════════════════════════════════════════════════╗ -->
+                    <!-- ║  SECTION 3: DETAILED PERFORMANCE NUMBERS (Discord)   ║ -->
+                    <!-- ╚══════════════════════════════════════════════════════╝ -->
+
+                    <div class="text-center mb-6">
+                        <button onclick="toggleDetailedDashboard('discord')" id="btn-details-discord" class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-500/20 to-blue-500/5 border-2 border-blue-400/40 text-white font-bold text-sm rounded-xl hover:border-blue-400/80 hover:shadow-lg hover:shadow-blue-400/20 transition-all">
+                            <i class="fas fa-table mr-2 text-blue-400"></i>See Detailed Numbers — By Week, Month, or All Time
+                            <i class="fas fa-chevron-down ml-3 text-blue-400 text-xs transition-transform" id="icon-details-discord"></i>
+                        </button>
+                    </div>
+
+                    <div id="detailed-dashboard-discord" class="hidden">
+
                     <!-- Period Toggle -->
                     <div class="flex flex-col sm:flex-row items-center justify-between mb-6 gap-3">
                         <div class="flex items-center gap-2">
-                            <button onclick="setPeriod('discord','weekly')" id="period-discord-weekly" class="period-btn active-period px-4 py-2 rounded-lg text-xs font-bold transition-all">This Week</button>
+                            <button onclick="setPeriod('discord','weekly')" id="period-discord-weekly" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-blue-400/50 transition-all">This Week</button>
                             <button onclick="setPeriod('discord','monthly')" id="period-discord-monthly" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-blue-400/50 transition-all">This Month</button>
-                            <button onclick="setPeriod('discord','alltime')" id="period-discord-alltime" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-blue-400/50 transition-all">All-Time</button>
+                            <button onclick="setPeriod('discord','alltime')" id="period-discord-alltime" class="period-btn active-period px-4 py-2 rounded-lg text-xs font-bold transition-all">All-Time</button>
                         </div>
                         <div class="flex items-center gap-2">
                             <button onclick="prevPeriod('discord')" class="week-nav-button px-3 py-1.5 bg-[#0d1d35] border border-gray-600 text-gray-300 rounded-lg text-xs font-semibold"><i class="fas fa-chevron-left"></i></button>
@@ -736,178 +1055,24 @@
                             <p class="text-[10px] text-gray-500 mt-0.5" id="discord-hero-dd-sub"></p>
                         </div>
                     </div>
-
                     <p class="text-gray-600 text-[10px] -mt-6 mb-6 text-center">Results reflect selective manual execution from Discord alerts. Individual results will vary. Past performance is not indicative of future results. <a href="#compliance-footer" class="underline hover:text-gray-400">Full disclosure</a></p>
 
-                    <!-- The Edge (Discord) -->
-                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-blue-400/20 rounded-2xl p-6 mb-8">
-                        <h3 class="text-lg font-bold text-white mb-5 flex items-center"><i class="fas fa-crosshairs text-blue-400 mr-2"></i>The Edge — Expected Value Analysis</h3>
-                        <div class="grid md:grid-cols-3 gap-6 items-center">
-                            <div class="text-center md:text-left">
-                                <p class="text-gray-400 text-xs mb-1 uppercase tracking-wider">Your Edge Per Trade</p>
-                                <p class="text-4xl font-bold text-blue-400" id="discord-ev-hero-big">—</p>
-                                <p class="text-sm text-gray-400 mt-1" id="discord-ev-hero-sub"></p>
-                                <div class="mt-3 bg-blue-500/10 border border-blue-400/20 rounded-lg p-3">
-                                    <p class="text-blue-400 text-xs" id="discord-ev-actual-risk"></p>
-                                </div>
-                            </div>
-                            <div class="space-y-3">
-                                <p class="text-gray-400 text-xs uppercase tracking-wider mb-2">How The Edge Is Built</p>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div class="bg-green-900/15 border border-green-500/20 rounded-lg p-3 text-center">
-                                        <p class="text-[10px] text-green-400 font-bold">AVG WIN</p>
-                                        <p class="text-xl font-bold text-green-400" id="discord-edge-avgwin">—</p>
-                                        <p class="text-[10px] text-gray-500" id="discord-edge-avgwin-pts"></p>
-                                    </div>
-                                    <div class="bg-red-900/15 border border-red-500/20 rounded-lg p-3 text-center">
-                                        <p class="text-[10px] text-red-400 font-bold">AVG LOSS</p>
-                                        <p class="text-xl font-bold text-red-400" id="discord-edge-avgloss">—</p>
-                                        <p class="text-[10px] text-gray-500" id="discord-edge-avgloss-pts"></p>
-                                    </div>
-                                </div>
-                                <div class="bg-blue-900/15 border border-blue-500/20 rounded-lg p-3 text-center">
-                                    <p class="text-[10px] text-blue-400 font-bold">WIN RATE</p>
-                                    <p class="text-lg font-bold text-white" id="discord-edge-wr">—</p>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="bg-[#0a1628]/60 border border-gray-700/50 rounded-lg p-4">
-                                    <p class="text-gray-300 text-sm leading-relaxed" id="discord-edge-explanation">Upload your Excel file to see your edge analysis.</p>
-                                </div>
-                                <div class="mt-3 space-y-2">
-                                    <div class="flex justify-between text-xs"><span class="text-gray-400">Risk Budget</span><span class="text-blue-400 font-semibold">$500/trade</span></div>
-                                </div>
-                                <button onclick="toggleDetails('discord')" class="mt-3 text-blue-400 text-xs font-semibold hover:underline"><i class="fas fa-chevron-down mr-1" id="discord-details-icon"></i>Detailed Breakdown</button>
-                                <div id="discord-edge-details" class="hidden mt-3 space-y-1.5 border-t border-gray-700/50 pt-3">
-                                    <div class="flex justify-between text-xs"><span class="text-gray-400">Gross Wins</span><span class="text-green-400 font-semibold" id="discord-detail-grosswins">—</span></div>
-                                    <div class="flex justify-between text-xs"><span class="text-gray-400">Gross Losses</span><span class="text-red-400 font-semibold" id="discord-detail-grosslosses">—</span></div>
-                                    <div class="flex justify-between text-xs"><span class="text-gray-400">Win/Loss Ratio</span><span class="text-white font-semibold" id="discord-detail-wlratio">—</span></div>
-                                    <div class="flex justify-between text-xs"><span class="text-gray-400">Net Points</span><span class="text-white font-semibold" id="discord-detail-netpts">—</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ===== EDGE ON THE FOOD CHAIN — Discord (Simplified) ===== -->
-                    <div id="foodchain-discord" class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-blue-400/25 rounded-2xl p-6 mb-8 hidden">
-                        <h3 class="text-lg font-bold text-white mb-1 flex items-center flex-wrap gap-2">
-                            <i class="fas fa-trophy text-blue-400 mr-1"></i>Where Your Edge Sits on the Food Chain
-                            <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-400/15 text-blue-400 border border-blue-400/30">DISCORD SELECTIVE · ES</span>
-                            <span class="text-xs font-normal text-gray-500" id="dfc-period-label"></span>
-                        </h3>
-                        <p class="text-gray-400 text-xs mb-5">Discord Selective performance ($50/pt ES, $500 risk/trade) vs. industry benchmarks — updated live from your data</p>
-
-                        <div class="grid lg:grid-cols-2 gap-6">
-                            <!-- LEFT: Position Chart + Quick Stats -->
-                            <div>
-                                <div class="bg-[#0a1628]/60 border border-blue-400/15 rounded-xl p-4 mb-4">
-                                    <div id="dfc-position-chart" style="height: 220px; width: 100%;"></div>
-                                </div>
-                                <!-- Quick edge stats -->
-                                <div class="grid grid-cols-3 gap-3">
-                                    <div class="bg-blue-900/10 border border-blue-400/20 rounded-lg p-3 text-center">
-                                        <p class="text-[9px] text-blue-400 font-bold">EDGE/TRADE</p>
-                                        <p class="text-lg font-bold text-blue-400" id="dfc-edge-per-trade">—</p>
-                                    </div>
-                                    <div class="bg-blue-900/10 border border-blue-400/20 rounded-lg p-3 text-center">
-                                        <p class="text-[9px] text-blue-400 font-bold">TRADES/MO</p>
-                                        <p class="text-lg font-bold text-white" id="dfc-trades-month">—</p>
-                                    </div>
-                                    <div class="bg-blue-900/10 border border-blue-400/20 rounded-lg p-3 text-center">
-                                        <p class="text-[9px] text-blue-400 font-bold">ANNUAL R</p>
-                                        <p class="text-lg font-bold text-white" id="dfc-annual-r">—</p>
-                                    </div>
-                                </div>
-
-                                <!-- Dynamic Summary Callout -->
-                                <div id="dfc-summary-callout" class="mt-3 bg-blue-400/8 border border-blue-400/25 rounded-lg p-3 text-center">
-                                    <p class="text-xs text-gray-300" id="dfc-summary-text">Loading...</p>
-                                </div>
-                            </div>
-
-                            <!-- RIGHT: Simplified Formula + Returns -->
-                            <div class="space-y-4">
-                                <!-- Edge derivation (compact) -->
-                                <div class="bg-[#0a1628]/60 border border-blue-400/15 rounded-xl p-4">
-                                    <h4 class="text-sm font-bold text-blue-400 mb-3"><i class="fas fa-calculator mr-1.5"></i>Edge Formula</h4>
-                                    <div class="flex items-center gap-3 mb-3">
-                                        <div class="bg-blue-500/10 border border-blue-400/30 rounded-lg px-3 py-1.5 text-center">
-                                            <p class="text-[9px] text-blue-400 font-bold">WIN RATE</p>
-                                            <p class="text-sm font-bold text-white" id="dfc-win-rate">—</p>
-                                        </div>
-                                        <div class="bg-purple-500/10 border border-purple-400/30 rounded-lg px-3 py-1.5 text-center">
-                                            <p class="text-[9px] text-purple-400 font-bold">R:R</p>
-                                            <p class="text-sm font-bold text-white" id="dfc-risk-reward">—</p>
-                                        </div>
-                                        <div class="text-gray-500 text-lg">=</div>
-                                        <div class="bg-blue-500/10 border border-blue-400/30 rounded-lg px-3 py-1.5 text-center">
-                                            <p class="text-[9px] text-blue-400 font-bold">EV</p>
-                                            <p class="text-sm font-bold text-blue-400" id="dfc-ev-result">—</p>
-                                        </div>
-                                    </div>
-                                    <div class="bg-[#0a1628] rounded-lg p-2.5 font-mono text-[11px] space-y-0.5">
-                                        <p class="text-gray-400" id="dfc-formula-line1">EV = ...</p>
-                                        <p class="text-gray-300" id="dfc-formula-line2">EV = ...</p>
-                                        <p class="text-blue-400 font-bold" id="dfc-formula-result">EV = ...</p>
-                                    </div>
-                                </div>
-
-                                <!-- Returns scaling (compact) -->
-                                <div class="bg-[#0a1628]/60 border border-blue-400/15 rounded-xl p-4">
-                                    <h4 class="text-sm font-bold text-blue-400 mb-3"><i class="fas fa-chart-bar mr-1.5"></i>Returns Scale</h4>
-                                    <div class="space-y-3" id="dfc-returns-bars"></div>
-                                    <div class="mt-3 bg-blue-500/8 border border-blue-400/20 rounded-lg p-2.5">
-                                        <p class="text-[10px] text-gray-300"><i class="fas fa-calculator text-blue-400 mr-1"></i><strong class="text-white">Math:</strong> <span id="dfc-math-formula">Return = Edge × Risk × Trades</span></p>
-                                    </div>
-                                </div>
-
-                                <!-- What R Means -->
-                                <div class="bg-[#0a1628]/60 border border-blue-400/15 rounded-xl p-4">
-                                    <h4 class="text-sm font-bold text-blue-400 mb-2"><i class="fas fa-info-circle mr-1.5"></i>What "<span id="dfc-annual-r-label">— R</span>" Means</h4>
-                                    <div class="space-y-1.5 text-xs">
-                                        <p class="text-gray-300" id="dfc-r-example1">R = fixed dollar risk per trade</p>
-                                        <p class="text-gray-300" id="dfc-r-example2">— R × $500 = —/year</p>
-                                    </div>
-                                    <div class="mt-2 bg-blue-500/8 border border-blue-400/20 rounded-lg p-2">
-                                        <p class="text-[10px] text-blue-400 text-center font-semibold" id="dfc-key-insight">Upload data to see edge analysis.</p>
-                                    </div>
-                                </div>
-
-                                <!-- Why It Matters (simplified) -->
-                                <div class="bg-[#0a1628]/60 border border-blue-400/15 rounded-xl p-4">
-                                    <h4 class="text-sm font-bold text-blue-400 mb-2"><i class="fas fa-lightbulb mr-1.5"></i>Key Takeaways</h4>
-                                    <div class="space-y-2">
-                                        <div class="flex items-start gap-2">
-                                            <span class="flex-shrink-0 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-[9px] font-bold text-white">1</span>
-                                            <p class="text-gray-400 text-[11px]" id="dfc-why-magnitude">Upload data to see how your edge compares.</p>
-                                        </div>
-                                        <div class="flex items-start gap-2">
-                                            <span class="flex-shrink-0 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-[9px] font-bold text-white">2</span>
-                                            <p class="text-gray-400 text-[11px]" id="dfc-why-frequency">E[Profit] ≈ —</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Weekly Trend + P&L Distribution (Discord) -->
+                    <!-- Charts -->
                     <div class="grid md:grid-cols-2 gap-6 mb-8">
+                        <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-blue-400/15 rounded-2xl p-6">
+                            <h3 class="text-sm font-bold text-white mb-3 flex items-center"><i class="fas fa-chart-area text-blue-400 mr-2"></i>Equity Curve</h3>
+                            <div id="chart-equity-discord" style="height: 280px; width: 100%;"></div>
+                        </div>
                         <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-blue-400/15 rounded-2xl p-6">
                             <h3 class="text-sm font-bold text-white mb-3 flex items-center"><i class="fas fa-chart-line text-blue-400 mr-2"></i>Weekly P&L Trend</h3>
                             <div id="chart-weekly-trend-discord" style="height: 280px; width: 100%;"></div>
                         </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6 mb-8">
                         <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-gray-700/30 rounded-2xl p-6">
                             <h3 class="text-sm font-bold text-white mb-3 flex items-center"><i class="fas fa-chart-bar text-purple-400 mr-2"></i>P&L Distribution</h3>
                             <div id="chart-pldist-discord" style="height: 280px; width: 100%;"></div>
-                        </div>
-                    </div>
-
-                    <!-- Charts (Discord) -->
-                    <div class="grid md:grid-cols-2 gap-6 mb-8">
-                        <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-gray-700/30 rounded-2xl p-6">
-                            <h3 class="text-sm font-bold text-white mb-3"><i class="fas fa-chart-area text-blue-400 mr-2"></i>Equity Curve</h3>
-                            <div id="chart-equity-discord" style="height: 280px; width: 100%;"></div>
                         </div>
                         <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-gray-700/30 rounded-2xl p-6">
                             <h3 class="text-sm font-bold text-white mb-3"><i class="fas fa-chart-bar text-blue-400 mr-2"></i>Daily P&L</h3>
@@ -958,6 +1123,8 @@
                         </div>
                     </div>
 
+                    </div><!-- /detailed-dashboard-discord -->
+
                     <!-- Disclaimer -->
                     <div class="border border-gray-700/30 rounded-lg px-4 py-3 flex items-center gap-2">
                         <i class="fas fa-info-circle text-gray-500 text-xs flex-shrink-0"></i>
@@ -989,9 +1156,9 @@
                     <!-- Period Toggle for Compare -->
                     <div class="flex flex-col sm:flex-row items-center justify-between mb-6 gap-3">
                         <div class="flex items-center gap-2">
-                            <button onclick="setComparePeriod('weekly')" id="period-compare-weekly" class="period-btn active-period px-4 py-2 rounded-lg text-xs font-bold transition-all">This Week</button>
+                            <button onclick="setComparePeriod('weekly')" id="period-compare-weekly" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-[#d4af37]/50 transition-all">This Week</button>
                             <button onclick="setComparePeriod('monthly')" id="period-compare-monthly" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-[#d4af37]/50 transition-all">This Month</button>
-                            <button onclick="setComparePeriod('alltime')" id="period-compare-alltime" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-[#d4af37]/50 transition-all">All-Time</button>
+                            <button onclick="setComparePeriod('alltime')" id="period-compare-alltime" class="period-btn active-period px-4 py-2 rounded-lg text-xs font-bold transition-all">All-Time</button>
                         </div>
                         <span class="text-gray-500 text-xs" id="compare-period-label"></span>
                     </div>
@@ -1044,6 +1211,214 @@
                     <div class="border border-gray-700/30 rounded-lg px-4 py-3 flex items-center gap-2">
                         <i class="fas fa-info-circle text-gray-500 text-xs flex-shrink-0"></i>
                         <p class="text-gray-500 text-[10px] leading-relaxed">Past performance is not indicative of future results. R-normalized metrics are for comparison purposes only; actual dollar results depend on position sizing and market conditions. <a href="#compliance-footer" class="text-gray-400 underline hover:text-[#d4af37]">Full disclosure</a></p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== EPIG PORTFOLIO CONTEXT ==================== -->
+    <section class="py-16 relative overflow-hidden">
+        <!-- Subtle background glow -->
+        <div class="absolute inset-0 opacity-10">
+            <div class="absolute top-20 left-1/3 w-72 h-72 bg-emerald-500/20 rounded-full blur-3xl"></div>
+            <div class="absolute bottom-10 right-1/3 w-72 h-72 bg-amber-500/15 rounded-full blur-3xl"></div>
+        </div>
+
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="max-w-6xl mx-auto">
+
+                <!-- Section Header -->
+                <div class="text-center mb-12">
+                    <div class="inline-block bg-amber-500/10 border border-amber-500/30 rounded-full px-6 py-2 mb-6">
+                        <span class="text-amber-400 font-semibold text-sm"><i class="fas fa-cubes mr-2"></i>INVESTMENT STRATEGY DESIGN</span>
+                    </div>
+                    <h2 class="font-playfair text-3xl sm:text-4xl font-bold text-white mb-4">Where This Edge Fits: The Bigger Picture</h2>
+                    <p class="text-gray-400 max-w-3xl mx-auto text-sm leading-relaxed">The performance you see above is the <strong class="text-amber-400">Tactical Income sleeve</strong> of a larger, institutional-grade portfolio architecture. It's not the entire strategy — it's the engine that generates outsized returns while 80% of capital stays protected.</p>
+                </div>
+
+                <!-- Context callout -->
+                <div class="bg-gradient-to-r from-amber-500/8 to-transparent border-l-4 border-amber-400 rounded-r-xl p-5 mb-10 max-w-4xl mx-auto">
+                    <div class="flex items-start gap-3">
+                        <div class="flex-shrink-0 mt-0.5">
+                            <div class="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
+                                <i class="fas fa-lightbulb text-amber-400 text-sm"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-white font-semibold text-sm mb-1">What you're looking at: Layer B — Tactical Income</p>
+                            <p class="text-gray-400 text-xs leading-relaxed">ECFS Active and Discord Selective are both <strong class="text-white">Tactical execution strategies</strong> within a complete portfolio framework called <strong class="text-amber-400">EPIG</strong> (Enduring Principal Protection · Income & Growth). They represent 3-5% of total capital allocation — designed to harvest volatility and generate income through high-EV, risk-managed futures trading.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== THREE-LAYER ARCHITECTURE ===== -->
+                <div class="mb-12">
+                    <h3 class="text-2xl font-bold text-white text-center mb-2">How EPIG Works: Three-Layer Architecture</h3>
+                    <p class="text-amber-400 text-center italic text-sm mb-8">Expected Value × Volume × Risk Management</p>
+
+                    <div class="grid md:grid-cols-3 gap-5">
+
+                        <!-- LAYER A: Core -->
+                        <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-emerald-500/25 rounded-2xl p-6 relative overflow-hidden">
+                            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-emerald-400"></div>
+                            <div class="inline-block bg-emerald-500 text-white text-[10px] font-bold px-3 py-1 rounded-md mb-4 uppercase tracking-wider">Layer A</div>
+                            <h4 class="font-playfair text-2xl font-bold text-emerald-400 mb-1">Core</h4>
+                            <p class="text-amber-400/80 text-xs italic mb-5">Capital Preservation Baseline</p>
+
+                            <div class="space-y-3 mb-5">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0"></div>
+                                    <span class="text-gray-300 text-sm">SPY or Cash</span>
+                                </div>
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0"></div>
+                                    <span class="text-gray-300 text-sm">Defensive posture</span>
+                                </div>
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0"></div>
+                                    <span class="text-gray-300 text-sm">85-99% of capital</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-emerald-900/15 border border-emerald-500/15 rounded-lg p-3 mb-5">
+                                <p class="text-xs"><span class="text-emerald-400 font-bold">Purpose:</span> <span class="text-gray-300">Protect principal during uncertain markets</span></p>
+                            </div>
+
+                            <p class="text-3xl font-bold text-emerald-400 text-center italic">~80%</p>
+                        </div>
+
+                        <!-- LAYER B: Tactical (HIGHLIGHTED — this is what the dashboard shows) -->
+                        <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border-2 border-amber-500/40 rounded-2xl p-6 relative overflow-hidden shadow-lg shadow-amber-500/10">
+                            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-amber-400"></div>
+                            <!-- "YOU ARE HERE" badge -->
+                            <div class="absolute top-3 right-3">
+                                <div class="bg-amber-500/20 border border-amber-400/40 rounded-full px-2.5 py-1">
+                                    <span class="text-amber-400 text-[9px] font-bold uppercase tracking-wider"><i class="fas fa-crosshairs mr-1"></i>You Are Here</span>
+                                </div>
+                            </div>
+                            <div class="inline-block bg-amber-500 text-white text-[10px] font-bold px-3 py-1 rounded-md mb-4 uppercase tracking-wider">Layer B</div>
+                            <h4 class="font-playfair text-2xl font-bold text-amber-400 mb-1">Tactical</h4>
+                            <p class="text-amber-400/80 text-xs italic mb-5">High-EV Window Harvesting</p>
+
+                            <div class="space-y-3 mb-5">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"></div>
+                                    <span class="text-gray-300 text-sm">Futures / Stocks / Options</span>
+                                </div>
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"></div>
+                                    <span class="text-gray-300 text-sm">Short-term tactical bets</span>
+                                </div>
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"></div>
+                                    <span class="text-gray-300 text-sm">1-5% VaR overlay</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-amber-900/15 border border-amber-500/15 rounded-lg p-3 mb-5">
+                                <p class="text-xs"><span class="text-amber-400 font-bold">Purpose:</span> <span class="text-gray-300">Harvest volatility & generate outsized returns</span></p>
+                            </div>
+
+                            <p class="text-3xl font-bold text-amber-400 text-center italic">3-5%</p>
+                            <p class="text-[10px] text-amber-400/60 text-center mt-1">← ECFS Active & Discord Selective</p>
+                        </div>
+
+                        <!-- LAYER C: Episodic Pivot -->
+                        <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-purple-500/25 rounded-2xl p-6 relative overflow-hidden">
+                            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-purple-400"></div>
+                            <div class="inline-block bg-purple-500 text-white text-[10px] font-bold px-3 py-1 rounded-md mb-4 uppercase tracking-wider">Layer C</div>
+                            <h4 class="font-playfair text-2xl font-bold text-purple-400 mb-1 italic">Episodic Pivot</h4>
+                            <p class="text-amber-400/80 text-xs italic mb-5">Strategic Growth Plays</p>
+
+                            <div class="space-y-3 mb-5">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-2 h-2 rounded-full bg-purple-400 flex-shrink-0"></div>
+                                    <span class="text-gray-300 text-sm">Events changing future earnings</span>
+                                </div>
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-2 h-2 rounded-full bg-purple-400 flex-shrink-0"></div>
+                                    <span class="text-gray-300 text-sm">Opportunistic allocation</span>
+                                </div>
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-2 h-2 rounded-full bg-purple-400 flex-shrink-0"></div>
+                                    <span class="text-gray-300 text-sm">5-25% position size</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-purple-900/15 border border-purple-500/15 rounded-lg p-3 mb-5">
+                                <p class="text-xs"><span class="text-purple-400 font-bold">Purpose:</span> <span class="text-gray-300">Capitalize on transformative catalysts</span></p>
+                            </div>
+
+                            <p class="text-3xl font-bold text-purple-400 text-center italic">3-5%</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== PORTFOLIO ALLOCATION VISUAL ===== -->
+                <div class="mb-12">
+                    <h3 class="text-2xl font-bold text-white text-center mb-2">Typical Portfolio Allocation</h3>
+                    <p class="text-gray-400 text-center text-xs mb-8">Barbell structure: massive capital protection + concentrated tactical edge</p>
+
+                    <div class="max-w-4xl mx-auto bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-cyan-500/25 rounded-2xl p-6 sm:p-8">
+                        <!-- Strategy A -->
+                        <div class="mb-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-white font-semibold text-sm">Strategy A (Core — SPY/Cash)</span>
+                                <span class="text-emerald-400 font-bold text-lg italic">~80%</span>
+                            </div>
+                            <div class="inline-block bg-emerald-500 text-white text-[9px] font-bold px-2.5 py-0.5 rounded mb-2 uppercase tracking-wider">Capital Preservation</div>
+                            <div class="h-4 rounded-full overflow-hidden" style="background: rgba(255,255,255,0.05);">
+                                <div class="h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-500" style="width: 80%;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Strategy B -->
+                        <div class="mb-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-white font-semibold text-sm">Strategy B (Tactical — Futures/Options)</span>
+                                <span class="text-emerald-400 font-bold text-lg italic">3-5%</span>
+                            </div>
+                            <div class="inline-block bg-amber-500 text-white text-[9px] font-bold px-2.5 py-0.5 rounded mb-2 uppercase tracking-wider">Tactical</div>
+                            <div class="h-4 rounded-full overflow-hidden" style="background: rgba(255,255,255,0.05);">
+                                <div class="h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-500" style="width: 5%;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Strategy C -->
+                        <div class="mb-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-white font-semibold text-sm">Strategy C (Long-Term — Blue Chips)</span>
+                                <span class="text-emerald-400 font-bold text-lg italic">3-5%</span>
+                            </div>
+                            <div class="inline-block bg-red-500 text-white text-[9px] font-bold px-2.5 py-0.5 rounded mb-2 uppercase tracking-wider">Long-term</div>
+                            <div class="h-4 rounded-full overflow-hidden" style="background: rgba(255,255,255,0.05);">
+                                <div class="h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-500" style="width: 5%;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Key Insight Box -->
+                        <div class="bg-amber-500/5 border border-amber-500/30 rounded-xl p-5 flex items-start gap-4">
+                            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center">
+                                <i class="fas fa-key text-white text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm"><span class="text-amber-400 font-bold">Key Insight:</span> <span class="text-gray-300">~80% of capital is always protected. The 3-5% tactical overlay plus 3-5% long-term Blue-Chip allocation generates outsized returns through leverage and selectivity.</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== EPIG FOUNDING MEMBER NOTE ===== -->
+                <div class="max-w-4xl mx-auto text-center">
+                    <div class="bg-gradient-to-r from-[#d4af37]/8 to-emerald-500/5 border border-[#d4af37]/25 rounded-2xl p-8">
+                        <div class="inline-block bg-[#d4af37]/15 border border-[#d4af37]/30 rounded-full px-4 py-1.5 mb-4">
+                            <span class="text-[#d4af37] text-xs font-bold uppercase tracking-wider"><i class="fas fa-crown mr-1.5"></i>Founding Members Only</span>
+                        </div>
+                        <h4 class="font-playfair text-xl font-bold text-white mb-3">EPIG — Enduring Principal Protection · Income & Growth</h4>
+                        <p class="text-gray-400 text-sm leading-relaxed max-w-2xl mx-auto mb-4">The complete three-layer portfolio architecture is available exclusively to founding members. The dashboard above demonstrates the <strong class="text-amber-400">Tactical Income engine (Layer B)</strong> — the systematic edge that drives returns while the barbell structure keeps your principal protected.</p>
+                        <p class="text-gray-500 text-xs">Past performance is not indicative of future results. Portfolio allocation examples are illustrative. <a href="#compliance-footer" class="text-gray-400 underline hover:text-[#d4af37]">Full disclosure</a></p>
                     </div>
                 </div>
 

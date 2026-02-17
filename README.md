@@ -1,4 +1,4 @@
-# Ekantik Capital — Performance Dashboard v2.8
+# Ekantik Capital — Performance Dashboard v2.9
 
 ## Project Overview
 A professional, data-driven performance dashboard for demonstrating weekly trading performance of **ECFS Active** (MES futures) and **Discord Selective** (ES futures) trading strategies. Built for Ekantik Capital Advisors LLC.
@@ -92,10 +92,51 @@ A professional, data-driven performance dashboard for demonstrating weekly tradi
   - Compact formula + returns scale + key takeaways
   - Dynamically updates with period selection
 
+### v2.9 — 3-Section Narrative Layout (Theory → Growth → Detail)
+
+**Both ECFS Active and Discord Selective panels now share an identical 3-section narrative structure:**
+
+#### Section 1: Understanding The Edge (Theory & Concepts)
+- **Live Edge Banner**: Pulsing green dot with "Live Edge — Updated Weekly", shows all-time trade count and last-updated date (auto-populated from trade data)
+- **1A. How Is The Edge Calculated?** — Visual EV formula (Win Rate × Avg Win − Loss Rate × Avg Loss = Edge Per Trade), with live numbers, mono-font formula breakdown, and plain-English explanation
+- **1B. What Makes This Edge Powerful?** — Food Chain comparison table (ECFS/Discord vs. Casino, HFT, Stat-Arb, CTAs, Retail), summary callout with explicit math (`edge × trades/mo × 12 = Annual R`), 3-card explainer (Magnitude, Frequency, Compounding), and ECharts position chart
+  - **Annual R header note**: Dynamically shows "extrapolated · N trades · as of [date]" under the "Annual R" column
+  - **Table footnote**: "Annual R is extrapolated from N trades as of [date]. Updated weekly with new trade data — projections recalculate automatically."
+- **1C. Returns Multiplier — A Function of Risk** — Animated scaling bars at 0.25%, 0.5%, 1%, 2% risk levels, "What R Means" explanation with dynamic dollar examples, and casino/HFT edge comparison
+  - **Data confidence indicator**: Shows ⚠️ Early projection (<30 trades), Developing confidence (30-100), or ✅ Statistically significant (100+)
+  - **All labels clearly state**: "Extrapolated from N all-time trades as of [date] · updated weekly with new data"
+  - **Math formula line**: Includes data-as-of context inline
+  - **Key insight**: Includes "Data as of [date], updated weekly" note
+
+#### Section 2: $100 Growth Comparison
+- **ECharts line chart**: 5-year projected growth of $100 invested in S&P 500 (14.6% CAGR — 15-year average total return with dividends reinvested, 2011–2025), ECFS Active, and Discord Selective
+- Compounding model: Annual R × 0.5% risk per trade, compounded weekly over 260 weeks
+- Logarithmic Y-axis for clear visualization of exponential growth
+- Summary boxes showing final values for each strategy, with risk context:
+  - **S&P 500**: Shows 14.6% CAGR with avg intra-year drawdown of −14% (15-year history)
+  - **ECFS Active / Discord Selective**: Shows Monte Carlo simulated max drawdown (95th percentile, 5,000 simulations resampling actual trade outcomes over 1-year horizon)
+- **Monte Carlo Max Drawdown Engine** (`monteCarloMaxDD()`): Resamples trade P&L outcomes (in R-multiples) with replacement, simulates tradesPerYear paths, tracks peak-to-trough drawdown per path, returns 50th/95th/99th percentile max DD in R, %, and $
+- **Dynamic subtitle**: "Annual R extrapolated from N all-time trades (ECFS: X, Discord: Y) as of [date]. Updated weekly with new trade data."
+- Appears on both ECFS and Discord panels (cross-strategy comparison from any tab)
+
+#### Section 3: Detailed Performance Numbers (Collapsed by Default)
+- **CTA button**: "See Detailed Numbers — By Week, Month, or All Time" with chevron animation
+- Opens to reveal: Period toggle (Week/Month/All-Time), Hero Stats bar (6 KPIs), Risk Management, Equity Curve, Charts grid (Weekly Trend, P&L Distribution, Daily P&L, Efficiency), Inception Summary, Monthly Summary, Trade Log
+- Charts auto-resize when panel opens (delayed resize trigger after reveal)
+- User can explore without being overwhelmed by numbers on first view
+
 ### Data Architecture
 - **ecfs_trades** table: Per-trade data from Tradovate CSV
 - **discord_trades** table: Per-trade data from Excel upload
 - **weekly_snapshots** table: Weekly summary KPIs for historical tracking
+
+- **EPIG Portfolio Context Section (v2.9)** — Positioned before the strategy CTA, connects dashboard performance to the broader portfolio:
+  - **Header callout**: Explains that ECFS Active + Discord Selective = Tactical Income (Layer B) within EPIG
+  - **Three-Layer Architecture**: Visual cards for Core (~80%, SPY/Cash), Tactical (3-5%, Futures/Options, highlighted with "You Are Here" badge), Episodic Pivot (3-5%, Strategic Growth Plays)
+  - **Typical Portfolio Allocation**: Horizontal bar chart showing barbell structure — 80% capital preservation, 3-5% tactical, 3-5% long-term
+  - **Key Insight Box**: "~80% of capital is always protected" with amber accent
+  - **Founding Member Note**: EPIG available exclusively to founding members, dashboard demonstrates Layer B engine
+  - Color coding: Emerald (Core), Amber (Tactical), Purple (Episodic Pivot)
 
 ### Strategy Chooser CTA (v2.5)
 - **"Two Ways to Access This Edge"** — dual-path conversion section after data panels:
@@ -253,7 +294,7 @@ GitHub Pages redeploys in 1–2 minutes. Done.
 1. **PDF Report Export** — One-click weekly report generation
 2. **Email Signup / Lead Capture** — Collect potential customer emails
 3. ~~Social Sharing~~ ✅ **Implemented** (Twitter/X, LinkedIn, copy link, native share)
-4. **S&P 500 Benchmarking** — Overlay SPX performance for context
+4. ~~S&P 500 Benchmarking~~ ✅ **Implemented** (v2.9 — $100 Growth Comparison chart with 5-year projection using 14.6% CAGR best-case passive benchmark)
 5. **Admin Password Protection** — Restrict upload to authorized users
 6. **Automated Screenshot Upload** — Link dashboard screenshots to weeks
 7. **Multiple Account Support** — Track different Tradovate accounts
@@ -275,7 +316,7 @@ GitHub Pages redeploys in 1–2 minutes. Done.
 
 ### Phase 3 (Advanced)
 - Add real-time data via Tradovate API (if available)
-- Implement S&P 500 benchmark comparison
+- ~~Implement S&P 500 benchmark comparison~~ ✅ Done in v2.9
 - Add notification webhooks for new data uploads
 
 ---
