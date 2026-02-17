@@ -1,12 +1,12 @@
 // =====================================================
-// DASHBOARD RENDERING ENGINE v2.0
+// DASHBOARD RENDERING ENGINE v2.9
 // Ekantik Capital Performance Dashboard
 // =====================================================
 
 // State
 const state = {
-    active: { allTrades: [], currentPeriod: 'weekly', selectedWeek: null, kpis: null, snapshots: [] },
-    discord: { allTrades: [], currentPeriod: 'weekly', selectedWeek: null, kpis: null, snapshots: [] }
+    active: { allTrades: [], currentPeriod: 'alltime', selectedWeek: null, kpis: null, snapshots: [] },
+    discord: { allTrades: [], currentPeriod: 'alltime', selectedWeek: null, kpis: null, snapshots: [] }
 };
 
 const chartInstances = {};
@@ -236,9 +236,40 @@ function populateWeekSelector(method, weeks) {
 function toggleDetails(method) {
     const el = document.getElementById(`${method}-edge-details`);
     const icon = document.getElementById(`${method}-details-icon`);
-    el.classList.toggle('hidden');
-    icon.classList.toggle('fa-chevron-down');
-    icon.classList.toggle('fa-chevron-up');
+    if (el) el.classList.toggle('hidden');
+    if (icon) {
+        icon.classList.toggle('fa-chevron-down');
+        icon.classList.toggle('fa-chevron-up');
+    }
+}
+
+// ===== TOGGLE DETAILED DASHBOARD (Section 3 CTA) =====
+function toggleDetailedDashboard(method) {
+    const panel = document.getElementById(`detailed-dashboard-${method}`);
+    const icon = document.getElementById(`icon-details-${method}`);
+    const btn = document.getElementById(`btn-details-${method}`);
+    if (!panel) return;
+
+    const isHidden = panel.classList.contains('hidden');
+    panel.classList.toggle('hidden');
+
+    if (icon) {
+        icon.classList.toggle('fa-chevron-down', !isHidden);
+        icon.classList.toggle('fa-chevron-up', isHidden);
+    }
+
+    // Scroll to detail section when opening
+    if (isHidden) {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Resize charts since they were hidden
+        setTimeout(() => {
+            Object.keys(chartInstances).forEach(key => {
+                if (key.includes(method) || (method === 'active' && key.includes('active'))) {
+                    try { chartInstances[key].resize(); } catch(e) {}
+                }
+            });
+        }, 300);
+    }
 }
 
 // ===== MAIN REFRESH =====
@@ -321,6 +352,24 @@ function updateLastUpdated(trades) {
     }
 }
 
+// Helper: get the most recent trade date as formatted string
+function getLastTradeDate(trades) {
+    if (!trades || trades.length === 0) return null;
+    let maxTime = 0;
+    for (const t of trades) {
+        const dateStr = t.exitTime || t.datetime || '';
+        if (!dateStr) continue;
+        const parts = dateStr.split(' ')[0].split('/');
+        if (parts.length < 3) continue;
+        const ts = new Date(parts[2], parts[0] - 1, parts[1]).getTime();
+        if (ts > maxTime) maxTime = ts;
+    }
+    if (maxTime > 0) {
+        return new Date(maxTime).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+    return null;
+}
+
 // ===== ANIMATED COUNT UP =====
 function animateValue(el, end, prefix = '', suffix = '', decimals = 2) {
     if (!el) return;
@@ -342,6 +391,15 @@ function animateValue(el, end, prefix = '', suffix = '', decimals = 2) {
 
 // ===== RENDER ECFS ACTIVE =====
 function renderActive(k, trades, allK, allTrades) {
+    // Live Update Banner
+    const activeTradeCountEl = document.getElementById('active-live-trade-count');
+    if (activeTradeCountEl) activeTradeCountEl.textContent = `${allTrades.length} trades (All-Time)`;
+    const activeLastUpdEl = document.getElementById('active-live-last-updated');
+    if (activeLastUpdEl) {
+        const lastDate = getLastTradeDate(allTrades);
+        activeLastUpdEl.textContent = lastDate || '—';
+    }
+
     // Hero Stats
     setColor('active-hero-pnl', fmtDollar(k.netPL), k.netPL);
     document.getElementById('active-hero-pnl-sub').textContent = `${k.totalTrades} trade${k.totalTrades !== 1 ? 's' : ''}`;
@@ -423,10 +481,22 @@ function renderActive(k, trades, allK, allTrades) {
 
     // Food Chain
     renderFoodChain('active', k, allK, allTrades);
+
+    // $100 Growth Comparison Chart (uses both strategies' all-time data)
+    renderGrowthComparisonFromState('chart-growth-comparison-active', 'active');
 }
 
 // ===== RENDER DISCORD =====
 function renderDiscord(k, trades, allK, allTrades) {
+    // Live Update Banner
+    const discordTradeCountEl = document.getElementById('discord-live-trade-count');
+    if (discordTradeCountEl) discordTradeCountEl.textContent = `${allTrades.length} trades (All-Time)`;
+    const discordLastUpdEl = document.getElementById('discord-live-last-updated');
+    if (discordLastUpdEl) {
+        const lastDate = getLastTradeDate(allTrades);
+        discordLastUpdEl.textContent = lastDate || '—';
+    }
+
     setColor('discord-hero-pnl', fmtDollar(k.netPL), k.netPL);
     document.getElementById('discord-hero-pnl-sub').textContent = `${k.totalTrades} trade${k.totalTrades !== 1 ? 's' : ''}`;
     setColor('discord-hero-return', fmtPct(k.returnPct), k.returnPct);
@@ -474,8 +544,11 @@ function renderDiscord(k, trades, allK, allTrades) {
     // Inception Summary
     renderInceptionSummary('discord', allK);
 
-    // Food Chain (simplified for Discord)
+    // Food Chain
     renderFoodChain('discord', k, allK, allTrades);
+
+    // $100 Growth Comparison Chart (uses both strategies' all-time data)
+    renderGrowthComparisonFromState('chart-growth-comparison-discord', 'discord');
 }
 
 // ===== EDGE ON THE FOOD CHAIN (Dynamic) =====
@@ -526,6 +599,11 @@ function renderFoodChain(method, k, allK, allTrades) {
 
     setEl(`${prefix}-period-label`, `(${periodLabel})`);
 
+    // --- Update Annual R header note with data-as-of context ---
+    const lastTradeDate = getLastTradeDate(allTrades) || 'latest upload';
+    const headerNoteEl = el(`${prefix}-annual-r-header-note`);
+    if (headerNoteEl) headerNoteEl.textContent = `extrapolated · ${k.totalTrades} trades · as of ${lastTradeDate}`;
+
     // --- Your Strategy Row ---
     const edgeSign = edgeR >= 0 ? '+' : '';
 
@@ -540,12 +618,14 @@ function renderFoodChain(method, k, allK, allTrades) {
     // Summary callout: explicit math so the user knows exactly how Annual R was derived
     const strategyLabel = method === 'active' ? 'ECFS Active (MES)' : 'Discord Selective (ES)';
     const riskLabel = method === 'active' ? '$100' : '$500';
+    const dataAsOf = `<span style="color:#9ca3af;font-weight:normal;"><i class="fas fa-sync-alt" style="font-size:9px;margin-right:3px;"></i>Extrapolated from <strong>${k.totalTrades} all-time trades</strong> as of ${lastTradeDate} · updated weekly with new data</span>`;
     setHTML(`${prefix}-summary-text`,
         `<strong style="color:${accentColor}">${strategyLabel}</strong> · ${periodLabel}: ` +
         `<strong>${edgeSign}${edgeR.toFixed(1)}%R</strong> edge/trade × ` +
         `<strong>${Math.round(tradesPerMonth)}</strong> trades/mo × 12 = ` +
         `<strong style="color:${accentColor}">≈${annualR.toFixed(0)} R/year</strong> ` +
-        `(${annualR.toFixed(0)}R × ${riskLabel} = $${Math.abs(annualR * riskBudget).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')})`
+        `(${annualR.toFixed(0)}R × ${riskLabel} = $${Math.abs(annualR * riskBudget).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')})<br>` +
+        dataAsOf
     );
 
     // --- Edge Derivation ---
@@ -623,20 +703,30 @@ function renderFoodChain(method, k, allK, allTrades) {
         });
     }
 
-    // Math formula subtitle
-    setEl(`${prefix}-math-formula`, `Return = ${edgeSign}${edgeR.toFixed(1)}%R × Risk$/Trade × ${Math.round(tradesPerYear)} trades/yr`);
+    // Math formula subtitle — with data-as-of context
+    setHTML(`${prefix}-math-formula`, `Return = ${edgeSign}${edgeR.toFixed(1)}%R × Risk$/Trade × ${Math.round(tradesPerYear)} trades/yr <span style="color:#6b7280;font-size:9px;font-weight:normal;">· extrapolated from ${k.totalTrades} trades as of ${lastTradeDate}</span>`);
+
+    // Scale subtitle: add data confidence note with data-as-of
+    const confidence = k.totalTrades < 30 ? '⚠️ Early projection' : k.totalTrades < 100 ? 'Developing confidence' : '✅ Statistically significant';
+    const confColor = k.totalTrades < 30 ? '#f59e0b' : k.totalTrades < 100 ? '#60a5fa' : '#22c55e';
+    setHTML(`${prefix}-scale-subtitle`,
+        `<strong style="color:${confColor}">${confidence}</strong> · Extrapolated from <strong>${k.totalTrades} all-time trades</strong> as of <strong>${lastTradeDate}</strong>. ` +
+        `Returns multiply linearly with risk taken (not compounded). ` +
+        `<span style="color:#60a5fa;">These projections update automatically every week as new trade data is loaded.</span>` +
+        (k.totalTrades < 50 ? ` <span style="color:#f59e0b;">Sample size is small; projections stabilize with 100+ trades.</span>` : '')
+    );
 
     // --- What R Means ---
     setEl(`${prefix}-annual-r-label`, `${annualR.toFixed(0)} R`);
     setEl(`${prefix}-r-example1`, `For ${(riskBudget / accountSize * 100).toFixed(1)}% risk on $${(accountSize / 1000).toFixed(0)}K account, R = $${riskBudget}`);
-    setEl(`${prefix}-r-example2`, `${annualR.toFixed(0)} R × $${riskBudget} = $${Math.abs(annualR * riskBudget).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}/year at ${(riskBudget / accountSize * 100).toFixed(1)}% risk`);
+    setEl(`${prefix}-r-example2`, `${annualR.toFixed(0)} R × $${riskBudget} = $${Math.abs(annualR * riskBudget).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}/year at ${(riskBudget / accountSize * 100).toFixed(1)}% risk (extrapolated from all-time data as of ${lastTradeDate})`);
 
     // Key insight
     const edgeVsCasino = 5.26 > 0 ? (edgeR / 5.26).toFixed(1) : '—';
     const edgeVsHFT = 0.017 > 0 ? (edgeR / 0.017).toFixed(0) : '—';
 
     if (edgeR > 0) {
-        setEl(`${prefix}-key-insight`, `Your ${edgeSign}${edgeR.toFixed(1)}%R edge is ${edgeVsCasino}× a casino's edge — returns grow proportionally with risk taken.`);
+        setHTML(`${prefix}-key-insight`, `Your ${edgeSign}${edgeR.toFixed(1)}%R edge is ${edgeVsCasino}× a casino's edge — returns grow proportionally with risk taken. <span style="font-size:9px;color:#6b7280;">Data as of ${lastTradeDate}, updated weekly.</span>`);
     } else if (edgeR < 0) {
         setEl(`${prefix}-key-insight`, `Edge is currently negative. More trades or better risk management needed to establish a positive expectancy.`);
     } else {
@@ -655,6 +745,268 @@ function renderFoodChain(method, k, allK, allTrades) {
     renderFoodChainChart(`${prefix}-position-chart`, k, method);
 }
 
+// Helper: compute annual R from all-time trades for a given method
+function computeAnnualRFromAllTrades(method) {
+    const trades = state[method].allTrades;
+    if (!trades || trades.length === 0) return 0;
+    const risk = method === 'active' ? ECFS_RISK : DISCORD_RISK;
+    const ppt = method === 'active' ? ECFS_PPT : DISCORD_PPT;
+    const kpis = calculateKPIs(trades, risk, ppt);
+    if (!kpis || kpis.totalTrades < 1) return 0;
+    const evR = kpis.evPlannedR / 100;
+    const tradingDays = kpis.tradingDays.length || 1;
+    const tradesPerDay = kpis.totalTrades / tradingDays;
+    return evR * tradesPerDay * 21 * 12;
+}
+
+// ===== MONTE CARLO MAX DRAWDOWN SIMULATION =====
+// Resamples trade outcomes (as %R) with replacement over a 1-year horizon,
+// tracks max drawdown in each simulation, returns percentile-based DD estimate.
+function monteCarloMaxDD(method, { simulations = 5000, percentile = 95 } = {}) {
+    const trades = state[method].allTrades;
+    if (!trades || trades.length < 5) return null; // need minimum sample
+
+    const riskBudget = method === 'active' ? ECFS_RISK : DISCORD_RISK;
+    const kpis = calculateKPIs(trades, riskBudget, method === 'active' ? ECFS_PPT : DISCORD_PPT);
+    if (!kpis || kpis.totalTrades < 5) return null;
+
+    // Build outcome array in R-multiples (dollarPL / riskBudget)
+    const outcomesR = trades.map(t => t.dollarPL / riskBudget);
+
+    // Estimate trades per year from data
+    const tradingDays = kpis.tradingDays.length || 1;
+    const tradesPerDay = kpis.totalTrades / tradingDays;
+    const tradesPerYear = Math.round(tradesPerDay * 252);
+
+    // Seeded random for reproducibility (simple LCG)
+    let seed = 42;
+    const rand = () => { seed = (seed * 1664525 + 1013904223) & 0xFFFFFFFF; return (seed >>> 0) / 0xFFFFFFFF; };
+
+    const maxDDs = []; // in R-multiples
+
+    for (let sim = 0; sim < simulations; sim++) {
+        let cumR = 0, peakR = 0, maxDDR = 0;
+
+        for (let t = 0; t < tradesPerYear; t++) {
+            // Random resample with replacement
+            const idx = Math.floor(rand() * outcomesR.length);
+            cumR += outcomesR[idx];
+            if (cumR > peakR) peakR = cumR;
+            const dd = peakR - cumR;
+            if (dd > maxDDR) maxDDR = dd;
+        }
+        maxDDs.push(maxDDR);
+    }
+
+    // Sort ascending to get percentiles
+    maxDDs.sort((a, b) => a - b);
+
+    const p50Idx = Math.floor(simulations * 0.50);
+    const p95Idx = Math.floor(simulations * (percentile / 100));
+    const p99Idx = Math.floor(simulations * 0.99);
+
+    const medianDDR = maxDDs[p50Idx];
+    const ddAtPercentile = maxDDs[p95Idx];
+    const worstCaseDDR = maxDDs[p99Idx];
+
+    // Convert R to % of starting balance
+    const ddPct = (ddAtPercentile * riskBudget / STARTING_BALANCE) * 100;
+    const medianDDPct = (medianDDR * riskBudget / STARTING_BALANCE) * 100;
+    const worstDDPct = (worstCaseDDR * riskBudget / STARTING_BALANCE) * 100;
+
+    return {
+        percentile,
+        simulations,
+        tradesPerYear,
+        sampleSize: outcomesR.length,
+        ddR: ddAtPercentile,                    // max DD in R-multiples at given percentile
+        ddPct: ddPct,                           // max DD as % of account at given percentile
+        ddDollars: ddAtPercentile * riskBudget,  // max DD in dollars at given percentile
+        medianDDPct,                            // 50th percentile DD %
+        worstDDPct,                             // 99th percentile DD %
+        medianDDR: medianDDR,
+        worstDDR: worstCaseDDR
+    };
+}
+
+// Wrapper: always computes both strategies from all-time data
+function renderGrowthComparisonFromState(containerId, suffix) {
+    const ecfsAnnualR = computeAnnualRFromAllTrades('active');
+    const discordAnnualR = computeAnnualRFromAllTrades('discord');
+    renderGrowthComparison(containerId, ecfsAnnualR, discordAnnualR, suffix);
+}
+
+// ===== $100 GROWTH COMPARISON CHART =====
+function renderGrowthComparison(containerId, ecfsAnnualR, discordAnnualR, suffix) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    // Compute weekly return rates from Annual R
+    // Annual R at 0.5% risk = annualR * 0.005 (return as fraction of account per year)
+    // Weekly compounding: (1 + weeklyRate)^52 = 1 + annualRate
+    const spyAnnual = 0.146; // 14.6% CAGR — S&P 500 total return (with dividends reinvested), 15-year average (2011–2025)
+    const ecfsAnnual = ecfsAnnualR * 0.005; // Annual R × 0.5% risk = fractional return
+    const discordAnnual = discordAnnualR * 0.005;
+
+    const spyWeekly = Math.pow(1 + spyAnnual, 1/52) - 1;
+    const ecfsWeekly = Math.pow(1 + Math.max(ecfsAnnual, -0.99), 1/52) - 1;
+    const discordWeekly = Math.pow(1 + Math.max(discordAnnual, -0.99), 1/52) - 1;
+
+    const weeks = 260; // 5 years × 52 weeks
+    const labels = [];
+    const spyData = [];
+    const ecfsData = [];
+    const discordData = [];
+
+    let spyVal = 100, ecfsVal = 100, discordVal = 100;
+    for (let w = 0; w <= weeks; w++) {
+        if (w % 4 === 0 || w === weeks) { // monthly data points for smoother chart
+            const yr = (w / 52).toFixed(1);
+            labels.push(w % 52 === 0 ? `Year ${Math.round(w/52)}` : '');
+            spyData.push(parseFloat(spyVal.toFixed(2)));
+            ecfsData.push(parseFloat(ecfsVal.toFixed(2)));
+            discordData.push(parseFloat(discordVal.toFixed(2)));
+        }
+        spyVal *= (1 + spyWeekly);
+        ecfsVal *= (1 + ecfsWeekly);
+        discordVal *= (1 + discordWeekly);
+    }
+
+    // Update summary boxes
+    const fmtGrowth = (v) => `$100 → $${v.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+    const setT = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+    const setH = (id, val) => { const e = document.getElementById(id); if (e) e.innerHTML = val; };
+    setT(`growth-spy-${suffix}`, fmtGrowth(spyData[spyData.length - 1]));
+    setT(`growth-ecfs-${suffix}`, fmtGrowth(ecfsData[ecfsData.length - 1]));
+    setT(`growth-discord-${suffix}`, fmtGrowth(discordData[discordData.length - 1]));
+
+    // Update risk/drawdown context under each strategy box — Monte Carlo simulated
+    const ecfsMC = monteCarloMaxDD('active');
+    const discordMC = monteCarloMaxDD('discord');
+
+    if (ecfsMC) {
+        setH(`growth-dd-ecfs-${suffix}`,
+            `<i class="fas fa-dice mr-0.5"></i>Est. Max DD: <strong>${ecfsMC.ddPct.toFixed(1)}%</strong> ` +
+            `<span style="color:#6b7280;font-size:8px;">(Monte Carlo ${ecfsMC.percentile}th %ile · ${ecfsMC.simulations.toLocaleString()} sims · ${ecfsMC.sampleSize} trades)</span>`);
+    }
+    if (discordMC) {
+        setH(`growth-dd-discord-${suffix}`,
+            `<i class="fas fa-dice mr-0.5"></i>Est. Max DD: <strong>${discordMC.ddPct.toFixed(1)}%</strong> ` +
+            `<span style="color:#6b7280;font-size:8px;">(Monte Carlo ${discordMC.percentile}th %ile · ${discordMC.simulations.toLocaleString()} sims · ${discordMC.sampleSize} trades)</span>`);
+    }
+
+    // Update growth subtitle with data-as-of context
+    const activeDate = getLastTradeDate(state.active.allTrades) || 'latest';
+    const discordDate = getLastTradeDate(state.discord.allTrades) || 'latest';
+    const activeCount = state.active.allTrades ? state.active.allTrades.length : 0;
+    const discordCount = state.discord.allTrades ? state.discord.allTrades.length : 0;
+    const latestDate = activeDate !== 'latest' ? activeDate : discordDate;
+    setH(`growth-subtitle-${suffix}`,
+        `Annual R extrapolated from <strong style="color:#60a5fa;">${activeCount + discordCount} all-time trades</strong> ` +
+        `(ECFS: ${activeCount}, Discord: ${discordCount}) as of <strong style="color:#60a5fa;">${latestDate}</strong>. ` +
+        `Compounded weekly at minimum 0.5% risk per trade. S&P 500 uses 14.6% CAGR (15-year avg total return with dividends, 2011\u20132025 — best-case passive benchmark). ` +
+        `<span style="color:#60a5fa;">Updated weekly with new trade data.</span>`
+    );
+
+    // ECharts option
+    const chartKey = `growth-${suffix}`;
+    if (chartInstances[chartKey]) {
+        chartInstances[chartKey].dispose();
+    }
+    const chart = echarts.init(container);
+    chartInstances[chartKey] = chart;
+
+    const option = {
+        backgroundColor: 'transparent',
+        tooltip: {
+            trigger: 'axis',
+            backgroundColor: 'rgba(10, 22, 40, 0.95)',
+            borderColor: 'rgba(212, 175, 55, 0.3)',
+            textStyle: { color: '#fff', fontSize: 11 },
+            formatter: function(params) {
+                const weekIdx = params[0].dataIndex;
+                const approxWeek = weekIdx * 4;
+                const yr = (approxWeek / 52).toFixed(1);
+                let html = `<div style="font-weight:bold;margin-bottom:4px;">Year ${yr}</div>`;
+                params.forEach(p => {
+                    html += `<div style="display:flex;justify-content:space-between;gap:16px;">`;
+                    html += `<span>${p.marker} ${p.seriesName}</span>`;
+                    html += `<span style="font-weight:bold;">$${p.value.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</span>`;
+                    html += `</div>`;
+                });
+                return html;
+            }
+        },
+        legend: {
+            data: ['S&P 500', 'ECFS Active', 'Discord Selective'],
+            top: 0,
+            textStyle: { color: '#9ca3af', fontSize: 10 },
+            itemWidth: 12,
+            itemHeight: 8
+        },
+        grid: { top: 35, right: 15, bottom: 25, left: 55 },
+        xAxis: {
+            type: 'category',
+            data: labels,
+            axisLine: { lineStyle: { color: '#374151' } },
+            axisLabel: { color: '#6b7280', fontSize: 10 },
+            axisTick: { show: false }
+        },
+        yAxis: {
+            type: 'log',
+            min: 80,
+            axisLine: { show: false },
+            splitLine: { lineStyle: { color: 'rgba(75, 85, 99, 0.2)' } },
+            axisLabel: {
+                color: '#6b7280',
+                fontSize: 10,
+                formatter: (v) => `$${v >= 1000 ? (v/1000).toFixed(0) + 'K' : v}`
+            }
+        },
+        series: [
+            {
+                name: 'S&P 500',
+                type: 'line',
+                data: spyData,
+                smooth: true,
+                symbol: 'none',
+                lineStyle: { color: '#6b7280', width: 2, type: 'dashed' },
+                areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                    { offset: 0, color: 'rgba(107, 114, 128, 0.1)' },
+                    { offset: 1, color: 'rgba(107, 114, 128, 0)' }
+                ])}
+            },
+            {
+                name: 'ECFS Active',
+                type: 'line',
+                data: ecfsData,
+                smooth: true,
+                symbol: 'none',
+                lineStyle: { color: '#d4af37', width: 2.5 },
+                areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                    { offset: 0, color: 'rgba(212, 175, 55, 0.15)' },
+                    { offset: 1, color: 'rgba(212, 175, 55, 0)' }
+                ])}
+            },
+            {
+                name: 'Discord Selective',
+                type: 'line',
+                data: discordData,
+                smooth: true,
+                symbol: 'none',
+                lineStyle: { color: '#60a5fa', width: 2.5 },
+                areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                    { offset: 0, color: 'rgba(96, 165, 250, 0.15)' },
+                    { offset: 1, color: 'rgba(96, 165, 250, 0)' }
+                ])}
+            }
+        ]
+    };
+
+    chart.setOption(option);
+    window.addEventListener('resize', () => chart.resize());
+}
+
 // Build the food chain comparison table, sorted by Annual R descending
 function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, periodLabel, accentColor) {
     const tbody = document.getElementById(`${prefix}-table-body`);
@@ -663,6 +1015,8 @@ function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, pe
     const edgeSign = edgeR >= 0 ? '+' : '';
     const strategyName = method === 'active' ? 'ECFS Active' : 'Discord Selective';
     const icon = method === 'active' ? 'fa-bolt' : 'fa-comments';
+    const lastDate = getLastTradeDate(state[method].allTrades) || 'latest';
+    const totalTrades = state[method].allTrades ? state[method].allTrades.length : 0;
 
     // Benchmark data with sortable Annual R values
     const benchmarks = [
@@ -706,6 +1060,13 @@ function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, pe
             </tr>`;
         }
     });
+
+    // Footnote row — data-as-of and extrapolation note
+    html += `<tr>
+        <td colspan="4" class="px-3 py-2 text-center" style="border-top: 1px solid rgba(107,114,128,0.2);">
+            <span style="color: #6b7280; font-size: 10px;">Annual R is extrapolated from ${totalTrades} trades as of ${lastDate}. Updated weekly with new trade data — projections recalculate automatically.</span>
+        </td>
+    </tr>`;
 
     tbody.innerHTML = html;
 }
@@ -842,7 +1203,7 @@ function renderInceptionSummary(method, allK) {
 
 // ===== COMPARE TAB =====
 // ===== COMPARE PERIOD CONTROLS =====
-let comparePeriod = 'weekly';
+let comparePeriod = 'alltime';
 
 function setComparePeriod(period) {
     comparePeriod = period;
@@ -1775,6 +2136,13 @@ document.addEventListener('DOMContentLoaded', async function () {
         state.active.snapshots = await DB.loadWeeklySnapshots('active');
         state.discord.snapshots = await DB.loadWeeklySnapshots('discord');
     } catch (e) { console.error('Error loading snapshots:', e); }
+
+    // Re-render growth charts now that BOTH strategies' data is available
+    // (First render may have had missing cross-strategy data due to load order)
+    if (state.active.allTrades.length > 0 || state.discord.allTrades.length > 0) {
+        renderGrowthComparisonFromState('chart-growth-comparison-active', 'active');
+        renderGrowthComparisonFromState('chart-growth-comparison-discord', 'discord');
+    }
 });
 
 // ===== SAMPLE DATA BANNER =====
