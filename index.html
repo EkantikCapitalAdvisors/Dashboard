@@ -126,9 +126,8 @@
                     <a href="#" onclick="switchExecution('compare'); return false;" class="text-gray-300 hover:text-[#d4af37] transition-colors text-sm font-medium flex items-center" id="nav-compare">
                         <i class="fas fa-exchange-alt mr-1.5 text-xs"></i><span class="hidden sm:inline">Comparison</span><span class="sm:hidden">Compare</span>
                     </a>
-                    <!-- Divider -->
+                    <template id="strategies-menu-disabled">
                     <div class="hidden sm:block w-px h-5 bg-gray-700"></div>
-                    <!-- Ekantik Investment Strategies Dropdown -->
                     <div class="relative group">
                         <button class="inline-flex items-center px-4 py-2 sm:px-5 sm:py-2.5 gradient-gold text-[#0a1628] font-bold text-xs sm:text-sm rounded-lg hover:shadow-lg hover:shadow-[#d4af37]/50 transition-all">
                             <i class="fas fa-landmark mr-1.5 text-xs"></i><span class="hidden sm:inline">Ekantik Investment Strategies</span><span class="sm:hidden">Strategies</span>
@@ -157,6 +156,7 @@
                             </div>
                         </div>
                     </div>
+                    </template>
                 </nav>
             </div>
         </div>
@@ -1544,7 +1544,8 @@
         </div>
     </section>
 
-    <!-- CTA Section — Strategy Chooser -->
+    <!-- CTA Section — Strategy Chooser (HIDDEN — performance-only page) -->
+    <template id="cta-strategy-chooser-disabled">
     <section class="py-16 bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border-t border-b border-[#d4af37]/20 relative overflow-hidden">
         <div class="absolute inset-0 opacity-10">
             <div class="absolute top-10 left-1/4 w-64 h-64 bg-[#d4af37]/20 rounded-full blur-3xl"></div>
@@ -1671,6 +1672,7 @@
             </div>
         </div>
     </section>
+    </template>
 
     <!-- Footer -->
     <footer id="compliance-footer" class="py-10 bg-[#0d1d35]/80 border-t border-[#d4af37]/20">
