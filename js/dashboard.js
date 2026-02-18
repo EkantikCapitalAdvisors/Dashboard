@@ -608,7 +608,7 @@ function renderFoodChain(method, k, allK, allTrades) {
     const edgeSign = edgeR >= 0 ? '+' : '';
 
     // Build sorted food chain table (ECFS Active has table, ECFS Selective has stat boxes)
-    renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, periodLabel, accentColor);
+    renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, periodLabel, accentColor, winRate, rr);
 
     // Also set standalone stat elements (used by ECFS Selective simplified layout)
     setEl(`${prefix}-edge-per-trade`, `${edgeSign}${edgeR.toFixed(1)}%R`);
@@ -900,6 +900,47 @@ function renderGrowthComparison(containerId, ecfsAnnualR, discordAnnualR, suffix
             `<span style="color:#6b7280;font-size:8px;">(Monte Carlo ${discordMC.percentile}th %ile · ${discordMC.simulations.toLocaleString()} sims · ${discordMC.sampleSize} trades)</span>`);
     }
 
+    // ===== RETURN-TO-PAIN DYNAMIC UPDATE =====
+    // Use the better-performing strategy's annual R (not summed — investor runs one or both,
+    // but R is per-strategy, not additive on the same capital)
+    const representativeAnnualR = Math.round(Math.max(ecfsAnnualR, discordAnnualR));
+    
+    // For EPIG drawdown, use the worse of the two MC 95th-percentile drawdowns (in R)
+    // Conservative: shows the larger single-strategy drawdown, not summed
+    let epigDDR = null;
+    let epigMCSims = 0;
+    let epigMCSample = 0;
+    if (ecfsMC && discordMC) {
+        epigDDR = Math.max(ecfsMC.ddR, discordMC.ddR); // worst single-strategy DD
+        epigMCSims = Math.max(ecfsMC.simulations, discordMC.simulations);
+        epigMCSample = ecfsMC.sampleSize + discordMC.sampleSize;
+    } else if (ecfsMC) {
+        epigDDR = ecfsMC.ddR;
+        epigMCSims = ecfsMC.simulations;
+        epigMCSample = ecfsMC.sampleSize;
+    } else if (discordMC) {
+        epigDDR = discordMC.ddR;
+        epigMCSims = discordMC.simulations;
+        epigMCSample = discordMC.sampleSize;
+    }
+
+    if (epigDDR !== null && representativeAnnualR > 0) {
+        const rtpRatio = (representativeAnnualR / epigDDR).toFixed(1);
+        const ddRRounded = epigDDR.toFixed(1);
+
+        // Data comparison cards
+        setH('rtp-annual-r', `~${representativeAnnualR}R <span class="text-emerald-400 text-lg">↑</span>`);
+        setH('rtp-mc-dd', `~${ddRRounded}R <span class="text-red-400 text-lg">↓</span>`);
+        setH('rtp-ratio-highlight', `≈ ${rtpRatio}:1`);
+        setT('rtp-ratio-highlight-sub', `${rtpRatio} units gain per 1 unit pain`);
+
+        // Footnote
+        setH('rtp-insight-mc-note',
+            `Monte Carlo simulation (${epigMCSims.toLocaleString()} runs, ` +
+            `95th percentile, ${epigMCSample} trades). Updated weekly.`
+        );
+    }
+
     // Update growth subtitle with data-as-of context
     const activeDate = getLastTradeDate(state.active.allTrades) || 'latest';
     const discordDate = getLastTradeDate(state.discord.allTrades) || 'latest';
@@ -1013,7 +1054,7 @@ function renderGrowthComparison(containerId, ecfsAnnualR, discordAnnualR, suffix
 }
 
 // Build the food chain comparison table, sorted by Annual R descending
-function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, periodLabel, accentColor) {
+function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, periodLabel, accentColor, winRate, rr) {
     const tbody = document.getElementById(`${prefix}-table-body`);
     if (!tbody) return;
 
@@ -1023,19 +1064,26 @@ function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, pe
     const lastDate = getLastTradeDate(state[method].allTrades) || 'latest';
     const totalTrades = state[method].allTrades ? state[method].allTrades.length : 0;
 
-    // Benchmark data with sortable Annual R values
+    // Kelly Criterion: K% = W - (1-W)/R  where W = win rate, R = avg win / avg loss
+    // For user's strategy, compute from actual data; for benchmarks, use known industry estimates
+    const userKelly = (rr > 0 && winRate > 0) ? ((winRate / 100) - ((1 - winRate / 100) / rr)) * 100 : 0;
+    const userKellyLabel = userKelly > 0 ? `${userKelly.toFixed(1)}%` : 'N/A';
+
+    // Benchmark data with sortable Annual R values and Kelly %
     const benchmarks = [
-        { name: 'Casino – American Roulette', edge: '+5.26%', trades: '≥2,400', annualR: 1500, annualRLabel: '≈1,500 R', isYou: false },
-        { name: 'High-Frequency Market-Making', edge: '+0.017%', trades: '≈100,000+', annualR: 26, annualRLabel: '≈26 R', isYou: false },
-        { name: 'Stat-Arb Pairs / Baskets', edge: '+0.5–2%', trades: '200–500', annualR: 42, annualRLabel: '≈42 R', isYou: false },
-        { name: 'Trend-Following CTAs', edge: '+0.5–1%', trades: '10–30', annualR: 56, annualRLabel: '≈56 R', isYou: false },
-        { name: 'Retail Day-Trader (median)', edge: 'negative', trades: '500+', annualR: -30, annualRLabel: '−30 R', isYou: false },
+        { name: 'Casino – American Roulette', edge: '+5.26%', trades: '≥2,400', annualR: 1500, annualRLabel: '≈1,500 R', kelly: '2.7%', kellyNote: 'W=47.4%, R=1:1', isYou: false },
+        { name: 'High-Frequency Market-Making', edge: '+0.017%', trades: '≈100,000+', annualR: 26, annualRLabel: '≈26 R', kelly: '~0.01%', kellyNote: 'tiny edge, massive volume', isYou: false },
+        { name: 'Stat-Arb Pairs / Baskets', edge: '+0.5–2%', trades: '200–500', annualR: 42, annualRLabel: '≈42 R', kelly: '3–8%', kellyNote: 'W≈55%, R≈1.2', isYou: false },
+        { name: 'Trend-Following CTAs', edge: '+0.5–1%', trades: '10–30', annualR: 56, annualRLabel: '≈56 R', kelly: '5–15%', kellyNote: 'W≈35%, R≈2.5', isYou: false },
+        { name: 'Retail Day-Trader (median)', edge: 'negative', trades: '500+', annualR: -30, annualRLabel: '−30 R', kelly: '0%', kellyNote: 'negative edge', isYou: false },
         {
             name: strategyName,
             edge: `${edgeSign}${edgeR.toFixed(1)}%R`,
             trades: `≈${Math.round(tradesPerMonth)}`,
             annualR: annualR,
             annualRLabel: `≈${annualR.toFixed(0)} R`,
+            kelly: userKellyLabel,
+            kellyNote: `W=${winRate.toFixed(0)}%, R=${rr.toFixed(1)}`,
             isYou: true,
             periodLabel: periodLabel
         }
@@ -1053,6 +1101,7 @@ function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, pe
                 <td style="color: ${accentColor}" class="font-bold text-right px-3 py-2.5 border-b border-gray-700/20">${b.edge}</td>
                 <td style="color: ${accentColor}" class="font-bold text-right px-3 py-2.5 border-b border-gray-700/20">${b.trades}</td>
                 <td style="color: ${accentColor}" class="font-bold text-right px-3 py-2.5 border-b border-gray-700/20">${b.annualRLabel}</td>
+                <td style="color: ${accentColor}" class="font-bold text-right px-3 py-2.5 border-b border-gray-700/20">${b.kelly} <span class="text-[9px] font-normal block" style="color: #9ca3af">${b.kellyNote}</span></td>
             </tr>`;
         } else {
             const edgeColor = b.annualR >= 0 ? '#4ade80' : '#f87171';
@@ -1062,14 +1111,15 @@ function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, pe
                 <td class="text-right px-3 py-2 border-b border-gray-700/20" style="color: ${edgeColor}">${b.edge}</td>
                 <td class="text-right px-3 py-2 border-b border-gray-700/20" style="color: #9ca3af">${b.trades}</td>
                 <td class="text-right px-3 py-2 border-b border-gray-700/20" style="color: ${annualColor}">${b.annualRLabel}</td>
+                <td class="text-right px-3 py-2 border-b border-gray-700/20" style="color: #9ca3af">${b.kelly} <span style="color:#6b7280;font-size:9px;" class="block">${b.kellyNote}</span></td>
             </tr>`;
         }
     });
 
     // Footnote row — data-as-of and extrapolation note
     html += `<tr>
-        <td colspan="4" class="px-3 py-2 text-center" style="border-top: 1px solid rgba(107,114,128,0.2);">
-            <span style="color: #6b7280; font-size: 10px;">Annual R is extrapolated from ${totalTrades} trades as of ${lastDate}. Updated weekly with new trade data — projections recalculate automatically.</span>
+        <td colspan="5" class="px-3 py-2 text-center" style="border-top: 1px solid rgba(107,114,128,0.2);">
+            <span style="color: #6b7280; font-size: 10px;">Annual R is extrapolated from ${totalTrades} trades as of ${lastDate}. Kelly % = W − (1−W)/R — optimal fraction of capital per trade assuming full reinvestment. Updated weekly.</span>
         </td>
     </tr>`;
 
