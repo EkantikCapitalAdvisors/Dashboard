@@ -390,6 +390,7 @@
                                         <th class="text-right text-gray-400 font-bold px-3 py-2.5 border-b-2 border-[#d4af37]/20 bg-[#d4af37]/5">Edge/Trade</th>
                                         <th class="text-right text-gray-400 font-bold px-3 py-2.5 border-b-2 border-[#d4af37]/20 bg-[#d4af37]/5">Trades/Mo</th>
                                         <th class="text-right text-gray-400 font-bold px-3 py-2.5 border-b-2 border-[#d4af37]/20 bg-[#d4af37]/5">Annual R <span id="fc-annual-r-header-note" class="text-[9px] font-normal text-gray-500 block">extrapolated · all-time</span></th>
+                                        <th class="text-right text-gray-400 font-bold px-3 py-2.5 border-b-2 border-[#d4af37]/20 bg-[#d4af37]/5">Kelly % <span class="text-[9px] font-normal text-gray-500 block">optimal position size</span></th>
                                     </tr>
                                 </thead>
                                 <tbody id="fc-table-body"></tbody>
@@ -913,6 +914,7 @@
                                         <th class="text-right text-gray-400 font-bold px-3 py-2.5 border-b-2 border-blue-400/20 bg-blue-400/5">Edge/Trade</th>
                                         <th class="text-right text-gray-400 font-bold px-3 py-2.5 border-b-2 border-blue-400/20 bg-blue-400/5">Trades/Mo</th>
                                         <th class="text-right text-gray-400 font-bold px-3 py-2.5 border-b-2 border-blue-400/20 bg-blue-400/5">Annual R <span id="dfc-annual-r-header-note" class="text-[9px] font-normal text-gray-500 block">extrapolated · all-time</span></th>
+                                        <th class="text-right text-gray-400 font-bold px-3 py-2.5 border-b-2 border-blue-400/20 bg-blue-400/5">Kelly % <span class="text-[9px] font-normal text-gray-500 block">optimal position size</span></th>
                                     </tr>
                                 </thead>
                                 <tbody id="dfc-table-body"></tbody>
@@ -1386,7 +1388,7 @@
                             <div class="space-y-3 mb-5">
                                 <div class="flex items-center gap-2.5">
                                     <div class="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0"></div>
-                                    <span class="text-gray-300 text-sm">SPY or Cash</span>
+                                    <span class="text-gray-300 text-sm">SPY, Cash, or Mag 7 at correction levels</span>
                                 </div>
                                 <div class="flex items-center gap-2.5">
                                     <div class="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0"></div>
@@ -1399,7 +1401,7 @@
                             </div>
 
                             <div class="bg-emerald-900/15 border border-emerald-500/15 rounded-lg p-3 mb-5">
-                                <p class="text-xs"><span class="text-emerald-400 font-bold">Purpose:</span> <span class="text-gray-300">Protect principal during uncertain markets</span></p>
+                                <p class="text-xs"><span class="text-emerald-400 font-bold">Purpose:</span> <span class="text-gray-300">Protect principal — SPY/cash in normal markets, Mag 7 names only at meaningful correction levels</span></p>
                             </div>
 
                             <p class="text-3xl font-bold text-emerald-400 text-center italic">~80%</p>
@@ -1481,7 +1483,7 @@
                         <!-- Strategy A -->
                         <div class="mb-6">
                             <div class="flex items-center justify-between mb-2">
-                                <span class="text-white font-semibold text-sm">Strategy A (Core — SPY/Cash)</span>
+                                <span class="text-white font-semibold text-sm">Strategy A (Core — SPY / Cash / Mag 7 at corrections)</span>
                                 <span class="text-emerald-400 font-bold text-lg italic">~80%</span>
                             </div>
                             <div class="inline-block bg-emerald-500 text-white text-[9px] font-bold px-2.5 py-0.5 rounded mb-2 uppercase tracking-wider">Capital Preservation</div>
