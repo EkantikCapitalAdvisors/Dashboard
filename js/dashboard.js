@@ -56,17 +56,21 @@ async function handleCSVUpload(event, method) {
 
             state.active.allTrades = trades;
             state.active.isSampleData = false;
-            localStorage.setItem('ecfs-trades', JSON.stringify(trades));
-            localStorage.setItem('ecfs-filename', file.name);
-            localStorage.setItem('ecfs-upload-time', Date.now().toString());
-            // Store raw CSV for export to GitHub
-            localStorage.setItem('ecfs-raw-csv', csvText);
 
+            // Update the UI FIRST so a storage failure can never block the re-render
             const weeks = getWeeksList(trades);
             state.active.selectedWeek = weeks[0];
             populateWeekSelector('active', weeks);
             // Always reset to all-time after upload so user sees the full merged dataset
             setPeriod('active', 'alltime');
+
+            // Persist to localStorage
+            localStorage.setItem('ecfs-trades', JSON.stringify(trades));
+            localStorage.setItem('ecfs-filename', file.name);
+            localStorage.setItem('ecfs-upload-time', Date.now().toString());
+            // Raw CSV can be large — isolate so a quota error never crashes the upload
+            try { localStorage.setItem('ecfs-raw-csv', csvText); }
+            catch (e) { console.warn('Could not cache raw CSV (storage quota):', e); }
 
             const addedMsg = uniqueNew.length < newTrades.length 
                 ? ` (${uniqueNew.length} new, ${newTrades.length - uniqueNew.length} duplicates skipped)`
@@ -138,15 +142,18 @@ async function handleExcelUpload(event, method) {
 
             state.discord.allTrades = trades;
             state.discord.isSampleData = false;
-            localStorage.setItem('discord-trades', JSON.stringify(trades));
-            localStorage.setItem('discord-filename', file.name);
-            localStorage.setItem('discord-upload-time', Date.now().toString());
 
+            // Update the UI FIRST so a storage failure can never block the re-render
             const weeks = getWeeksList(trades);
             state.discord.selectedWeek = weeks[0];
             populateWeekSelector('discord', weeks);
             // Always reset to all-time after upload so user sees the full merged dataset
             setPeriod('discord', 'alltime');
+
+            // Persist to localStorage
+            localStorage.setItem('discord-trades', JSON.stringify(trades));
+            localStorage.setItem('discord-filename', file.name);
+            localStorage.setItem('discord-upload-time', Date.now().toString());
 
             showUploadSuccess('discord', `${file.name} — ${trades.length} trades parsed`);
 
