@@ -554,9 +554,9 @@ function updateLastUpdated(trades) {
         const d = new Date(latestUpload);
         document.getElementById('last-updated').textContent = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     } else {
-        // Fallback: use today's date (data was loaded from DB or sample on this session)
-        const d = new Date();
-        document.getElementById('last-updated').textContent = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        // Fallback: use last trade date — consistent with panel badges
+        const lastDate = getLastTradeDate(trades);
+        document.getElementById('last-updated').textContent = lastDate || '—';
     }
 }
 
@@ -2586,10 +2586,13 @@ document.addEventListener('DOMContentLoaded', async function () {
                     return true;
                 });
                 state.active.allTrades = uniqueDbTrades.map(dbRowToECFSTrade);
-                // Use the most recent DB record's updated_at as the upload time
-                const maxUpdated = Math.max(...dbTrades.map(r => r.updated_at || r.created_at || 0));
-                if (maxUpdated > 0 && !localStorage.getItem('ecfs-upload-time')) {
-                    localStorage.setItem('ecfs-upload-time', maxUpdated.toString());
+                // Recover upload time from upload_batch field (format: "ecfs-<timestamp>")
+                const maxBatchTime = Math.max(...dbTrades.map(r => {
+                    const ts = parseInt((r.upload_batch || '').split('-').pop() || '0');
+                    return isNaN(ts) ? 0 : ts;
+                }));
+                if (maxBatchTime > 0) {
+                    localStorage.setItem('ecfs-upload-time', maxBatchTime.toString());
                 }
                 const weeks = getWeeksList(state.active.allTrades);
                 state.active.selectedWeek = weeks[0];
@@ -2658,10 +2661,13 @@ document.addEventListener('DOMContentLoaded', async function () {
                     return true;
                 });
                 state.discord.allTrades = uniqueDbTrades.map(dbRowToDiscordTrade);
-                // Use the most recent DB record's updated_at as the upload time
-                const maxUpdated = Math.max(...dbTrades.map(r => r.updated_at || r.created_at || 0));
-                if (maxUpdated > 0 && !localStorage.getItem('discord-upload-time')) {
-                    localStorage.setItem('discord-upload-time', maxUpdated.toString());
+                // Recover upload time from upload_batch field (format: "discord-<timestamp>")
+                const maxBatchTime = Math.max(...dbTrades.map(r => {
+                    const ts = parseInt((r.upload_batch || '').split('-').pop() || '0');
+                    return isNaN(ts) ? 0 : ts;
+                }));
+                if (maxBatchTime > 0) {
+                    localStorage.setItem('discord-upload-time', maxBatchTime.toString());
                 }
                 const weeks = getWeeksList(state.discord.allTrades);
                 state.discord.selectedWeek = weeks[0];
