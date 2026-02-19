@@ -22,7 +22,18 @@ async function handleCSVUpload(event, method) {
     reader.onload = async function (e) {
         try {
             const csvText = e.target.result;
-            const trades = parseTradovateCSV(csvText);
+            const newTrades = parseTradovateCSV(csvText);
+
+            // MERGE: Combine new trades with existing historical data
+            // Dedup by entryTime+exitTime+direction to avoid duplicates on re-upload
+            const existingTrades = state.active.allTrades.filter(t => !t._isSample);
+            const existingKeys = new Set(existingTrades.map(t => `${t.entryTime}|${t.exitTime}|${t.direction}|${t.dollarPL}`));
+            const uniqueNew = newTrades.filter(t => !existingKeys.has(`${t.entryTime}|${t.exitTime}|${t.direction}|${t.dollarPL}`));
+            const trades = [...existingTrades, ...uniqueNew].sort((a, b) => {
+                const da = new Date(a.entryTime || a.date), db = new Date(b.entryTime || b.date);
+                return da - db;
+            });
+
             state.active.allTrades = trades;
             state.active.isSampleData = false;
             localStorage.setItem('ecfs-trades', JSON.stringify(trades));
@@ -35,12 +46,15 @@ async function handleCSVUpload(event, method) {
             populateWeekSelector('active', weeks);
             refreshDashboard('active');
 
-            showUploadSuccess('active', `${file.name} — ${trades.length} round-trip trades parsed`);
+            const addedMsg = uniqueNew.length < newTrades.length 
+                ? ` (${uniqueNew.length} new, ${newTrades.length - uniqueNew.length} duplicates skipped)`
+                : '';
+            showUploadSuccess('active', `${file.name} — ${trades.length} total trades${addedMsg}`);
 
-            // Save to DB in background
+            // Save only NEW trades to DB in background (avoid duplicates)
             showUploadProgress('active', 'Saving to database...');
             const batchId = `ecfs-${Date.now()}`;
-            await DB.saveTrades('ecfs_trades', trades, batchId);
+            await DB.saveTrades('ecfs_trades', uniqueNew, batchId);
 
             // Generate and save weekly snapshots
             const snapshots = generateWeeklySnapshots(trades, 'active', ECFS_RISK, ECFS_PPT);
@@ -49,7 +63,7 @@ async function handleCSVUpload(event, method) {
             }
             state.active.snapshots = snapshots;
 
-            showUploadSuccess('active', `${file.name} — ${trades.length} trades parsed & saved`);
+            showUploadSuccess('active', `${trades.length} total trades saved (${uniqueNew.length} new from ${file.name})`);
             showExportButton('active');
         } catch (err) {
             showUploadError('active', 'Error parsing CSV: ' + err.message);
@@ -93,10 +107,10 @@ async function handleExcelUpload(event, method) {
 
             showUploadSuccess('discord', `${file.name} — ${trades.length} trades parsed`);
 
-            // Save to DB
+            // Save only NEW trades to DB (avoid duplicates)
             showUploadProgress('discord', 'Saving to database...');
             const batchId = `discord-${Date.now()}`;
-            await DB.saveTrades('discord_trades', trades, batchId);
+            await DB.saveTrades('discord_trades', uniqueNew, batchId);
 
             const snapshots = generateWeeklySnapshots(trades, 'discord', DISCORD_RISK, DISCORD_PPT);
             for (const snap of snapshots) {
