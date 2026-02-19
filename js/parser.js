@@ -328,9 +328,10 @@ function parseDiscordExcel(data) {
         const netDollar = parseFloat(row[8]) || 0;
         const netPoints = parseFloat(row[6]) || 0;
         const riskPoints = parseFloat(row[7]) || 0;
-        // Derive outcome from dollar P&L if the outcome column is absent
-        const outcomeRaw = String(row[9] || '').toLowerCase();
-        const isWin = outcomeRaw.includes('win') || (outcomeRaw === '' && netDollar > 0);
+        // Derive outcome from dollar P&L if the outcome column is absent or shorthand (W/L)
+        const outcomeRaw = String(row[9] || '').toLowerCase().trim();
+        const isWin = outcomeRaw.includes('win') || outcomeRaw === 'w' || outcomeRaw === 'yes'
+            || (outcomeRaw === '' && netDollar > 0);
         // Use row index as fallback tradeNum so dedup never collapses all rows to one key
         const tradeNum = row[1] != null && row[1] !== '' ? row[1] : `row-${i}`;
 
