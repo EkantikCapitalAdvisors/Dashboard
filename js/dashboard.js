@@ -77,11 +77,12 @@ async function handleCSVUpload(event, method) {
             // Always reset to all-time after upload so user sees the full merged dataset
             setPeriod('active', 'alltime');
 
-            // Persist to localStorage
-            localStorage.setItem('ecfs-trades', JSON.stringify(trades));
-            localStorage.setItem('ecfs-filename', file.name);
-            localStorage.setItem('ecfs-upload-time', Date.now().toString());
-            // Raw CSV can be large — isolate so a quota error never crashes the upload
+            // Persist to localStorage (guarded — quota errors must not abort the upload)
+            try {
+                localStorage.setItem('ecfs-trades', JSON.stringify(trades));
+                localStorage.setItem('ecfs-filename', file.name);
+                localStorage.setItem('ecfs-upload-time', Date.now().toString());
+            } catch (e) { console.warn('localStorage save failed (quota?), data safe in DB:', e); }
             try { localStorage.setItem('ecfs-raw-csv', csvText); }
             catch (e) { console.warn('Could not cache raw CSV (storage quota):', e); }
 
@@ -118,7 +119,8 @@ async function handleCSVUpload(event, method) {
                 await DB.saveWeeklySnapshot(snap);
             }
             state.active.snapshots = snapshots;
-            localStorage.setItem('ecfs-snapshots', JSON.stringify(snapshots));
+            try { localStorage.setItem('ecfs-snapshots', JSON.stringify(snapshots)); }
+            catch (e) { console.warn('Could not cache snapshots:', e); }
 
             showUploadSuccess('active', `${trades.length} total trades saved (${uniqueNew.length} new from ${file.name})`);
             showExportButton('active');
@@ -193,10 +195,12 @@ async function handleExcelUpload(event, method) {
             // Always reset to all-time after upload so user sees the full merged dataset
             setPeriod('discord', 'alltime');
 
-            // Persist to localStorage
-            localStorage.setItem('discord-trades', JSON.stringify(trades));
-            localStorage.setItem('discord-filename', file.name);
-            localStorage.setItem('discord-upload-time', Date.now().toString());
+            // Persist to localStorage (guarded — quota errors must not abort the upload)
+            try {
+                localStorage.setItem('discord-trades', JSON.stringify(trades));
+                localStorage.setItem('discord-filename', file.name);
+                localStorage.setItem('discord-upload-time', Date.now().toString());
+            } catch (e) { console.warn('localStorage save failed (quota?), data safe in DB:', e); }
 
             showUploadSuccess('discord', `${file.name} — ${trades.length} trades parsed`);
 
@@ -217,7 +221,8 @@ async function handleExcelUpload(event, method) {
                 await DB.saveWeeklySnapshot(snap);
             }
             state.discord.snapshots = snapshots;
-            localStorage.setItem('discord-snapshots', JSON.stringify(snapshots));
+            try { localStorage.setItem('discord-snapshots', JSON.stringify(snapshots)); }
+            catch (e) { console.warn('Could not cache snapshots:', e); }
 
             const addedMsg = uniqueNew.length < newTrades.length 
                 ? ` (${uniqueNew.length} new, ${newTrades.length - uniqueNew.length} duplicates skipped)`
@@ -639,20 +644,24 @@ function refreshDashboard(method) {
 
 function updateLastUpdated(trades) {
     if (!trades || trades.length === 0) return;
-    
-    // "Last Updated" = when the dashboard data was last refreshed/uploaded
-    // Check localStorage for the most recent upload timestamp
+
+    // Derive from the most recent trade date — correct on every device regardless
+    // of whether data came from localStorage, DB, or a fresh upload
+    const lastDate = getLastTradeDate(trades);
+    if (lastDate) {
+        document.getElementById('last-updated').textContent = lastDate;
+        return;
+    }
+
+    // Fallback: upload timestamp (only available on the uploading device)
     const ecfsUploadTime = parseInt(localStorage.getItem('ecfs-upload-time') || '0');
     const discordUploadTime = parseInt(localStorage.getItem('discord-upload-time') || '0');
     const latestUpload = Math.max(ecfsUploadTime, discordUploadTime);
-    
     if (latestUpload > 0) {
         const d = new Date(latestUpload);
         document.getElementById('last-updated').textContent = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     } else {
-        // Fallback: use last trade date — consistent with panel badges
-        const lastDate = getLastTradeDate(trades);
-        document.getElementById('last-updated').textContent = lastDate || '—';
+        document.getElementById('last-updated').textContent = '—';
     }
 }
 
@@ -2685,7 +2694,9 @@ document.addEventListener('DOMContentLoaded', async function () {
                 );
                 if (missing.length > 0) {
                     console.log(`[DB sync] Pushing ${missing.length} missing ECFS trades to DB`);
+                    showUploadProgress('active', `Syncing ${missing.length} missing trades to database…`);
                     await DB.saveTrades('ecfs_trades', missing, `ecfs-sync-${Date.now()}`);
+                    showUploadSuccess('active', `${lsTrades.length} trades · ${missing.length} synced to database`);
                 }
             } catch (e) { console.warn('[DB sync] ECFS background sync failed:', e); }
         })();
@@ -2778,7 +2789,9 @@ document.addEventListener('DOMContentLoaded', async function () {
                 const missing = lsTrades.filter(t => !dbNums.has(t.tradeNum));
                 if (missing.length > 0) {
                     console.log(`[DB sync] Pushing ${missing.length} missing Discord trades to DB`);
+                    showUploadProgress('discord', `Syncing ${missing.length} missing trades to database…`);
                     await DB.saveTrades('discord_trades', missing, `discord-sync-${Date.now()}`);
+                    showUploadSuccess('discord', `${lsTrades.length} trades · ${missing.length} synced to database`);
                 }
             } catch (e) { console.warn('[DB sync] Discord background sync failed:', e); }
         })();
