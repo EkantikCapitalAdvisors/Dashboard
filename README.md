@@ -1,7 +1,7 @@
 # Ekantik Capital — Performance Dashboard v2.9
 
 ## Project Overview
-A professional, data-driven performance dashboard for demonstrating weekly trading performance of **ECFS Active** (MES futures) and **ECFS Selective** (ES futures) trading strategies. Built for Ekantik Capital Advisors LLC.
+A professional, data-driven performance dashboard for demonstrating weekly trading performance of **ECFS Active** (MES futures) and **ECFS Aggressive** (ES futures) trading strategies. Built for Ekantik Capital Advisors LLC.
 
 **Live Landing Pages:**
 - **Cash Flow Strategy:** https://cashflow.ekantikcapital.com/
@@ -13,10 +13,10 @@ A professional, data-driven performance dashboard for demonstrating weekly tradi
 ## ✅ Completed Features
 
 ### Core Dashboard
-- **Three-tab layout**: ECFS Active (MES), ECFS Selective (ES), Compare Both
+- **Three-tab layout**: ECFS Active (MES), ECFS Aggressive (ES), Compare Both
 - **Period toggles**: This Week / This Month / All-Time views with week navigation
 - **CSV upload**: Drag-and-drop Tradovate Orders CSV for ECFS Active
-- **Excel upload**: 10-column Excel format for ECFS Selective
+- **Excel upload**: 10-column Excel format for ECFS Aggressive
 - **localStorage caching**: Instant reload without re-upload
 - **Database persistence**: Trades saved to REST API tables for cross-session access
 
@@ -66,7 +66,7 @@ A professional, data-driven performance dashboard for demonstrating weekly tradi
 - **Weekly P&L Trend** — bar + cumulative line overlay
 - **P&L Distribution Histogram** — win/loss trade distribution
 - **Performance Radar** (Compare tab) — 6-axis spider chart
-- **Food Chain Position Chart** (ECFS Active + ECFS Selective) — horizontal bar benchmark comparison
+- **Food Chain Position Chart** (ECFS Active + ECFS Aggressive) — horizontal bar benchmark comparison
 
 ### New Sections
 - **Inception-to-Date Summary** — Total P&L, Return %, Total Trades, Best/Worst Week
@@ -86,7 +86,7 @@ A professional, data-driven performance dashboard for demonstrating weekly tradi
   - "Why The Numbers Matter" — magnitude comparison, frequency × edge = dollars
   - ECharts horizontal bar chart: edge position vs. industry benchmarks
   - **All values update dynamically based on the selected performance period**
-- **Edge on the Food Chain (ECFS Selective)** — Simplified version with:
+- **Edge on the Food Chain (ECFS Aggressive)** — Simplified version with:
   - ECharts position chart
   - Quick edge stats (edge/trade, trades/mo, annual R)
   - Compact formula + returns scale + key takeaways
@@ -94,15 +94,15 @@ A professional, data-driven performance dashboard for demonstrating weekly tradi
 
 ### v2.9 — 3-Section Narrative Layout (Theory → Growth → Detail)
 
-**Both ECFS Active and ECFS Selective panels now share an identical 3-section narrative structure:**
+**Both ECFS Active and ECFS Aggressive panels now share an identical 3-section narrative structure:**
 
-#### ECFS Selective: Why 5× Risk
-- **"Why 5× Risk Per Trade?" callout box** — positioned before the edge formula in the ECFS Selective panel
+#### ECFS Aggressive: Why 5× Risk
+- **"Why 5× Risk Per Trade?" callout box** — positioned before the edge formula in the ECFS Aggressive panel
 - Explains selective execution, manual confirmation filter, and fewer-but-bigger trade philosophy
 - Three cards: Selective Execution, Manual Confirmation, Fewer Bigger Trades
-- Logic summary: ECFS Active takes every signal at $100 risk; ECFS Selective cherry-picks at $500 risk
+- Logic summary: ECFS Active takes every signal at $100 risk; ECFS Aggressive cherry-picks at $500 risk
 - Risk levels reflected accurately everywhere: growth chart boxes ("at 2.5% risk, 5× ECFS"), Compare tab context, CTA cards
-- Growth chart JS uses equal 0.5% risk for apples-to-apples comparison (ECFS Selective note shows actual 2.5%)
+- Growth chart JS uses equal 0.5% risk for apples-to-apples comparison (ECFS Aggressive note shows actual 2.5%)
 
 #### Section 1: Understanding The Edge (Theory & Concepts)
 - **Live Edge Banner**: Pulsing green dot with "Live Edge — Updated Weekly", shows all-time trade count and last-updated date (auto-populated from trade data)
@@ -117,15 +117,15 @@ A professional, data-driven performance dashboard for demonstrating weekly tradi
   - **Key insight**: Includes "Data as of [date], updated weekly" note
 
 #### Section 2: $100 Growth Comparison
-- **ECharts line chart**: 5-year projected growth of $100 invested in S&P 500 (14.6% CAGR — 15-year average total return with dividends reinvested, 2011–2025), ECFS Active, and ECFS Selective
+- **ECharts line chart**: 5-year projected growth of $100 invested in S&P 500 (14.6% CAGR — 15-year average total return with dividends reinvested, 2011–2025), ECFS Active, and ECFS Aggressive
 - Compounding model: Annual R × 0.5% risk per trade, compounded weekly over 260 weeks
 - Logarithmic Y-axis for clear visualization of exponential growth
 - Summary boxes showing final values for each strategy, with risk context:
   - **S&P 500**: Shows 14.6% CAGR with avg intra-year drawdown of −14% (15-year history)
-  - **ECFS Active / ECFS Selective**: Shows Monte Carlo simulated max drawdown (95th percentile, 5,000 simulations resampling actual trade outcomes over 1-year horizon)
+  - **ECFS Active / ECFS Aggressive**: Shows Monte Carlo simulated max drawdown (95th percentile, 5,000 simulations resampling actual trade outcomes over 1-year horizon)
 - **Monte Carlo Max Drawdown Engine** (`monteCarloMaxDD()`): Resamples trade P&L outcomes (in R-multiples) with replacement, simulates tradesPerYear paths, tracks peak-to-trough drawdown per path, returns 50th/95th/99th percentile max DD in R, %, and $
-- **Dynamic subtitle**: "Annual R extrapolated from N all-time trades (ECFS Active: X, ECFS Selective: Y) as of [date]. Updated weekly with new trade data."
-- Appears on both ECFS Active and ECFS Selective panels (cross-strategy comparison from any tab)
+- **Dynamic subtitle**: "Annual R extrapolated from N all-time trades (ECFS Active: X, ECFS Aggressive: Y) as of [date]. Updated weekly with new trade data."
+- Appears on both ECFS Active and ECFS Aggressive panels (cross-strategy comparison from any tab)
 
 #### Section 3: Detailed Performance Numbers (Collapsed by Default)
 - **CTA button**: "See Detailed Numbers — By Week, Month, or All Time" with chevron animation
@@ -163,7 +163,7 @@ A professional, data-driven performance dashboard for demonstrating weekly tradi
 ### Compliance & Sharing (v2.4 — Widely Shareable)
 - **5-layer compliance architecture** — regulatory-complete yet investor-friendly:
   1. **Welcome modal** (first visit only) — branded, clean, one-click "View Dashboard" with brief risk note + link to full disclosure. Stored in localStorage so only shown once
-  2. **Panel-specific disclaimers** — ECFS Active, ECFS Selective, and Compare panels each have compact one-line disclaimers with "Full disclosure" link
+  2. **Panel-specific disclaimers** — ECFS Active, ECFS Aggressive, and Compare panels each have compact one-line disclaimers with "Full disclosure" link
   3. **CTA section risk note** — subtle line below call-to-action buttons
   4. **Collapsible regulatory footer** — full CFTC/NFA-style disclosures (Risk, Not Investment Advice, Hypothetical Projections, Real Execution Data, CFTC Rule 4.41) hidden behind a click-to-expand toggle
   5. **Footer one-liner** — persistent "Past performance is not indicative of future results" in small text
@@ -194,7 +194,7 @@ js/parser.js            Tradovate CSV parser + Excel parser + KPI calculator + D
 js/dashboard.js         Dashboard rendering engine + charts + export + DB persistence
 images/og-dashboard.png OG image for social media sharing previews
 orders_sample.csv       Cumulative Tradovate export (grows weekly — full ECFS history)
-discord_trades.json     Cumulative ECFS Selective trades (grows weekly — full trade history)
+discord_trades.json     Cumulative ECFS Aggressive trades (grows weekly — full trade history)
 README.md               This file
 ```
 
@@ -206,7 +206,7 @@ README.md               This file
 |------|-------------|
 | `/index.html` | Main performance dashboard |
 | `tables/ecfs_trades` | REST API for ECFS trade data |
-| `tables/discord_trades` | REST API for ECFS Selective trade data |
+| `tables/discord_trades` | REST API for ECFS Aggressive trade data |
 | `tables/weekly_snapshots` | REST API for weekly summary snapshots |
 
 ---
@@ -216,7 +216,7 @@ README.md               This file
 ### Auto-Load / Demo Mode (v2.6)
 - **3-tier data loading for BOTH tabs**: localStorage (fastest) → Database API → Static file fallback
 - **ECFS Active**: Falls back to `orders_sample.csv` (full cumulative Tradovate export)
-- **ECFS Selective**: Falls back to `discord_trades.json` (cumulative trade history)
+- **ECFS Aggressive**: Falls back to `discord_trades.json` (cumulative trade history)
 - All 30+ KPIs, equity curves, charts, food chain, period toggles work immediately on both tabs
 - Shows a green "Live Results Loaded" banner with trade count
 - When the user uploads their own CSV/Excel, it replaces the sample data and saves to localStorage + DB
@@ -225,7 +225,7 @@ README.md               This file
 ### Export for GitHub Deployment (v2.7)
 - **Export buttons** appear after any successful data load (upload, cache, or DB)
 - **ECFS Active → Export**: Downloads the raw Tradovate CSV as `orders_sample.csv` — commit to GitHub
-- **ECFS Selective → Export**: Downloads all accumulated trades as `discord_trades.json` — commit to GitHub
+- **ECFS Aggressive → Export**: Downloads all accumulated trades as `discord_trades.json` — commit to GitHub
 - **Discord merge logic**: Uploading a new weekly Excel **merges** new trades with existing data (deduplication by trade ID). This means the dashboard accumulates history over time:
   - Week 1: Upload Excel (10 trades) → Export = 10 trades
   - Week 2: Upload Excel (8 new trades) → Export = 18 trades
@@ -259,9 +259,9 @@ README.md               This file
 4. Verify KPIs update correctly
 5. Click the green **Export** button → downloads `orders_sample.csv`
 
-#### Step 2: ECFS Selective
+#### Step 2: ECFS Aggressive
 1. Open your weekly Excel (10-column format) with only the **new** week's trades
-2. Go to the dashboard → ECFS Selective tab → Upload Excel
+2. Go to the dashboard → ECFS Aggressive tab → Upload Excel
 3. The dashboard **merges** new trades with existing history (duplicates are skipped)
 4. Verify the total trade count increased
 5. Click the green **Export** button → downloads `discord_trades.json` (full cumulative history)
@@ -292,7 +292,7 @@ GitHub Pages redeploys in 1–2 minutes. Done.
 - Groups by week (Mon-Fri) automatically
 
 ### Key Parameters
-| Parameter | ECFS Active | ECFS Selective |
+| Parameter | ECFS Active | ECFS Aggressive |
 |-----------|-------------|-------------------|
 | Contract | MES (Micro E-mini S&P 500) | ES (E-mini S&P 500) |
 | Point Value | $5/point | $50/point |
@@ -319,7 +319,7 @@ GitHub Pages redeploys in 1–2 minutes. Done.
 
 ### Phase 1 (Quick Wins)
 - Upload several weeks of real Tradovate data to populate historical charts
-- Fill in ECFS Selective Excel data for comparison
+- Fill in ECFS Aggressive Excel data for comparison
 - Take a dashboard screenshot for the screenshot section
 
 ### Phase 2 (Customer-Facing Polish)

@@ -64,6 +64,7 @@ async function handleCSVUpload(event, method) {
                 await DB.saveWeeklySnapshot(snap);
             }
             state.active.snapshots = snapshots;
+            localStorage.setItem('ecfs-snapshots', JSON.stringify(snapshots));
 
             showUploadSuccess('active', `${trades.length} total trades saved (${uniqueNew.length} new from ${file.name})`);
             showExportButton('active');
@@ -115,11 +116,12 @@ async function handleExcelUpload(event, method) {
             const batchId = `discord-${Date.now()}`;
             await DB.saveTrades('discord_trades', uniqueNew, batchId);
 
-            const snapshots = generateWeeklySnapshots(trades, 'discord', DISCORD_RISK, DISCORD_PPT);
+            const snapshots = generateWeeklySnapshots(trades, 'discord', DISCORD_RISK, DISCORD_PPT, DISCORD_STARTING_BALANCE);
             for (const snap of snapshots) {
                 await DB.saveWeeklySnapshot(snap);
             }
             state.discord.snapshots = snapshots;
+            localStorage.setItem('discord-snapshots', JSON.stringify(snapshots));
 
             const addedMsg = uniqueNew.length < newTrades.length 
                 ? ` (${uniqueNew.length} new, ${newTrades.length - uniqueNew.length} duplicates skipped)`
@@ -166,8 +168,11 @@ function clearData(method) {
     localStorage.removeItem(method === 'active' ? 'ecfs-trades' : 'discord-trades');
     localStorage.removeItem(method === 'active' ? 'ecfs-filename' : 'discord-filename');
     localStorage.removeItem(method === 'active' ? 'ecfs-upload-time' : 'discord-upload-time');
+    localStorage.removeItem(method === 'active' ? 'ecfs-snapshots' : 'discord-snapshots');
+    if (method === 'active') localStorage.removeItem('ecfs-raw-csv');
     state[method].allTrades = [];
     state[method].kpis = null;
+    state[method].snapshots = [];
     location.reload();
 }
 
@@ -499,11 +504,12 @@ function refreshDashboard(method) {
 
     const risk = method === 'active' ? ECFS_RISK : DISCORD_RISK;
     const ppt = method === 'active' ? ECFS_PPT : DISCORD_PPT;
-    const kpis = calculateKPIs(trades, risk, ppt);
+    const startBal = method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
+    const kpis = calculateKPIs(trades, risk, ppt, startBal);
     state[method].kpis = kpis;
 
     // Also calculate all-time KPIs for cumulative metrics
-    const allTimeKPIs = calculateKPIs(allTrades, risk, ppt);
+    const allTimeKPIs = calculateKPIs(allTrades, risk, ppt, startBal);
 
     const rangeEl = document.getElementById(`period-range-${method}`);
     if (rangeEl) {
@@ -737,7 +743,7 @@ function renderDiscord(k, trades, allK, allTrades) {
     renderWeeklyTrend('chart-weekly-trend-discord', allK.weeklyPL, 'discord');
 
     // Monthly Summary
-    renderMonthlySummary('monthly-summary-discord', allTrades, DISCORD_RISK, DISCORD_PPT);
+    renderMonthlySummary('monthly-summary-discord', allTrades, DISCORD_RISK, DISCORD_PPT, DISCORD_STARTING_BALANCE);
 
     // Trade Log
     renderDiscordTradeLog('discord-trades-body', trades);
@@ -812,16 +818,16 @@ function renderFoodChain(method, k, allK, allTrades) {
     // --- Your Strategy Row ---
     const edgeSign = edgeR >= 0 ? '+' : '';
 
-    // Build sorted food chain table (ECFS Active has table, ECFS Selective has stat boxes)
+    // Build sorted food chain table (ECFS Active has table, ECFS Aggressive has stat boxes)
     renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, periodLabel, accentColor, winRate, rr);
 
-    // Also set standalone stat elements (used by ECFS Selective simplified layout)
+    // Also set standalone stat elements (used by ECFS Aggressive simplified layout)
     setEl(`${prefix}-edge-per-trade`, `${edgeSign}${edgeR.toFixed(1)}%R`);
     setEl(`${prefix}-trades-month`, `≈${Math.round(tradesPerMonth)}`);
     setEl(`${prefix}-annual-r`, `≈${annualR.toFixed(0)} R`);
 
     // Summary callout: explicit math so the user knows exactly how Annual R was derived
-    const strategyLabel = method === 'active' ? 'ECFS Active (MES)' : 'ECFS Selective (ES)';
+    const strategyLabel = method === 'active' ? 'ECFS Active (MES)' : 'ECFS Aggressive (ES)';
     const riskLabel = method === 'active' ? '$100' : '$500';
     const dataAsOf = `<span style="color:#9ca3af;font-weight:normal;"><i class="fas fa-sync-alt" style="font-size:9px;margin-right:3px;"></i>Extrapolated from <strong>${k.totalTrades} all-time trades</strong> as of ${lastTradeDate} · updated weekly with new data</span>`;
     setHTML(`${prefix}-summary-text`,
@@ -849,15 +855,20 @@ function renderFoodChain(method, k, allK, allTrades) {
     setEl(`${prefix}-formula-result`, `EV = ${edgeSign}${(edgeR / 100).toFixed(3)}R per trade (${edgeSign}${edgeR.toFixed(1)}%R)`);
 
     // --- Returns Scaling Bars ---
-    const accountSize = STARTING_BALANCE;
+    const accountSize = method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
     const barsContainer = el(`${prefix}-returns-bars`);
     if (barsContainer) {
         // Different risk levels (% of account)
-        const riskLevels = [
+        const riskLevels = method === 'active' ? [
             { pct: 0.25, label: '0.25%' },
             { pct: 0.50, label: '0.50%' },
             { pct: 1.00, label: '1.00%' },
             { pct: 2.00, label: '2.00%' }
+        ] : [
+            { pct: 2.50, label: '2.5%' },
+            { pct: 5.00, label: '5%' },
+            { pct: 10.00, label: '10%' },
+            { pct: 15.00, label: '15%' }
         ];
 
         const maxReturn = Math.max(...riskLevels.map(r => Math.abs(evR * (accountSize * r.pct / 100) / riskBudget * tradesPerYear * riskBudget)));
@@ -956,7 +967,8 @@ function computeAnnualRFromAllTrades(method) {
     if (!trades || trades.length === 0) return 0;
     const risk = method === 'active' ? ECFS_RISK : DISCORD_RISK;
     const ppt = method === 'active' ? ECFS_PPT : DISCORD_PPT;
-    const kpis = calculateKPIs(trades, risk, ppt);
+    const startBal = method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
+    const kpis = calculateKPIs(trades, risk, ppt, startBal);
     if (!kpis || kpis.totalTrades < 1) return 0;
     const evR = kpis.evPlannedR / 100;
     const tradingDays = kpis.tradingDays.length || 1;
@@ -972,7 +984,8 @@ function monteCarloMaxDD(method, { simulations = 5000, percentile = 95 } = {}) {
     if (!trades || trades.length < 5) return null; // need minimum sample
 
     const riskBudget = method === 'active' ? ECFS_RISK : DISCORD_RISK;
-    const kpis = calculateKPIs(trades, riskBudget, method === 'active' ? ECFS_PPT : DISCORD_PPT);
+    const startBal = method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
+    const kpis = calculateKPIs(trades, riskBudget, method === 'active' ? ECFS_PPT : DISCORD_PPT, startBal);
     if (!kpis || kpis.totalTrades < 5) return null;
 
     // Build outcome array in R-multiples (dollarPL / riskBudget)
@@ -1015,9 +1028,9 @@ function monteCarloMaxDD(method, { simulations = 5000, percentile = 95 } = {}) {
     const worstCaseDDR = maxDDs[p99Idx];
 
     // Convert R to % of starting balance
-    const ddPct = (ddAtPercentile * riskBudget / STARTING_BALANCE) * 100;
-    const medianDDPct = (medianDDR * riskBudget / STARTING_BALANCE) * 100;
-    const worstDDPct = (worstCaseDDR * riskBudget / STARTING_BALANCE) * 100;
+    const ddPct = (ddAtPercentile * riskBudget / startBal) * 100;
+    const medianDDPct = (medianDDR * riskBudget / startBal) * 100;
+    const worstDDPct = (worstCaseDDR * riskBudget / startBal) * 100;
 
     return {
         percentile,
@@ -1052,7 +1065,7 @@ function renderGrowthComparison(containerId, ecfsAnnualR, discordAnnualR, suffix
     const spyAnnual = 0.146; // 14.6% CAGR — S&P 500 total return (with dividends reinvested), 15-year average (2011–2025)
     // IMPORTANT: Both strategies use 0.5% risk for apples-to-apples edge comparison.
     // This isolates edge quality (EV × frequency) from position-sizing differences.
-    // ECFS Selective's actual risk is 2.5% (5×), but comparing at the SAME risk level 
+    // ECFS Aggressive's actual risk is 10% ($500 on $5K), but comparing at the SAME risk level 
     // shows which edge is more powerful per unit of risk.
     const compareRiskPct = 0.005; // 0.5% risk — equal basis for comparison
     const ecfsAnnual = ecfsAnnualR * compareRiskPct;
@@ -1154,8 +1167,8 @@ function renderGrowthComparison(containerId, ecfsAnnualR, discordAnnualR, suffix
     const latestDate = activeDate !== 'latest' ? activeDate : discordDate;
     setH(`growth-subtitle-${suffix}`,
         `Annual R extrapolated from <strong style="color:#60a5fa;">${activeCount + discordCount} all-time trades</strong> ` +
-        `(ECFS Active: ${activeCount}, ECFS Selective: ${discordCount}) as of <strong style="color:#60a5fa;">${latestDate}</strong>. ` +
-        `Compounded weekly — all strategies compared at equal 0.5% risk per trade to isolate edge quality. ECFS Selective actually trades at 2.5% (5×) for higher absolute returns. S&P 500 uses 14.6% CAGR (15-year avg total return with dividends, 2011\u20132025). ` +
+        `(ECFS Active: ${activeCount}, ECFS Aggressive: ${discordCount}) as of <strong style="color:#60a5fa;">${latestDate}</strong>. ` +
+        `Compounded weekly — all strategies compared at equal 0.5% risk per trade to isolate edge quality. ECFS Aggressive actually trades at 10% risk ($500/trade on $5K) for higher absolute returns. S&P 500 uses 14.6% CAGR (15-year avg total return with dividends, 2011\u20132025). ` +
         `<span style="color:#60a5fa;">Updated weekly with new trade data.</span>`
     );
 
@@ -1189,7 +1202,7 @@ function renderGrowthComparison(containerId, ecfsAnnualR, discordAnnualR, suffix
             }
         },
         legend: {
-            data: ['S&P 500', 'ECFS Active', 'ECFS Selective'],
+            data: ['S&P 500', 'ECFS Active', 'ECFS Aggressive'],
             top: 0,
             textStyle: { color: '#9ca3af', fontSize: 10 },
             itemWidth: 12,
@@ -1240,7 +1253,7 @@ function renderGrowthComparison(containerId, ecfsAnnualR, discordAnnualR, suffix
                 ])}
             },
             {
-                name: 'ECFS Selective',
+                name: 'ECFS Aggressive',
                 type: 'line',
                 data: discordData,
                 smooth: true,
@@ -1264,7 +1277,7 @@ function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, pe
     if (!tbody) return;
 
     const edgeSign = edgeR >= 0 ? '+' : '';
-    const strategyName = method === 'active' ? 'ECFS Active' : 'ECFS Selective';
+    const strategyName = method === 'active' ? 'ECFS Active' : 'ECFS Aggressive';
     const icon = method === 'active' ? 'fa-bolt' : 'fa-comments';
     const lastDate = getLastTradeDate(state[method].allTrades) || 'latest';
     const totalTrades = state[method].allTrades ? state[method].allTrades.length : 0;
@@ -1355,7 +1368,7 @@ function renderFoodChainChart(containerId, k, method) {
         { name: 'Stat-Arb', edge: 1.25, color: '#6b7280' },
         { name: 'Trend-Following CTAs', edge: 0.75, color: '#6b7280' },
         { name: 'Casino Roulette', edge: 5.26, color: '#9ca3af' },
-        { name: method === 'active' ? 'ECFS Active' : 'ECFS Selective', edge: edgeR, color: accentColor }
+        { name: method === 'active' ? 'ECFS Active' : 'ECFS Aggressive', edge: edgeR, color: accentColor }
     ];
 
     // Sort by edge
@@ -1499,7 +1512,8 @@ function getCompareKPIs(method) {
 
     const risk = method === 'active' ? ECFS_RISK : DISCORD_RISK;
     const ppt = method === 'active' ? ECFS_PPT : DISCORD_PPT;
-    return calculateKPIs(trades, risk, ppt);
+    const startBal = method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
+    return calculateKPIs(trades, risk, ppt, startBal);
 }
 
 function renderCompare() {
@@ -1651,7 +1665,7 @@ function renderCompareRTable(ak, dk) {
             <tr>
                 <th class="text-left text-gray-400 font-bold px-3 py-2 border-b-2 border-[#d4af37]/20" style="background: rgba(212,175,55,0.05)">Metric</th>
                 <th class="text-right text-[#d4af37] font-bold px-3 py-2 border-b-2 border-[#d4af37]/20" style="background: rgba(212,175,55,0.05)"><i class="fas fa-bolt mr-1"></i>ECFS Active</th>
-                <th class="text-right text-blue-400 font-bold px-3 py-2 border-b-2 border-[#d4af37]/20" style="background: rgba(212,175,55,0.05)"><i class="fas fa-comments mr-1"></i>ECFS Selective</th>
+                <th class="text-right text-blue-400 font-bold px-3 py-2 border-b-2 border-[#d4af37]/20" style="background: rgba(212,175,55,0.05)"><i class="fas fa-comments mr-1"></i>ECFS Aggressive</th>
             </tr>
         </thead><tbody>`;
 
@@ -1671,7 +1685,7 @@ function renderCompareRTable(ak, dk) {
     html += `<div class="mt-3 flex items-center gap-3 text-[10px] text-gray-500 justify-center">
         <span><strong style="color:#d4af37">ECFS:</strong> 1R = $${ECFS_RISK}</span>
         <span>|</span>
-        <span><strong style="color:#60a5fa">ECFS Selective:</strong> 1R = $${DISCORD_RISK}</span>
+        <span><strong style="color:#60a5fa">ECFS Aggressive:</strong> 1R = $${DISCORD_RISK}</span>
         <span>|</span>
         <span><i class="fas fa-trophy text-[#d4af37]"></i> = winner for that metric</span>
     </div>`;
@@ -1696,12 +1710,12 @@ function renderCompareInsights(ak, dk) {
         icon: 'fa-shield-alt',
         color: '#d4af37',
         title: 'Different Risk, Same Edge Framework',
-        text: `ECFS Active risks $${ECFS_RISK}/trade (0.5% of $20K) while ECFS Selective risks $${DISCORD_RISK}/trade (2.5%). Dollar amounts differ, but R-normalized metrics tell the real story.`
+        text: `ECFS Active risks $${ECFS_RISK}/trade (0.5% of $20K) while ECFS Aggressive risks $${DISCORD_RISK}/trade (10% of $5K). Dollar amounts differ, but R-normalized metrics tell the real story.`
     });
 
     // 2. EV comparison in R
     if (ak.evPlannedR !== dk.evPlannedR) {
-        const better = ak.evPlannedR > dk.evPlannedR ? 'ECFS Active' : 'ECFS Selective';
+        const better = ak.evPlannedR > dk.evPlannedR ? 'ECFS Active' : 'ECFS Aggressive';
         const bEV = Math.max(ak.evPlannedR, dk.evPlannedR);
         const wEV = Math.min(ak.evPlannedR, dk.evPlannedR);
         insights.push({
@@ -1714,7 +1728,7 @@ function renderCompareInsights(ak, dk) {
 
     // 3. Win rate
     if (Math.abs(ak.winRate - dk.winRate) >= 1) {
-        const better = ak.winRate > dk.winRate ? 'ECFS Active' : 'ECFS Selective';
+        const better = ak.winRate > dk.winRate ? 'ECFS Active' : 'ECFS Aggressive';
         insights.push({
             icon: 'fa-trophy',
             color: '#4ade80',
@@ -1727,7 +1741,7 @@ function renderCompareInsights(ak, dk) {
     const akDDR = ak.maxDD / ECFS_RISK;
     const dkDDR = dk.maxDD / DISCORD_RISK;
     if (Math.abs(akDDR - dkDDR) > 0.5) {
-        const betterDD = akDDR < dkDDR ? 'ECFS Active' : 'ECFS Selective';
+        const betterDD = akDDR < dkDDR ? 'ECFS Active' : 'ECFS Aggressive';
         insights.push({
             icon: 'fa-arrow-trend-down',
             color: '#f87171',
@@ -1737,7 +1751,7 @@ function renderCompareInsights(ak, dk) {
     }
 
     // 5. Data confidence
-    const moreData = ak.totalTrades > dk.totalTrades ? 'ECFS Active' : 'ECFS Selective';
+    const moreData = ak.totalTrades > dk.totalTrades ? 'ECFS Active' : 'ECFS Aggressive';
     if (ak.totalTrades !== dk.totalTrades) {
         insights.push({
             icon: 'fa-database',
@@ -2217,7 +2231,7 @@ function renderRadarChart(ak, dk) {
     }
     if (dk) {
         series.push({
-            name: 'ECFS Selective',
+            name: 'ECFS Aggressive',
             type: 'radar',
             data: [{
                 value: [
@@ -2228,7 +2242,7 @@ function renderRadarChart(ak, dk) {
                     dkWinR,
                     dk.tradingDays.length > 0 ? dk.profitableDays / dk.tradingDays.length * 100 : 0
                 ],
-                name: 'ECFS Selective',
+                name: 'ECFS Aggressive',
                 lineStyle: { color: '#60a5fa', width: 2 },
                 areaStyle: { color: 'rgba(96, 165, 250, 0.15)' },
                 itemStyle: { color: '#60a5fa' }
@@ -2240,7 +2254,7 @@ function renderRadarChart(ak, dk) {
         backgroundColor: 'transparent',
         tooltip: { trigger: 'item' },
         legend: {
-            data: ['ECFS Active', 'ECFS Selective'].filter((_, i) => (i === 0 && ak) || (i === 1 && dk)),
+            data: ['ECFS Active', 'ECFS Aggressive'].filter((_, i) => (i === 0 && ak) || (i === 1 && dk)),
             textStyle: { color: '#888', fontSize: 10 },
             bottom: 0
         },
@@ -2260,7 +2274,7 @@ function renderRadarChart(ak, dk) {
 }
 
 // ===== MONTHLY PERFORMANCE SUMMARY TABLE =====
-function renderMonthlySummary(containerId, allTrades, riskBudget, ppt) {
+function renderMonthlySummary(containerId, allTrades, riskBudget, ppt, startingBalance = STARTING_BALANCE) {
     const container = document.getElementById(containerId);
     if (!container || !allTrades || allTrades.length === 0) return;
 
@@ -2292,7 +2306,7 @@ function renderMonthlySummary(containerId, allTrades, riskBudget, ppt) {
 
     for (const mk of months) {
         const mTrades = monthlyData[mk];
-        const mKPIs = calculateKPIs(mTrades, riskBudget, ppt);
+        const mKPIs = calculateKPIs(mTrades, riskBudget, ppt, startingBalance);
         cumPL += mKPIs.netPL;
 
         const parts = mk.split('/');
@@ -2559,10 +2573,46 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     // Load weekly snapshots for historical charts
-    try {
-        state.active.snapshots = await DB.loadWeeklySnapshots('active');
-        state.discord.snapshots = await DB.loadWeeklySnapshots('discord');
-    } catch (e) { console.error('Error loading snapshots:', e); }
+    // Priority: localStorage → REST API DB → regenerate from trade data
+    const tryLoadSnapshotsFromStorage = (storageKey) => {
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+            } catch (e) { console.error(`Error parsing ${storageKey}:`, e); }
+        }
+        return null;
+    };
+
+    const activeSnaps = tryLoadSnapshotsFromStorage('ecfs-snapshots');
+    const discordSnaps = tryLoadSnapshotsFromStorage('discord-snapshots');
+
+    if (activeSnaps) {
+        state.active.snapshots = activeSnaps;
+    } else {
+        try {
+            state.active.snapshots = await DB.loadWeeklySnapshots('active');
+        } catch (e) { console.error('Error loading active snapshots from DB:', e); }
+    }
+
+    if (discordSnaps) {
+        state.discord.snapshots = discordSnaps;
+    } else {
+        try {
+            state.discord.snapshots = await DB.loadWeeklySnapshots('discord');
+        } catch (e) { console.error('Error loading discord snapshots from DB:', e); }
+    }
+
+    // If snapshots are still empty, regenerate from available trade data and cache them
+    if (state.active.snapshots.length === 0 && state.active.allTrades.length > 0) {
+        state.active.snapshots = generateWeeklySnapshots(state.active.allTrades, 'active', ECFS_RISK, ECFS_PPT);
+        localStorage.setItem('ecfs-snapshots', JSON.stringify(state.active.snapshots));
+    }
+    if (state.discord.snapshots.length === 0 && state.discord.allTrades.length > 0) {
+        state.discord.snapshots = generateWeeklySnapshots(state.discord.allTrades, 'discord', DISCORD_RISK, DISCORD_PPT, DISCORD_STARTING_BALANCE);
+        localStorage.setItem('discord-snapshots', JSON.stringify(state.discord.snapshots));
+    }
 
     // Re-render growth charts now that BOTH strategies' data is available
     // (First render may have had missing cross-strategy data due to load order)
@@ -2624,11 +2674,11 @@ function exportECFSData() {
     showExportToast('ECFS JSON exported — for best results, use the raw Tradovate CSV');
 }
 
-// Export ECFS Selective data as JSON (the canonical format for GitHub)
+// Export ECFS Aggressive data as JSON (the canonical format for GitHub)
 function exportDiscordData() {
     const trades = state.discord.allTrades;
     if (!trades || trades.length === 0) {
-        alert('No ECFS Selective data to export. Upload an Excel file first.');
+        alert('No ECFS Aggressive data to export. Upload an Excel file first.');
         return;
     }
 

@@ -8,6 +8,7 @@ const ECFS_PPT = 5;          // $5 per point (MES)
 const DISCORD_RISK = 500;    // $500 per trade
 const DISCORD_PPT = 50;      // $50 per point (ES)
 const STARTING_BALANCE = 20000;
+const DISCORD_STARTING_BALANCE = 5000; // $5,000 portfolio for ECFS Aggressive (10% risk per trade)
 
 // ===== DATABASE API =====
 const DB = {
@@ -400,7 +401,7 @@ function extractDate(datetime) {
 }
 
 // ===== KPI CALCULATOR =====
-function calculateKPIs(trades, riskBudget, pointMultiplier) {
+function calculateKPIs(trades, riskBudget, pointMultiplier, startingBalance = STARTING_BALANCE) {
     if (!trades || trades.length === 0) return null;
     
     const totalTrades = trades.length;
@@ -416,7 +417,7 @@ function calculateKPIs(trades, riskBudget, pointMultiplier) {
     
     const winRate = (winCount / totalTrades * 100);
     const profitFactor = grossLosses > 0 ? grossWins / grossLosses : Infinity;
-    const returnPct = (netPL / STARTING_BALANCE * 100);
+    const returnPct = (netPL / startingBalance * 100);
     
     // EV
     const evPerTrade = netPL / totalTrades;
@@ -457,12 +458,12 @@ function calculateKPIs(trades, riskBudget, pointMultiplier) {
         if (cumPL > peak) peak = cumPL;
         const dd = peak - cumPL;
         if (dd > maxDD) maxDD = dd;
-        equityCurve.push({ time: t.exitTime || t.datetime, cumPL, balance: STARTING_BALANCE + cumPL });
+        equityCurve.push({ time: t.exitTime || t.datetime, cumPL, balance: startingBalance + cumPL });
         drawdownCurve.push({ time: t.exitTime || t.datetime, dd: -(peak - cumPL) });
     });
     currentDD = peak - cumPL;
     
-    const maxDDPct = peak > 0 ? (maxDD / (STARTING_BALANCE + peak) * 100) : (maxDD / STARTING_BALANCE * 100);
+    const maxDDPct = peak > 0 ? (maxDD / (startingBalance + peak) * 100) : (maxDD / startingBalance * 100);
     const recoveryFactor = maxDD > 0 ? netPL / maxDD : Infinity;
     
     // Streaks
@@ -540,7 +541,7 @@ function calculateKPIs(trades, riskBudget, pointMultiplier) {
 }
 
 // ===== WEEKLY SNAPSHOT GENERATOR =====
-function generateWeeklySnapshots(trades, method, riskBudget, ppt) {
+function generateWeeklySnapshots(trades, method, riskBudget, ppt, startingBalance = STARTING_BALANCE) {
     const weeklyPL = {};
     trades.forEach(t => {
         const wk = getWeekKey(t.date);
@@ -554,7 +555,7 @@ function generateWeeklySnapshots(trades, method, riskBudget, ppt) {
 
     for (const wk of weeks) {
         const wkTrades = weeklyPL[wk];
-        const wkKPIs = calculateKPIs(wkTrades, riskBudget, ppt);
+        const wkKPIs = calculateKPIs(wkTrades, riskBudget, ppt, startingBalance);
         cumPL += wkKPIs.netPL;
 
         snapshots.push({
@@ -572,8 +573,8 @@ function generateWeeklySnapshots(trades, method, riskBudget, ppt) {
             ev_actual_r: wkKPIs.evActualR,
             max_dd: wkKPIs.maxDD,
             cumulative_pl: cumPL,
-            cumulative_balance: STARTING_BALANCE + cumPL,
-            cumulative_return: (cumPL / STARTING_BALANCE * 100)
+            cumulative_balance: startingBalance + cumPL,
+            cumulative_return: (cumPL / startingBalance * 100)
         });
     }
 
