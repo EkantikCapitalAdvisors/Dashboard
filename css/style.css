@@ -17,6 +17,19 @@
     border-color: transparent !important;
 }
 
+/* Edge Timeframe Filter Buttons */
+.edge-period-btn { transition: all 0.2s ease; }
+.active-edge-period {
+    background: linear-gradient(135deg, #d4af37 0%, #f4c430 100%) !important;
+    color: #0a1628 !important;
+    border-color: transparent !important;
+}
+.active-edge-period-blue {
+    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%) !important;
+    color: #0a1628 !important;
+    border-color: transparent !important;
+}
+
 /* Week Navigation */
 .week-nav-button { transition: all 0.2s ease; }
 .week-nav-button:hover:not(:disabled) { background: rgba(212, 175, 55, 0.2); border-color: rgba(212, 175, 55, 0.5); }
