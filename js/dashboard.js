@@ -90,13 +90,27 @@ async function handleCSVUpload(event, method) {
                 : '';
             showUploadSuccess('active', `${file.name} — ${trades.length} total trades${addedMsg}`);
 
-            // Save only the NEW trades to DB (existing ones are already there from prior uploads)
-            // This prevents the DB from accumulating duplicate rows on every upload
-            if (uniqueNew.length > 0) {
-                showUploadProgress('active', 'Saving to database...');
+            // Full DB sync: ensure every merged trade is in the database.
+            // We compare against the CURRENT DB state (not just local state) so that
+            // any trade missing from the DB — whether new from this CSV or an old trade
+            // that failed to save in a prior session — gets written now.
+            // This guarantees all trades are visible from any computer/browser.
+            showUploadProgress('active', 'Syncing to database...');
+            try {
                 const batchId = `ecfs-${Date.now()}`;
-                await DB.saveTrades('ecfs_trades', uniqueNew, batchId);
-            }
+                const currentDbRows = await DB.loadTrades('ecfs_trades');
+                // Normalize dollar_pl to avoid float-precision key mismatches
+                const norm = v => Math.round(parseFloat(v) * 10000) / 10000;
+                const dbKeys = new Set(currentDbRows.map(r =>
+                    `${r.entry_time}|${r.exit_time}|${r.direction}|${norm(r.dollar_pl)}`
+                ));
+                const missingFromDb = trades.filter(t =>
+                    !dbKeys.has(`${t.entryTime}|${t.exitTime}|${t.direction}|${norm(t.dollarPL)}`)
+                );
+                if (missingFromDb.length > 0) {
+                    await DB.saveTrades('ecfs_trades', missingFromDb, batchId);
+                }
+            } catch (e) { console.warn('DB sync error (local data is safe):', e); }
 
             // Generate and save weekly snapshots
             const snapshots = generateWeeklySnapshots(trades, 'active', ECFS_RISK, ECFS_PPT);
@@ -186,12 +200,17 @@ async function handleExcelUpload(event, method) {
 
             showUploadSuccess('discord', `${file.name} — ${trades.length} trades parsed`);
 
-            // Save only the NEW trades to DB (existing ones are already there from prior uploads)
-            if (uniqueNew.length > 0) {
-                showUploadProgress('discord', 'Saving to database...');
+            // Full DB sync: ensure every merged trade is in the database.
+            showUploadProgress('discord', 'Syncing to database...');
+            try {
                 const batchId = `discord-${Date.now()}`;
-                await DB.saveTrades('discord_trades', uniqueNew, batchId);
-            }
+                const currentDbRows = await DB.loadTrades('discord_trades');
+                const dbNums = new Set(currentDbRows.map(r => r.trade_num));
+                const missingFromDb = trades.filter(t => !dbNums.has(t.tradeNum));
+                if (missingFromDb.length > 0) {
+                    await DB.saveTrades('discord_trades', missingFromDb, batchId);
+                }
+            } catch (e) { console.warn('DB sync error (local data is safe):', e); }
 
             const snapshots = generateWeeklySnapshots(trades, 'discord', DISCORD_RISK, DISCORD_PPT, DISCORD_STARTING_BALANCE);
             for (const snap of snapshots) {
