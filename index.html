@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Performance Dashboard - Weekly Results | Ekantik Capital</title>
-    <meta name="description" content="Live trading performance dashboard. Weekly updates showing real results for ECFS Active and ECFS Selective execution. Full transparency.">
-    <meta name="keywords" content="trading performance, weekly results, ECFS performance, ECFS Selective, trading dashboard">
+    <meta name="description" content="Live trading performance dashboard. Weekly updates showing real results for ECFS Active and ECFS Aggressive execution. Full transparency.">
+    <meta name="keywords" content="trading performance, weekly results, ECFS performance, ECFS Aggressive, trading dashboard">
     <meta name="robots" content="index, follow">
     <meta property="og:title" content="Performance Dashboard - Weekly Trading Results | Ekantik Capital">
     <meta property="og:description" content="Live trading performance with 30+ KPIs, equity curves, and edge analysis. Real Tradovate fills — updated weekly. Past performance is not indicative of future results.">
@@ -118,9 +118,9 @@
                     <a href="#" onclick="switchExecution('active'); return false;" class="text-[#d4af37] font-semibold text-sm flex items-center hover:text-[#d4af37] transition-colors" id="nav-active">
                         <i class="fas fa-bolt mr-1.5 text-xs"></i><span class="hidden sm:inline">ECFS Active</span><span class="sm:hidden">ECFS</span>
                     </a>
-                    <!-- Tab: ECFS Selective -->
+                    <!-- Tab: ECFS Aggressive -->
                     <a href="#" onclick="switchExecution('discord'); return false;" class="text-gray-300 hover:text-blue-400 transition-colors text-sm font-medium flex items-center" id="nav-discord">
-                        <i class="fas fa-comments mr-1.5 text-xs"></i><span class="hidden sm:inline">ECFS Selective</span><span class="sm:hidden">Select</span>
+                        <i class="fas fa-comments mr-1.5 text-xs"></i><span class="hidden sm:inline">ECFS Aggressive</span><span class="sm:hidden">Select</span>
                     </a>
                     <!-- Tab: Comparison -->
                     <a href="#" onclick="switchExecution('compare'); return false;" class="text-gray-300 hover:text-[#d4af37] transition-colors text-sm font-medium flex items-center" id="nav-compare">
@@ -209,7 +209,7 @@
                         <i class="fas fa-bolt mr-2"></i>ECFS Active (MES)
                     </button>
                     <button onclick="switchExecution('discord')" id="tab-discord" class="tab-button px-6 py-3 bg-[#0d1d35] text-gray-300 rounded-lg font-bold text-sm border-2 border-gray-600 hover:border-[#d4af37]">
-                        <i class="fas fa-comments mr-2"></i>ECFS Selective (ES)
+                        <i class="fas fa-comments mr-2"></i>ECFS Aggressive (ES)
                     </button>
                     <button onclick="switchExecution('compare')" id="tab-compare" class="tab-button px-6 py-3 bg-[#0d1d35] text-gray-300 rounded-lg font-bold text-sm border-2 border-gray-600 hover:border-[#d4af37]">
                         <i class="fas fa-balance-scale mr-2"></i>Compare Both
@@ -483,10 +483,10 @@
                             </div>
                             <div>
                                 <h3 class="text-xl font-bold text-white">$100 Invested — Where Does It Go?</h3>
-                                <p class="text-gray-400 text-xs mt-0.5">Projected 5-year growth: S&P 500 vs ECFS Active vs ECFS Selective</p>
+                                <p class="text-gray-400 text-xs mt-0.5">Projected 5-year growth: S&P 500 vs ECFS Active vs ECFS Aggressive</p>
                             </div>
                         </div>
-                        <p class="text-gray-500 text-[10px] mb-5 ml-13" id="growth-subtitle-active">All strategies compared at equal 0.5% risk per trade to isolate edge quality. ECFS Selective actually trades at 2.5% (5×). S&P 500 uses 14.6% CAGR (15yr avg with dividends).</p>
+                        <p class="text-gray-500 text-[10px] mb-5 ml-13" id="growth-subtitle-active">All strategies compared at equal 0.5% risk per trade to isolate edge quality. ECFS Aggressive actually trades at 2.5% (5×). S&P 500 uses 14.6% CAGR (15yr avg with dividends).</p>
 
                         <div id="chart-growth-comparison-active" style="height: 400px; width: 100%;"></div>
 
@@ -504,7 +504,7 @@
                                 <p class="text-[9px] text-emerald-400/70 mt-0.5" id="growth-dd-ecfs-active"><i class="fas fa-dice mr-0.5"></i>Est. Max DD: calculating…</p>
                             </div>
                             <div class="bg-blue-500/8 border border-blue-400/30 rounded-lg p-3 text-center">
-                                <p class="text-[10px] text-blue-400 font-bold">ECFS SELECTIVE</p>
+                                <p class="text-[10px] text-blue-400 font-bold">ECFS AGGRESSIVE</p>
                                 <p class="text-sm font-bold text-blue-400" id="growth-discord-active">$100 → —</p>
                                 <p class="text-[10px] text-gray-500">at 0.5% risk (equal basis)</p>
                                 <p class="text-[9px] text-blue-400/60">Actual: 2.5% (5×) → multiply by 5</p>
@@ -717,7 +717,7 @@
                     <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-blue-400/30 rounded-2xl p-6 mb-6">
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div class="mb-3 md:mb-0">
-                                <h2 class="font-playfair text-2xl sm:text-3xl font-bold text-white mb-1">ECFS Selective Execution</h2>
+                                <h2 class="font-playfair text-2xl sm:text-3xl font-bold text-white mb-1">ECFS Aggressive Execution</h2>
                                 <p class="text-gray-400 text-sm">Fewer trades, higher conviction — manually selected from Discord alerts</p>
                                 <p class="text-blue-400 text-xs mt-1"><i class="fas fa-chart-bar mr-1"></i>E-mini S&P 500 (ES) Futures | $50/point | 1 Contract | Starting: $20,000</p>
                             </div>
@@ -781,7 +781,7 @@
                             </div>
                             <div class="flex-1">
                                 <h3 class="text-lg font-bold text-white mb-2">Why 5× the Risk of ECFS Active?</h3>
-                                <p class="text-gray-300 text-sm leading-relaxed mb-4">ECFS Selective risks <strong class="text-blue-400">$500 per trade (2.5%)</strong> vs ECFS Active's <strong class="text-[#d4af37]">$100 per trade (0.5%)</strong> — on the same $20K portfolio. Here's why:</p>
+                                <p class="text-gray-300 text-sm leading-relaxed mb-4">ECFS Aggressive risks <strong class="text-blue-400">$500 per trade (2.5%)</strong> vs ECFS Active's <strong class="text-[#d4af37]">$100 per trade (0.5%)</strong> — on the same $20K portfolio. Here's why:</p>
 
                                 <div class="grid sm:grid-cols-3 gap-3 mb-4">
                                     <div class="bg-[#0a1628]/80 border border-blue-400/15 rounded-lg p-3">
@@ -808,7 +808,7 @@
                                 </div>
 
                                 <div class="bg-blue-500/8 border border-blue-400/20 rounded-lg p-3">
-                                    <p class="text-[11px] text-center"><i class="fas fa-balance-scale text-blue-400 mr-1.5"></i><strong class="text-white">The Logic:</strong> <span class="text-gray-300">ECFS Active takes <em>every</em> systematic signal at low risk ($100). ECFS Selective cherry-picks the best setups and concentrates risk ($500) — same portfolio, same capital, different execution philosophy.</span></p>
+                                    <p class="text-[11px] text-center"><i class="fas fa-balance-scale text-blue-400 mr-1.5"></i><strong class="text-white">The Logic:</strong> <span class="text-gray-300">ECFS Active takes <em>every</em> systematic signal at low risk ($100). ECFS Aggressive cherry-picks the best setups and concentrates risk ($500) — same portfolio, same capital, different execution philosophy.</span></p>
                                 </div>
                             </div>
                         </div>
@@ -1007,10 +1007,10 @@
                             </div>
                             <div>
                                 <h3 class="text-xl font-bold text-white">$100 Invested — Where Does It Go?</h3>
-                                <p class="text-gray-400 text-xs mt-0.5">Projected 5-year growth: S&P 500 vs ECFS Active vs ECFS Selective</p>
+                                <p class="text-gray-400 text-xs mt-0.5">Projected 5-year growth: S&P 500 vs ECFS Active vs ECFS Aggressive</p>
                             </div>
                         </div>
-                        <p class="text-gray-500 text-[10px] mb-5 ml-13" id="growth-subtitle-discord">All strategies compared at equal 0.5% risk per trade to isolate edge quality. ECFS Selective actually trades at 2.5% (5×). S&P 500 uses 14.6% CAGR (15yr avg with dividends).</p>
+                        <p class="text-gray-500 text-[10px] mb-5 ml-13" id="growth-subtitle-discord">All strategies compared at equal 0.5% risk per trade to isolate edge quality. ECFS Aggressive actually trades at 2.5% (5×). S&P 500 uses 14.6% CAGR (15yr avg with dividends).</p>
 
                         <div id="chart-growth-comparison-discord" style="height: 400px; width: 100%;"></div>
 
@@ -1028,7 +1028,7 @@
                                 <p class="text-[9px] text-emerald-400/70 mt-0.5" id="growth-dd-ecfs-discord"><i class="fas fa-dice mr-0.5"></i>Est. Max DD: calculating…</p>
                             </div>
                             <div class="bg-blue-500/8 border border-blue-400/30 rounded-lg p-3 text-center">
-                                <p class="text-[10px] text-blue-400 font-bold">ECFS SELECTIVE</p>
+                                <p class="text-[10px] text-blue-400 font-bold">ECFS AGGRESSIVE</p>
                                 <p class="text-sm font-bold text-blue-400" id="growth-discord-discord">$100 → —</p>
                                 <p class="text-[10px] text-gray-500">at 0.5% risk (equal basis)</p>
                                 <p class="text-[9px] text-blue-400/60">Actual: 2.5% (5×) → multiply by 5</p>
@@ -1181,12 +1181,12 @@
                 <!-- ==================== COMPARE PANEL ==================== -->
                 <div id="panel-compare" class="execution-panel hidden">
                     <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-[#d4af37]/30 rounded-2xl p-6 mb-6">
-                        <h2 class="font-playfair text-2xl sm:text-3xl font-bold text-white mb-2 text-center">ECFS Active vs ECFS Selective</h2>
+                        <h2 class="font-playfair text-2xl sm:text-3xl font-bold text-white mb-2 text-center">ECFS Active vs ECFS Aggressive</h2>
                         <p class="text-gray-400 text-center text-sm mb-4">Same edge, different execution — all metrics normalized to R (risk units) for true comparison</p>
 
                         <!-- Risk Context Callout -->
                         <div class="bg-amber-500/5 border border-amber-400/20 rounded-lg p-3 mb-4 max-w-2xl mx-auto">
-                            <p class="text-[11px] text-center text-gray-300"><i class="fas fa-info-circle text-amber-400 mr-1.5"></i><strong class="text-white">Why different risk levels?</strong> ECFS Selective risks <strong class="text-blue-400">5× more per trade</strong> ($500 vs $100) because trades are manually filtered for highest conviction. R-normalization lets you compare edge quality regardless of position size.</p>
+                            <p class="text-[11px] text-center text-gray-300"><i class="fas fa-info-circle text-amber-400 mr-1.5"></i><strong class="text-white">Why different risk levels?</strong> ECFS Aggressive risks <strong class="text-blue-400">5× more per trade</strong> ($500 vs $100) because trades are manually filtered for highest conviction. R-normalization lets you compare edge quality regardless of position size.</p>
                         </div>
 
                         <div class="grid sm:grid-cols-2 gap-3 max-w-lg mx-auto">
@@ -1196,7 +1196,7 @@
                                 <p class="text-gray-400 text-[10px]">MES · $5/pt · Auto-copy</p>
                             </div>
                             <div class="bg-blue-500/8 border border-blue-400/30 rounded-lg px-4 py-2 text-center">
-                                <p class="text-[10px] text-blue-400 font-bold tracking-wider">ECFS SELECTIVE</p>
+                                <p class="text-[10px] text-blue-400 font-bold tracking-wider">ECFS AGGRESSIVE</p>
                                 <p class="text-white text-sm font-bold">1R = $500 <span class="text-gray-400 font-normal text-xs">(2.5% of $20K)</span></p>
                                 <p class="text-gray-400 text-[10px]">ES · $50/pt · Manual alerts</p>
                             </div>
@@ -1236,7 +1236,7 @@
                         <!-- Discord Column -->
                         <div class="bg-gradient-to-br from-blue-900/10 to-[#0a1628] border-2 border-blue-400/50 rounded-2xl p-6">
                             <div class="flex items-center justify-between mb-5">
-                                <div><h3 class="text-lg font-bold text-white">ECFS Selective</h3><p class="text-blue-400 text-xs">ES | $50/pt | 1R = $500</p></div>
+                                <div><h3 class="text-lg font-bold text-white">ECFS Aggressive</h3><p class="text-blue-400 text-xs">ES | $50/pt | 1R = $500</p></div>
                                 <i class="fas fa-comments text-blue-400 text-xl"></i>
                             </div>
                             <div class="space-y-3" id="compare-discord-stats">
@@ -1367,7 +1367,7 @@
                         </div>
                         <div>
                             <p class="text-white font-semibold text-sm mb-1">What you're looking at: Layer B — Tactical Income</p>
-                            <p class="text-gray-400 text-xs leading-relaxed">ECFS Active and ECFS Selective are both <strong class="text-white">Tactical execution strategies</strong> within a complete portfolio framework called <strong class="text-amber-400">EPIG</strong> (Enduring Principal Protection · Income & Growth). They represent 5-10% of total capital allocation — designed to harvest volatility and generate income through high-EV, risk-managed futures trading.</p>
+                            <p class="text-gray-400 text-xs leading-relaxed">ECFS Active and ECFS Aggressive are both <strong class="text-white">Tactical execution strategies</strong> within a complete portfolio framework called <strong class="text-amber-400">EPIG</strong> (Enduring Principal Protection · Income & Growth). They represent 5-10% of total capital allocation — designed to harvest volatility and generate income through high-EV, risk-managed futures trading.</p>
                         </div>
                     </div>
                 </div>
@@ -1441,7 +1441,7 @@
                             </div>
 
                             <p class="text-3xl font-bold text-amber-400 text-center italic">5-10%</p>
-                            <p class="text-[10px] text-amber-400/60 text-center mt-1">← ECFS Active & ECFS Selective</p>
+                            <p class="text-[10px] text-amber-400/60 text-center mt-1">← ECFS Active & ECFS Aggressive</p>
                         </div>
 
                         <!-- LAYER C: Episodic Pivot -->
@@ -1633,7 +1633,7 @@
                         <p class="text-gray-300 text-sm leading-relaxed mb-6">Prefer a managed approach? Our income & growth strategy targets consistent returns with built-in principal protection — designed for investors who want results without the screen time.</p>
 
                         <div class="bg-emerald-500/5 border border-emerald-400/20 rounded-lg px-3 py-2 mb-5">
-                            <p class="text-[10px] text-center"><strong class="text-emerald-400">Includes ECFS Selective: $500/trade (2.5%)</strong> <span class="text-gray-400">· 5× ECFS · Highest-conviction trades only</span></p>
+                            <p class="text-[10px] text-center"><strong class="text-emerald-400">Includes ECFS Aggressive: $500/trade (2.5%)</strong> <span class="text-gray-400">· 5× ECFS · Highest-conviction trades only</span></p>
                         </div>
 
                         <div class="space-y-3 mb-8">
