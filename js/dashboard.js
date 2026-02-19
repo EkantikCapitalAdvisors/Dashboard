@@ -38,6 +38,7 @@ async function handleCSVUpload(event, method) {
             state.active.isSampleData = false;
             localStorage.setItem('ecfs-trades', JSON.stringify(trades));
             localStorage.setItem('ecfs-filename', file.name);
+            localStorage.setItem('ecfs-upload-time', Date.now().toString());
             // Store raw CSV for export to GitHub
             localStorage.setItem('ecfs-raw-csv', csvText);
 
@@ -99,6 +100,7 @@ async function handleExcelUpload(event, method) {
             state.discord.isSampleData = false;
             localStorage.setItem('discord-trades', JSON.stringify(trades));
             localStorage.setItem('discord-filename', file.name);
+            localStorage.setItem('discord-upload-time', Date.now().toString());
 
             const weeks = getWeeksList(trades);
             state.discord.selectedWeek = weeks[0];
@@ -162,6 +164,7 @@ function clearData(method) {
     if (!confirm('Clear all uploaded data? This will remove it from this browser only. Database records are preserved.')) return;
     localStorage.removeItem(method === 'active' ? 'ecfs-trades' : 'discord-trades');
     localStorage.removeItem(method === 'active' ? 'ecfs-filename' : 'discord-filename');
+    localStorage.removeItem(method === 'active' ? 'ecfs-upload-time' : 'discord-upload-time');
     state[method].allTrades = [];
     state[method].kpis = null;
     location.reload();
@@ -207,6 +210,130 @@ function switchExecution(method) {
     }
 }
 
+// ===== HIGH-LEVEL PERIOD CONTROLS =====
+// These control the entire dashboard view (Sections 1, 2, and 3 all update)
+function setHighLevelPeriod(method, period) {
+    state[method].currentPeriod = period;
+
+    // Update high-level button UI
+    const btnClass = method === 'active' ? 'hl-period-btn-active' : 'hl-period-btn-discord';
+    document.querySelectorAll(`#panel-${method} .${btnClass}`).forEach(b => {
+        b.classList.remove('hl-active-period');
+        b.classList.add('bg-[#0d1d35]', 'text-gray-400', 'border', 'border-gray-700');
+    });
+    const hlBtn = document.getElementById(`hl-period-${method}-${period}`);
+    if (hlBtn) {
+        hlBtn.classList.add('hl-active-period');
+        hlBtn.classList.remove('bg-[#0d1d35]', 'text-gray-400', 'border', 'border-gray-700');
+    }
+
+    // Sync detailed section period buttons too
+    document.querySelectorAll(`#panel-${method} .period-btn`).forEach(b => {
+        b.classList.remove('active-period');
+        b.classList.add('bg-[#0d1d35]', 'text-gray-400', 'border', 'border-gray-700');
+    });
+    const detailBtn = document.getElementById(`period-${method}-${period}`);
+    if (detailBtn) {
+        detailBtn.classList.add('active-period');
+        detailBtn.classList.remove('bg-[#0d1d35]', 'text-gray-400', 'border', 'border-gray-700');
+    }
+
+    // Update the high-level range label
+    updateHLRangeLabel(method);
+
+    refreshDashboard(method);
+}
+
+function updateHLRangeLabel(method) {
+    const el = document.getElementById(`hl-period-range-${method}`);
+    if (!el) return;
+    const period = state[method].currentPeriod;
+    const allTrades = state[method].allTrades || [];
+
+    if (period === 'weekly') {
+        const selectedWeek = state[method].selectedWeek;
+        el.textContent = selectedWeek ? getWeekRange(selectedWeek) : 'Select a week';
+    } else if (period === 'monthly') {
+        const selectedWeek = state[method].selectedWeek;
+        const parts = selectedWeek ? selectedWeek.split('/') : [];
+        const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        if (parts.length >= 3) {
+            const m = parseInt(parts[0]) - 1;
+            const y = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+            const trades = filterByMonth(allTrades, selectedWeek);
+            el.textContent = `${monthNames[m]} ${y} · ${trades.length} trades`;
+        } else {
+            el.textContent = 'Month view';
+        }
+    } else {
+        el.textContent = `All-Time · ${allTrades.length} trades`;
+    }
+}
+
+function hlPrevPeriod(method) {
+    const period = state[method].currentPeriod;
+    if (period === 'alltime') return; // no prev/next for all-time
+
+    const sel = document.getElementById(`week-selector-${method}`);
+    if (!sel || sel.options.length === 0) return;
+
+    if (period === 'monthly') {
+        // Jump to prev month
+        const currentParts = sel.value.split('/');
+        const currentMonth = parseInt(currentParts[0]);
+        for (let i = sel.selectedIndex + 1; i < sel.options.length; i++) {
+            const parts = sel.options[i].value.split('/');
+            if (parseInt(parts[0]) !== currentMonth) {
+                sel.selectedIndex = i;
+                state[method].selectedWeek = sel.value;
+                updateHLRangeLabel(method);
+                refreshDashboard(method);
+                return;
+            }
+        }
+    } else {
+        // Weekly — prev week
+        if (sel.selectedIndex < sel.options.length - 1) {
+            sel.selectedIndex++;
+            state[method].selectedWeek = sel.value;
+            updateHLRangeLabel(method);
+            refreshDashboard(method);
+        }
+    }
+}
+
+function hlNextPeriod(method) {
+    const period = state[method].currentPeriod;
+    if (period === 'alltime') return;
+
+    const sel = document.getElementById(`week-selector-${method}`);
+    if (!sel || sel.options.length === 0) return;
+
+    if (period === 'monthly') {
+        // Jump to next month
+        const currentParts = sel.value.split('/');
+        const currentMonth = parseInt(currentParts[0]);
+        for (let i = sel.selectedIndex - 1; i >= 0; i--) {
+            const parts = sel.options[i].value.split('/');
+            if (parseInt(parts[0]) !== currentMonth) {
+                sel.selectedIndex = i;
+                state[method].selectedWeek = sel.value;
+                updateHLRangeLabel(method);
+                refreshDashboard(method);
+                return;
+            }
+        }
+    } else {
+        // Weekly — next week
+        if (sel.selectedIndex > 0) {
+            sel.selectedIndex--;
+            state[method].selectedWeek = sel.value;
+            updateHLRangeLabel(method);
+            refreshDashboard(method);
+        }
+    }
+}
+
 // ===== PERIOD CONTROLS =====
 function setPeriod(method, period) {
     state[method].currentPeriod = period;
@@ -217,12 +344,31 @@ function setPeriod(method, period) {
     const btn = document.getElementById(`period-${method}-${period}`);
     btn.classList.add('active-period');
     btn.classList.remove('bg-[#0d1d35]', 'text-gray-400', 'border', 'border-gray-700');
+
+    // Sync high-level period buttons
+    syncHLButtons(method, period);
+    updateHLRangeLabel(method);
+
     refreshDashboard(method);
+}
+
+function syncHLButtons(method, period) {
+    const btnClass = method === 'active' ? 'hl-period-btn-active' : 'hl-period-btn-discord';
+    document.querySelectorAll(`#panel-${method} .${btnClass}`).forEach(b => {
+        b.classList.remove('hl-active-period');
+        b.classList.add('bg-[#0d1d35]', 'text-gray-400', 'border', 'border-gray-700');
+    });
+    const hlBtn = document.getElementById(`hl-period-${method}-${period}`);
+    if (hlBtn) {
+        hlBtn.classList.add('hl-active-period');
+        hlBtn.classList.remove('bg-[#0d1d35]', 'text-gray-400', 'border', 'border-gray-700');
+    }
 }
 
 function selectWeek(method) {
     const sel = document.getElementById(`week-selector-${method}`);
     state[method].selectedWeek = sel.value;
+    updateHLRangeLabel(method);
     refreshDashboard(method);
 }
 
@@ -345,6 +491,9 @@ function refreshDashboard(method) {
             btn.classList.add('active-period');
             btn.classList.remove('bg-[#0d1d35]', 'text-gray-400', 'border', 'border-gray-700');
         }
+        // Sync high-level buttons too
+        syncHLButtons(method, 'alltime');
+        updateHLRangeLabel(method);
     }
 
     const risk = method === 'active' ? ECFS_RISK : DISCORD_RISK;
@@ -373,6 +522,9 @@ function refreshDashboard(method) {
         else rangeEl.textContent = `All-time (${allTrades.length} trades)`;
     }
 
+    // Keep high-level range label in sync
+    updateHLRangeLabel(method);
+
     updateLastUpdated(allTrades);
 
     if (method === 'active') renderActive(kpis, trades, allTimeKPIs, allTrades);
@@ -382,25 +534,18 @@ function refreshDashboard(method) {
 function updateLastUpdated(trades) {
     if (!trades || trades.length === 0) return;
     
-    // Find the most recent date across ALL trades (don't trust array order)
-    let maxTime = 0;
-    let maxDateStr = '';
+    // "Last Updated" = when the dashboard data was last refreshed/uploaded
+    // Check localStorage for the most recent upload timestamp
+    const ecfsUploadTime = parseInt(localStorage.getItem('ecfs-upload-time') || '0');
+    const discordUploadTime = parseInt(localStorage.getItem('discord-upload-time') || '0');
+    const latestUpload = Math.max(ecfsUploadTime, discordUploadTime);
     
-    for (const t of trades) {
-        const dateStr = t.exitTime || t.datetime || '';
-        if (!dateStr) continue;
-        const parts = dateStr.split(' ')[0].split('/');
-        if (parts.length < 3) continue;
-        const y = parts[2].length === 2 ? '20' + parts[2] : parts[2];
-        const ts = new Date(parseInt(y), parseInt(parts[0]) - 1, parseInt(parts[1])).getTime();
-        if (ts > maxTime) {
-            maxTime = ts;
-            maxDateStr = dateStr;
-        }
-    }
-    
-    if (maxTime > 0) {
-        const d = new Date(maxTime);
+    if (latestUpload > 0) {
+        const d = new Date(latestUpload);
+        document.getElementById('last-updated').textContent = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    } else {
+        // Fallback: use today's date (data was loaded from DB or sample on this session)
+        const d = new Date();
         document.getElementById('last-updated').textContent = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     }
 }
@@ -532,6 +677,9 @@ function renderActive(k, trades, allK, allTrades) {
     // Inception Summary
     renderInceptionSummary('active', allK);
 
+    // Edge %R by Week Trend Chart
+    renderEdgeTrendByWeek('chart-edge-trend-active', allTrades, ECFS_RISK, ECFS_PPT, 'active', allK.evPlannedR);
+
     // Food Chain
     renderFoodChain('active', k, allK, allTrades);
 
@@ -596,6 +744,9 @@ function renderDiscord(k, trades, allK, allTrades) {
 
     // Inception Summary
     renderInceptionSummary('discord', allK);
+
+    // Edge %R by Week Trend Chart
+    renderEdgeTrendByWeek('chart-edge-trend-discord', allTrades, DISCORD_RISK, DISCORD_PPT, 'discord', allK.evPlannedR);
 
     // Food Chain
     renderFoodChain('discord', k, allK, allTrades);
@@ -1853,6 +2004,163 @@ function renderWeeklyTrend(containerId, weeklyPL, method) {
     window.addEventListener('resize', () => chart.resize());
 }
 
+// ===== EDGE %R BY WEEK — TREND CHART =====
+function renderEdgeTrendByWeek(containerId, allTrades, riskBudget, ppt, method, allTimeEV) {
+    const container = document.getElementById(containerId);
+    if (!container || !allTrades || allTrades.length === 0) return;
+
+    if (chartInstances[containerId]) chartInstances[containerId].dispose();
+    const chart = echarts.init(container, 'dark');
+    chartInstances[containerId] = chart;
+
+    const accentColor = method === 'active' ? '#d4af37' : '#60a5fa';
+
+    // Group trades by week and calculate EV for each week
+    const weeklyGroups = {};
+    allTrades.forEach(t => {
+        const wk = getWeekKey(t.date);
+        if (!weeklyGroups[wk]) weeklyGroups[wk] = [];
+        weeklyGroups[wk].push(t);
+    });
+
+    const weeks = Object.keys(weeklyGroups).sort((a, b) => parseWeekKey(a) - parseWeekKey(b));
+    if (weeks.length < 1) return;
+
+    // Calculate EV per week
+    const weeklyEV = weeks.map(wk => {
+        const trades = weeklyGroups[wk];
+        if (trades.length < 1) return 0;
+        const kpis = calculateKPIs(trades, riskBudget, ppt);
+        return kpis.evPlannedR;
+    });
+
+    // Track cumulative EV progression (recalculate as if seeing more data each week)
+    let cumTrades = [];
+    const cumulativeEV = weeks.map(wk => {
+        cumTrades = cumTrades.concat(weeklyGroups[wk]);
+        if (cumTrades.length < 1) return 0;
+        const kpis = calculateKPIs(cumTrades, riskBudget, ppt);
+        return kpis.evPlannedR;
+    });
+
+    // Trade count per week
+    const tradeCounts = weeks.map(wk => weeklyGroups[wk].length);
+
+    // Labels
+    const labels = weeks.map(wk => {
+        const parts = wk.split('/');
+        return `${parts[0]}/${parts[1]}`;
+    });
+
+    chart.setOption({
+        backgroundColor: 'transparent',
+        tooltip: {
+            trigger: 'axis',
+            backgroundColor: '#0d1d35',
+            borderColor: accentColor,
+            textStyle: { color: '#fff', fontSize: 11 },
+            formatter: params => {
+                const idx = params[0].dataIndex;
+                let result = `<strong>Week of ${getWeekRange(weeks[idx])}</strong><br/>`;
+                result += `<span style="color:#999">Trades: ${tradeCounts[idx]}</span><br/>`;
+                params.forEach(p => {
+                    if (p.seriesName === 'Weekly Edge') {
+                        const clr = p.value >= 0 ? '#4ade80' : '#f87171';
+                        result += `Weekly EV: <span style="color:${clr};font-weight:bold">${p.value >= 0 ? '+' : ''}${p.value.toFixed(1)}%R</span><br/>`;
+                    } else if (p.seriesName === 'Cumulative Edge') {
+                        result += `Cumulative EV: <span style="color:${accentColor};font-weight:bold">${p.value >= 0 ? '+' : ''}${p.value.toFixed(1)}%R</span>`;
+                    }
+                });
+                return result;
+            }
+        },
+        legend: {
+            data: ['Weekly Edge', 'Cumulative Edge', 'All-Time EV'],
+            textStyle: { color: '#888', fontSize: 10 },
+            top: 0, right: 0
+        },
+        grid: { left: 55, right: 55, top: 35, bottom: 30 },
+        xAxis: {
+            type: 'category',
+            data: labels,
+            axisLabel: { color: '#888', fontSize: 10, rotate: weeks.length > 10 ? 30 : 0 },
+            axisLine: { lineStyle: { color: '#333' } }
+        },
+        yAxis: [
+            {
+                type: 'value',
+                name: 'Weekly %R',
+                nameTextStyle: { color: '#666', fontSize: 9 },
+                axisLabel: { color: '#888', fontSize: 10, formatter: '{value}%' },
+                splitLine: { lineStyle: { color: '#1a2a40' } },
+                axisLine: { show: false }
+            },
+            {
+                type: 'value',
+                name: 'Cumul. %R',
+                nameTextStyle: { color: '#666', fontSize: 9 },
+                axisLabel: { color: '#888', fontSize: 10, formatter: '{value}%' },
+                splitLine: { show: false },
+                axisLine: { show: false }
+            }
+        ],
+        series: [
+            {
+                name: 'Weekly Edge',
+                type: 'bar',
+                data: weeklyEV.map(v => ({
+                    value: parseFloat(v.toFixed(1)),
+                    itemStyle: {
+                        color: v >= 0 ? '#4ade80' : '#f87171',
+                        borderRadius: v >= 0 ? [3, 3, 0, 0] : [0, 0, 3, 3]
+                    }
+                })),
+                barWidth: '45%'
+            },
+            {
+                name: 'Cumulative Edge',
+                type: 'line',
+                yAxisIndex: 1,
+                data: cumulativeEV.map(v => parseFloat(v.toFixed(1))),
+                lineStyle: { color: accentColor, width: 2 },
+                itemStyle: { color: accentColor },
+                areaStyle: {
+                    color: {
+                        type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+                        colorStops: [
+                            { offset: 0, color: accentColor + '30' },
+                            { offset: 1, color: accentColor + '05' }
+                        ]
+                    }
+                },
+                smooth: true,
+                symbol: 'circle',
+                symbolSize: 6
+            },
+            {
+                name: 'All-Time EV',
+                type: 'line',
+                yAxisIndex: 0,
+                data: weeks.map(() => parseFloat(allTimeEV.toFixed(1))),
+                lineStyle: { color: '#fff', width: 1.5, type: 'dashed' },
+                itemStyle: { color: '#fff' },
+                symbol: 'none',
+                silent: true
+            }
+        ]
+    });
+
+    window.addEventListener('resize', () => chart.resize());
+
+    // Update the note below the chart
+    const noteEl = document.getElementById(`edge-trend-${method}-note`);
+    if (noteEl) {
+        const avgWeeklyTrades = (allTrades.length / weeks.length).toFixed(1);
+        const posWeeks = weeklyEV.filter(v => v > 0).length;
+        noteEl.textContent = `${weeks.length} weeks tracked · ${posWeeks} positive (${(posWeeks / weeks.length * 100).toFixed(0)}%) · avg ${avgWeeklyTrades} trades/week · dashed line = all-time EV (${allTimeEV >= 0 ? '+' : ''}${allTimeEV.toFixed(1)}%R)`;
+    }
+}
+
 // ===== RADAR CHART (Compare) =====
 function renderRadarChart(ak, dk) {
     const container = document.getElementById('chart-radar-compare');
@@ -2150,6 +2458,11 @@ document.addEventListener('DOMContentLoaded', async function () {
             const dbTrades = await DB.loadTrades('ecfs_trades');
             if (dbTrades.length > 0) {
                 state.active.allTrades = dbTrades.map(dbRowToECFSTrade);
+                // Use the most recent DB record's updated_at as the upload time
+                const maxUpdated = Math.max(...dbTrades.map(r => r.updated_at || r.created_at || 0));
+                if (maxUpdated > 0 && !localStorage.getItem('ecfs-upload-time')) {
+                    localStorage.setItem('ecfs-upload-time', maxUpdated.toString());
+                }
                 const weeks = getWeeksList(state.active.allTrades);
                 state.active.selectedWeek = weeks[0];
                 populateWeekSelector('active', weeks);
@@ -2208,6 +2521,11 @@ document.addEventListener('DOMContentLoaded', async function () {
             const dbTrades = await DB.loadTrades('discord_trades');
             if (dbTrades.length > 0) {
                 state.discord.allTrades = dbTrades.map(dbRowToDiscordTrade);
+                // Use the most recent DB record's updated_at as the upload time
+                const maxUpdated = Math.max(...dbTrades.map(r => r.updated_at || r.created_at || 0));
+                if (maxUpdated > 0 && !localStorage.getItem('discord-upload-time')) {
+                    localStorage.setItem('discord-upload-time', maxUpdated.toString());
+                }
                 const weeks = getWeeksList(state.discord.allTrades);
                 state.discord.selectedWeek = weeks[0];
                 populateWeekSelector('discord', weeks);
