@@ -698,8 +698,12 @@ function renderActive(k, trades, allK, allTrades) {
     if (activeTradeCountEl) activeTradeCountEl.textContent = `${allTrades.length} trades (All-Time)`;
     const activeLastUpdEl = document.getElementById('active-live-last-updated');
     if (activeLastUpdEl) {
-        const lastDate = getLastTradeDate(allTrades);
-        activeLastUpdEl.textContent = lastDate || '—';
+        const uploadTime = parseInt(localStorage.getItem('ecfs-upload-time') || '0');
+        if (uploadTime > 0) {
+            activeLastUpdEl.textContent = new Date(uploadTime).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        } else {
+            activeLastUpdEl.textContent = getLastTradeDate(allTrades) || '—';
+        }
     }
 
     // Hero Stats
@@ -798,8 +802,12 @@ function renderDiscord(k, trades, allK, allTrades) {
     if (discordTradeCountEl) discordTradeCountEl.textContent = `${allTrades.length} trades (All-Time)`;
     const discordLastUpdEl = document.getElementById('discord-live-last-updated');
     if (discordLastUpdEl) {
-        const lastDate = getLastTradeDate(allTrades);
-        discordLastUpdEl.textContent = lastDate || '—';
+        const uploadTime = parseInt(localStorage.getItem('discord-upload-time') || '0');
+        if (uploadTime > 0) {
+            discordLastUpdEl.textContent = new Date(uploadTime).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        } else {
+            discordLastUpdEl.textContent = getLastTradeDate(allTrades) || '—';
+        }
     }
 
     setColor('discord-hero-pnl', fmtDollar(k.netPL), k.netPL);
