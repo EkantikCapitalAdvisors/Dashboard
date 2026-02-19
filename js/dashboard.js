@@ -26,7 +26,39 @@ async function handleCSVUpload(event, method) {
 
             // MERGE: Combine new trades with existing historical data
             // Dedup by entryTime+exitTime+direction to avoid duplicates on re-upload
-            const existingTrades = state.active.allTrades.filter(t => !t._isSample);
+            let existingTrades = state.active.allTrades.filter(t => !t._isSample);
+
+            // Fallback 1: read directly from localStorage (handles corrupted/cleared state)
+            if (existingTrades.length === 0) {
+                try {
+                    const lsJson = localStorage.getItem('ecfs-trades');
+                    if (lsJson) {
+                        const lsTrades = JSON.parse(lsJson);
+                        if (Array.isArray(lsTrades) && lsTrades.length > 0) {
+                            existingTrades = lsTrades.filter(t => !t._isSample);
+                        }
+                    }
+                } catch (e) { /* corrupted localStorage — continue to DB fallback */ }
+            }
+
+            // Fallback 2: fetch from DB (handles cleared localStorage / different browser)
+            if (existingTrades.length === 0) {
+                try {
+                    const dbTrades = await DB.loadTrades('ecfs_trades');
+                    if (dbTrades.length > 0) {
+                        const seenKeys = new Set();
+                        existingTrades = dbTrades
+                            .filter(r => {
+                                const k = `${r.entry_time}|${r.exit_time}|${r.direction}|${r.dollar_pl}`;
+                                if (seenKeys.has(k)) return false;
+                                seenKeys.add(k);
+                                return true;
+                            })
+                            .map(dbRowToECFSTrade);
+                    }
+                } catch (e) { console.warn('Could not pre-load DB trades before merge:', e); }
+            }
+
             const existingKeys = new Set(existingTrades.map(t => `${t.entryTime}|${t.exitTime}|${t.direction}|${t.dollarPL}`));
             const uniqueNew = newTrades.filter(t => !existingKeys.has(`${t.entryTime}|${t.exitTime}|${t.direction}|${t.dollarPL}`));
             const trades = [...existingTrades, ...uniqueNew].sort((a, b) => {
@@ -37,26 +69,34 @@ async function handleCSVUpload(event, method) {
 
             state.active.allTrades = trades;
             state.active.isSampleData = false;
-            localStorage.setItem('ecfs-trades', JSON.stringify(trades));
-            localStorage.setItem('ecfs-filename', file.name);
-            localStorage.setItem('ecfs-upload-time', Date.now().toString());
-            // Store raw CSV for export to GitHub
-            localStorage.setItem('ecfs-raw-csv', csvText);
 
+            // Update the UI FIRST so a storage failure can never block the re-render
             const weeks = getWeeksList(trades);
             state.active.selectedWeek = weeks[0];
             populateWeekSelector('active', weeks);
-            refreshDashboard('active');
+            // Always reset to all-time after upload so user sees the full merged dataset
+            setPeriod('active', 'alltime');
+
+            // Persist to localStorage
+            localStorage.setItem('ecfs-trades', JSON.stringify(trades));
+            localStorage.setItem('ecfs-filename', file.name);
+            localStorage.setItem('ecfs-upload-time', Date.now().toString());
+            // Raw CSV can be large — isolate so a quota error never crashes the upload
+            try { localStorage.setItem('ecfs-raw-csv', csvText); }
+            catch (e) { console.warn('Could not cache raw CSV (storage quota):', e); }
 
             const addedMsg = uniqueNew.length < newTrades.length 
                 ? ` (${uniqueNew.length} new, ${newTrades.length - uniqueNew.length} duplicates skipped)`
                 : '';
             showUploadSuccess('active', `${file.name} — ${trades.length} total trades${addedMsg}`);
 
-            // Save all merged trades to DB so the full history is preserved if localStorage is lost
-            showUploadProgress('active', 'Saving to database...');
-            const batchId = `ecfs-${Date.now()}`;
-            await DB.saveTrades('ecfs_trades', trades, batchId);
+            // Save only the NEW trades to DB (existing ones are already there from prior uploads)
+            // This prevents the DB from accumulating duplicate rows on every upload
+            if (uniqueNew.length > 0) {
+                showUploadProgress('active', 'Saving to database...');
+                const batchId = `ecfs-${Date.now()}`;
+                await DB.saveTrades('ecfs_trades', uniqueNew, batchId);
+            }
 
             // Generate and save weekly snapshots
             const snapshots = generateWeeklySnapshots(trades, 'active', ECFS_RISK, ECFS_PPT);
@@ -90,7 +130,38 @@ async function handleExcelUpload(event, method) {
 
             // MERGE: Combine new trades with existing historical data
             // Dedup by tradeNum to avoid duplicates on re-upload
-            const existingTrades = state.discord.allTrades.filter(t => !t._isSample);
+            let existingTrades = state.discord.allTrades.filter(t => !t._isSample);
+
+            // Fallback 1: read directly from localStorage (handles corrupted/cleared state)
+            if (existingTrades.length === 0) {
+                try {
+                    const lsJson = localStorage.getItem('discord-trades');
+                    if (lsJson) {
+                        const lsTrades = JSON.parse(lsJson);
+                        if (Array.isArray(lsTrades) && lsTrades.length > 0) {
+                            existingTrades = lsTrades.filter(t => !t._isSample);
+                        }
+                    }
+                } catch (e) { /* corrupted localStorage — continue to DB fallback */ }
+            }
+
+            // Fallback 2: fetch from DB (handles cleared localStorage / different browser)
+            if (existingTrades.length === 0) {
+                try {
+                    const dbTrades = await DB.loadTrades('discord_trades');
+                    if (dbTrades.length > 0) {
+                        const seenNums = new Set();
+                        existingTrades = dbTrades
+                            .filter(r => {
+                                if (seenNums.has(r.trade_num)) return false;
+                                seenNums.add(r.trade_num);
+                                return true;
+                            })
+                            .map(dbRowToDiscordTrade);
+                    }
+                } catch (e) { console.warn('Could not pre-load DB trades before merge:', e); }
+            }
+
             const existingNums = new Set(existingTrades.map(t => t.tradeNum));
             const uniqueNew = newTrades.filter(t => !existingNums.has(t.tradeNum));
             const trades = [...existingTrades, ...uniqueNew].sort((a, b) => {
@@ -100,21 +171,27 @@ async function handleExcelUpload(event, method) {
 
             state.discord.allTrades = trades;
             state.discord.isSampleData = false;
+
+            // Update the UI FIRST so a storage failure can never block the re-render
+            const weeks = getWeeksList(trades);
+            state.discord.selectedWeek = weeks[0];
+            populateWeekSelector('discord', weeks);
+            // Always reset to all-time after upload so user sees the full merged dataset
+            setPeriod('discord', 'alltime');
+
+            // Persist to localStorage
             localStorage.setItem('discord-trades', JSON.stringify(trades));
             localStorage.setItem('discord-filename', file.name);
             localStorage.setItem('discord-upload-time', Date.now().toString());
 
-            const weeks = getWeeksList(trades);
-            state.discord.selectedWeek = weeks[0];
-            populateWeekSelector('discord', weeks);
-            refreshDashboard('discord');
-
             showUploadSuccess('discord', `${file.name} — ${trades.length} trades parsed`);
 
-            // Save all merged trades to DB so the full history is preserved if localStorage is lost
-            showUploadProgress('discord', 'Saving to database...');
-            const batchId = `discord-${Date.now()}`;
-            await DB.saveTrades('discord_trades', trades, batchId);
+            // Save only the NEW trades to DB (existing ones are already there from prior uploads)
+            if (uniqueNew.length > 0) {
+                showUploadProgress('discord', 'Saving to database...');
+                const batchId = `discord-${Date.now()}`;
+                await DB.saveTrades('discord_trades', uniqueNew, batchId);
+            }
 
             const snapshots = generateWeeklySnapshots(trades, 'discord', DISCORD_RISK, DISCORD_PPT, DISCORD_STARTING_BALANCE);
             for (const snap of snapshots) {
