@@ -818,7 +818,7 @@ function renderFoodChain(method, k, allK, allTrades) {
     // --- Your Strategy Row ---
     const edgeSign = edgeR >= 0 ? '+' : '';
 
-    // Build sorted food chain table (ECFS Active has table, ECFS Aggressive has stat boxes)
+    // Build sorted food chain table (ECFS Conservative has table, ECFS Aggressive has stat boxes)
     renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, periodLabel, accentColor, winRate, rr);
 
     // Also set standalone stat elements (used by ECFS Aggressive simplified layout)
@@ -827,7 +827,7 @@ function renderFoodChain(method, k, allK, allTrades) {
     setEl(`${prefix}-annual-r`, `≈${annualR.toFixed(0)} R`);
 
     // Summary callout: explicit math so the user knows exactly how Annual R was derived
-    const strategyLabel = method === 'active' ? 'ECFS Active (MES)' : 'ECFS Aggressive (ES)';
+    const strategyLabel = method === 'active' ? 'ECFS Conservative (MES)' : 'ECFS Aggressive (ES)';
     const riskLabel = method === 'active' ? '$100' : '$500';
     const dataAsOf = `<span style="color:#9ca3af;font-weight:normal;"><i class="fas fa-sync-alt" style="font-size:9px;margin-right:3px;"></i>Extrapolated from <strong>${k.totalTrades} all-time trades</strong> as of ${lastTradeDate} · updated weekly with new data</span>`;
     setHTML(`${prefix}-summary-text`,
@@ -1167,7 +1167,7 @@ function renderGrowthComparison(containerId, ecfsAnnualR, discordAnnualR, suffix
     const latestDate = activeDate !== 'latest' ? activeDate : discordDate;
     setH(`growth-subtitle-${suffix}`,
         `Annual R extrapolated from <strong style="color:#60a5fa;">${activeCount + discordCount} all-time trades</strong> ` +
-        `(ECFS Active: ${activeCount}, ECFS Aggressive: ${discordCount}) as of <strong style="color:#60a5fa;">${latestDate}</strong>. ` +
+        `(ECFS Conservative: ${activeCount}, ECFS Aggressive: ${discordCount}) as of <strong style="color:#60a5fa;">${latestDate}</strong>. ` +
         `Compounded weekly — all strategies compared at equal 0.5% risk per trade to isolate edge quality. ECFS Aggressive actually trades at 10% risk ($500/trade on $5K) for higher absolute returns. S&P 500 uses 14.6% CAGR (15-year avg total return with dividends, 2011\u20132025). ` +
         `<span style="color:#60a5fa;">Updated weekly with new trade data.</span>`
     );
@@ -1202,7 +1202,7 @@ function renderGrowthComparison(containerId, ecfsAnnualR, discordAnnualR, suffix
             }
         },
         legend: {
-            data: ['S&P 500', 'ECFS Active', 'ECFS Aggressive'],
+            data: ['S&P 500', 'ECFS Conservative', 'ECFS Aggressive'],
             top: 0,
             textStyle: { color: '#9ca3af', fontSize: 10 },
             itemWidth: 12,
@@ -1241,7 +1241,7 @@ function renderGrowthComparison(containerId, ecfsAnnualR, discordAnnualR, suffix
                 ])}
             },
             {
-                name: 'ECFS Active',
+                name: 'ECFS Conservative',
                 type: 'line',
                 data: ecfsData,
                 smooth: true,
@@ -1277,7 +1277,7 @@ function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, pe
     if (!tbody) return;
 
     const edgeSign = edgeR >= 0 ? '+' : '';
-    const strategyName = method === 'active' ? 'ECFS Active' : 'ECFS Aggressive';
+    const strategyName = method === 'active' ? 'ECFS Conservative' : 'ECFS Aggressive';
     const icon = method === 'active' ? 'fa-bolt' : 'fa-comments';
     const lastDate = getLastTradeDate(state[method].allTrades) || 'latest';
     const totalTrades = state[method].allTrades ? state[method].allTrades.length : 0;
@@ -1368,7 +1368,7 @@ function renderFoodChainChart(containerId, k, method) {
         { name: 'Stat-Arb', edge: 1.25, color: '#6b7280' },
         { name: 'Trend-Following CTAs', edge: 0.75, color: '#6b7280' },
         { name: 'Casino Roulette', edge: 5.26, color: '#9ca3af' },
-        { name: method === 'active' ? 'ECFS Active' : 'ECFS Aggressive', edge: edgeR, color: accentColor }
+        { name: method === 'active' ? 'ECFS Conservative' : 'ECFS Aggressive', edge: edgeR, color: accentColor }
     ];
 
     // Sort by edge
@@ -1664,7 +1664,7 @@ function renderCompareRTable(ak, dk) {
         <thead>
             <tr>
                 <th class="text-left text-gray-400 font-bold px-3 py-2 border-b-2 border-[#d4af37]/20" style="background: rgba(212,175,55,0.05)">Metric</th>
-                <th class="text-right text-[#d4af37] font-bold px-3 py-2 border-b-2 border-[#d4af37]/20" style="background: rgba(212,175,55,0.05)"><i class="fas fa-bolt mr-1"></i>ECFS Active</th>
+                <th class="text-right text-[#d4af37] font-bold px-3 py-2 border-b-2 border-[#d4af37]/20" style="background: rgba(212,175,55,0.05)"><i class="fas fa-bolt mr-1"></i>ECFS Conservative</th>
                 <th class="text-right text-blue-400 font-bold px-3 py-2 border-b-2 border-[#d4af37]/20" style="background: rgba(212,175,55,0.05)"><i class="fas fa-comments mr-1"></i>ECFS Aggressive</th>
             </tr>
         </thead><tbody>`;
@@ -1710,12 +1710,12 @@ function renderCompareInsights(ak, dk) {
         icon: 'fa-shield-alt',
         color: '#d4af37',
         title: 'Different Risk, Same Edge Framework',
-        text: `ECFS Active risks $${ECFS_RISK}/trade (0.5% of $20K) while ECFS Aggressive risks $${DISCORD_RISK}/trade (10% of $5K). Dollar amounts differ, but R-normalized metrics tell the real story.`
+        text: `ECFS Conservative risks $${ECFS_RISK}/trade (0.5% of $20K) while ECFS Aggressive risks $${DISCORD_RISK}/trade (10% of $5K). Dollar amounts differ, but R-normalized metrics tell the real story.`
     });
 
     // 2. EV comparison in R
     if (ak.evPlannedR !== dk.evPlannedR) {
-        const better = ak.evPlannedR > dk.evPlannedR ? 'ECFS Active' : 'ECFS Aggressive';
+        const better = ak.evPlannedR > dk.evPlannedR ? 'ECFS Conservative' : 'ECFS Aggressive';
         const bEV = Math.max(ak.evPlannedR, dk.evPlannedR);
         const wEV = Math.min(ak.evPlannedR, dk.evPlannedR);
         insights.push({
@@ -1728,7 +1728,7 @@ function renderCompareInsights(ak, dk) {
 
     // 3. Win rate
     if (Math.abs(ak.winRate - dk.winRate) >= 1) {
-        const better = ak.winRate > dk.winRate ? 'ECFS Active' : 'ECFS Aggressive';
+        const better = ak.winRate > dk.winRate ? 'ECFS Conservative' : 'ECFS Aggressive';
         insights.push({
             icon: 'fa-trophy',
             color: '#4ade80',
@@ -1741,7 +1741,7 @@ function renderCompareInsights(ak, dk) {
     const akDDR = ak.maxDD / ECFS_RISK;
     const dkDDR = dk.maxDD / DISCORD_RISK;
     if (Math.abs(akDDR - dkDDR) > 0.5) {
-        const betterDD = akDDR < dkDDR ? 'ECFS Active' : 'ECFS Aggressive';
+        const betterDD = akDDR < dkDDR ? 'ECFS Conservative' : 'ECFS Aggressive';
         insights.push({
             icon: 'fa-arrow-trend-down',
             color: '#f87171',
@@ -1751,7 +1751,7 @@ function renderCompareInsights(ak, dk) {
     }
 
     // 5. Data confidence
-    const moreData = ak.totalTrades > dk.totalTrades ? 'ECFS Active' : 'ECFS Aggressive';
+    const moreData = ak.totalTrades > dk.totalTrades ? 'ECFS Conservative' : 'ECFS Aggressive';
     if (ak.totalTrades !== dk.totalTrades) {
         insights.push({
             icon: 'fa-database',
@@ -2211,7 +2211,7 @@ function renderRadarChart(ak, dk) {
     const series = [];
     if (ak) {
         series.push({
-            name: 'ECFS Active',
+            name: 'ECFS Conservative',
             type: 'radar',
             data: [{
                 value: [
@@ -2222,7 +2222,7 @@ function renderRadarChart(ak, dk) {
                     akWinR,
                     ak.tradingDays.length > 0 ? ak.profitableDays / ak.tradingDays.length * 100 : 0
                 ],
-                name: 'ECFS Active',
+                name: 'ECFS Conservative',
                 lineStyle: { color: '#d4af37', width: 2 },
                 areaStyle: { color: 'rgba(212, 175, 55, 0.15)' },
                 itemStyle: { color: '#d4af37' }
@@ -2254,7 +2254,7 @@ function renderRadarChart(ak, dk) {
         backgroundColor: 'transparent',
         tooltip: { trigger: 'item' },
         legend: {
-            data: ['ECFS Active', 'ECFS Aggressive'].filter((_, i) => (i === 0 && ak) || (i === 1 && dk)),
+            data: ['ECFS Conservative', 'ECFS Aggressive'].filter((_, i) => (i === 0 && ak) || (i === 1 && dk)),
             textStyle: { color: '#888', fontSize: 10 },
             bottom: 0
         },
@@ -2651,12 +2651,12 @@ function showExportButton(method) {
     if (btn) btn.classList.remove('hidden');
 }
 
-// Export ECFS Active data as the raw CSV stored during upload
+// Export ECFS Conservative data as the raw CSV stored during upload
 // (The full Tradovate CSV is what GitHub Pages serves — cumulative history)
 function exportECFSData() {
     const trades = state.active.allTrades;
     if (!trades || trades.length === 0) {
-        alert('No ECFS Active data to export. Upload a CSV first.');
+        alert('No ECFS Conservative data to export. Upload a CSV first.');
         return;
     }
 
