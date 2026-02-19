@@ -28,7 +28,20 @@ async function handleCSVUpload(event, method) {
             // Dedup by entryTime+exitTime+direction to avoid duplicates on re-upload
             let existingTrades = state.active.allTrades.filter(t => !t._isSample);
 
-            // Race-condition guard: if state is empty (DB still loading), fetch from DB now
+            // Fallback 1: read directly from localStorage (handles corrupted/cleared state)
+            if (existingTrades.length === 0) {
+                try {
+                    const lsJson = localStorage.getItem('ecfs-trades');
+                    if (lsJson) {
+                        const lsTrades = JSON.parse(lsJson);
+                        if (Array.isArray(lsTrades) && lsTrades.length > 0) {
+                            existingTrades = lsTrades.filter(t => !t._isSample);
+                        }
+                    }
+                } catch (e) { /* corrupted localStorage — continue to DB fallback */ }
+            }
+
+            // Fallback 2: fetch from DB (handles cleared localStorage / different browser)
             if (existingTrades.length === 0) {
                 try {
                     const dbTrades = await DB.loadTrades('ecfs_trades');
@@ -77,10 +90,13 @@ async function handleCSVUpload(event, method) {
                 : '';
             showUploadSuccess('active', `${file.name} — ${trades.length} total trades${addedMsg}`);
 
-            // Save all merged trades to DB so the full history is preserved if localStorage is lost
-            showUploadProgress('active', 'Saving to database...');
-            const batchId = `ecfs-${Date.now()}`;
-            await DB.saveTrades('ecfs_trades', trades, batchId);
+            // Save only the NEW trades to DB (existing ones are already there from prior uploads)
+            // This prevents the DB from accumulating duplicate rows on every upload
+            if (uniqueNew.length > 0) {
+                showUploadProgress('active', 'Saving to database...');
+                const batchId = `ecfs-${Date.now()}`;
+                await DB.saveTrades('ecfs_trades', uniqueNew, batchId);
+            }
 
             // Generate and save weekly snapshots
             const snapshots = generateWeeklySnapshots(trades, 'active', ECFS_RISK, ECFS_PPT);
@@ -116,7 +132,20 @@ async function handleExcelUpload(event, method) {
             // Dedup by tradeNum to avoid duplicates on re-upload
             let existingTrades = state.discord.allTrades.filter(t => !t._isSample);
 
-            // Race-condition guard: if state is empty (DB still loading), fetch from DB now
+            // Fallback 1: read directly from localStorage (handles corrupted/cleared state)
+            if (existingTrades.length === 0) {
+                try {
+                    const lsJson = localStorage.getItem('discord-trades');
+                    if (lsJson) {
+                        const lsTrades = JSON.parse(lsJson);
+                        if (Array.isArray(lsTrades) && lsTrades.length > 0) {
+                            existingTrades = lsTrades.filter(t => !t._isSample);
+                        }
+                    }
+                } catch (e) { /* corrupted localStorage — continue to DB fallback */ }
+            }
+
+            // Fallback 2: fetch from DB (handles cleared localStorage / different browser)
             if (existingTrades.length === 0) {
                 try {
                     const dbTrades = await DB.loadTrades('discord_trades');
@@ -157,10 +186,12 @@ async function handleExcelUpload(event, method) {
 
             showUploadSuccess('discord', `${file.name} — ${trades.length} trades parsed`);
 
-            // Save all merged trades to DB so the full history is preserved if localStorage is lost
-            showUploadProgress('discord', 'Saving to database...');
-            const batchId = `discord-${Date.now()}`;
-            await DB.saveTrades('discord_trades', trades, batchId);
+            // Save only the NEW trades to DB (existing ones are already there from prior uploads)
+            if (uniqueNew.length > 0) {
+                showUploadProgress('discord', 'Saving to database...');
+                const batchId = `discord-${Date.now()}`;
+                await DB.saveTrades('discord_trades', uniqueNew, batchId);
+            }
 
             const snapshots = generateWeeklySnapshots(trades, 'discord', DISCORD_RISK, DISCORD_PPT, DISCORD_STARTING_BALANCE);
             for (const snap of snapshots) {
