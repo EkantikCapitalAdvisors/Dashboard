@@ -214,11 +214,39 @@ function selectWeek(method) {
 
 function prevPeriod(method) {
     const sel = document.getElementById(`week-selector-${method}`);
-    if (sel.selectedIndex < sel.options.length - 1) { sel.selectedIndex++; selectWeek(method); }
+    if (state[method].currentPeriod === 'monthly') {
+        // Skip to a week in the previous month
+        const currentParts = sel.value.split('/');
+        const currentMonth = parseInt(currentParts[0]);
+        for (let i = sel.selectedIndex + 1; i < sel.options.length; i++) {
+            const parts = sel.options[i].value.split('/');
+            if (parseInt(parts[0]) !== currentMonth) {
+                sel.selectedIndex = i;
+                selectWeek(method);
+                return;
+            }
+        }
+    } else {
+        if (sel.selectedIndex < sel.options.length - 1) { sel.selectedIndex++; selectWeek(method); }
+    }
 }
 function nextPeriod(method) {
     const sel = document.getElementById(`week-selector-${method}`);
-    if (sel.selectedIndex > 0) { sel.selectedIndex--; selectWeek(method); }
+    if (state[method].currentPeriod === 'monthly') {
+        // Skip to a week in the next month
+        const currentParts = sel.value.split('/');
+        const currentMonth = parseInt(currentParts[0]);
+        for (let i = sel.selectedIndex - 1; i >= 0; i--) {
+            const parts = sel.options[i].value.split('/');
+            if (parseInt(parts[0]) !== currentMonth) {
+                sel.selectedIndex = i;
+                selectWeek(method);
+                return;
+            }
+        }
+    } else {
+        if (sel.selectedIndex > 0) { sel.selectedIndex--; selectWeek(method); }
+    }
 }
 
 function populateWeekSelector(method, weeks) {
@@ -316,7 +344,18 @@ function refreshDashboard(method) {
     const rangeEl = document.getElementById(`period-range-${method}`);
     if (rangeEl) {
         if (period === 'weekly') rangeEl.textContent = getWeekRange(selectedWeek);
-        else if (period === 'monthly') rangeEl.textContent = `Month view`;
+        else if (period === 'monthly') {
+            // Show month name based on the selected week's month
+            const parts = selectedWeek ? selectedWeek.split('/') : [];
+            const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            if (parts.length >= 3) {
+                const m = parseInt(parts[0]) - 1;
+                const y = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+                rangeEl.textContent = `${monthNames[m]} ${y} · ${trades.length} trades`;
+            } else {
+                rangeEl.textContent = `Month view · ${trades.length} trades`;
+            }
+        }
         else rangeEl.textContent = `All-time (${allTrades.length} trades)`;
     }
 
