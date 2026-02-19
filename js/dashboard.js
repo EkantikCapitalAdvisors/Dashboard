@@ -2690,6 +2690,8 @@ document.addEventListener('DOMContentLoaded', async function () {
             } catch (e) { console.warn('[DB sync] ECFS background sync failed:', e); }
         })();
     }
+
+    if (!ecfsLoaded) {
         // Try loading from DB
         try {
             const dbTrades = await DB.loadTrades('ecfs_trades');
@@ -2781,6 +2783,8 @@ document.addEventListener('DOMContentLoaded', async function () {
             } catch (e) { console.warn('[DB sync] Discord background sync failed:', e); }
         })();
     }
+
+    if (!discordLoaded) {
         try {
             const dbTrades = await DB.loadTrades('discord_trades');
             if (dbTrades.length > 0) {
