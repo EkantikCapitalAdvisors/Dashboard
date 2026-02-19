@@ -320,14 +320,22 @@ function parseDiscordExcel(data) {
     const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
     
     const trades = [];
+    let lastDateRaw = null; // carry forward merged date cells
     for (let i = 1; i < json.length; i++) {
         const row = json[i];
-        // Need at least datetime + enough columns for P&L data; skip blank rows
-        if (!row || row.length < 7 || !row[0]) continue;
+        if (!row || row.length < 7) continue;
+
+        // Inherit date from previous row when the cell is empty (merged cell pattern)
+        if (row[0] != null && row[0] !== '') lastDateRaw = row[0];
+        if (!lastDateRaw) continue; // no date seen yet — still in header area
 
         const netDollar = parseFloat(row[8]) || 0;
         const netPoints = parseFloat(row[6]) || 0;
         const riskPoints = parseFloat(row[7]) || 0;
+
+        // Skip rows that carry no trade data at all (spacer / summary rows)
+        if (netDollar === 0 && netPoints === 0 && !row[2]) continue;
+
         // Derive outcome from dollar P&L if the outcome column is absent or shorthand (W/L)
         const outcomeRaw = String(row[9] || '').toLowerCase().trim();
         const isWin = outcomeRaw.includes('win') || outcomeRaw === 'w' || outcomeRaw === 'yes'
@@ -335,8 +343,9 @@ function parseDiscordExcel(data) {
         // Use row index as fallback tradeNum so dedup never collapses all rows to one key
         const tradeNum = row[1] != null && row[1] !== '' ? row[1] : `row-${i}`;
 
+        const datetimeStr = formatExcelDate(lastDateRaw);
         trades.push({
-            datetime: formatExcelDate(row[0]),
+            datetime: datetimeStr,
             tradeNum,
             direction: row[2] || '',
             entryPrice: parseFloat(row[3]) || 0,
@@ -348,7 +357,7 @@ function parseDiscordExcel(data) {
             riskDollars: riskPoints * DISCORD_PPT,
             isWin,
             outcome: isWin ? 'Win' : 'Loss',
-            date: extractDate(formatExcelDate(row[0]))
+            date: extractDate(datetimeStr)
         });
     }
     return trades;
