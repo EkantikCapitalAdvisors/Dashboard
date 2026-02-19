@@ -3,11 +3,11 @@
 // Ekantik Capital Performance Dashboard v2.0
 // =====================================================
 
-const ECFS_RISK = 100;       // $100 per trade (0.5% of $20k)
+const ECFS_RISK = 100;       // $100 per trade (2% of $5k)
 const ECFS_PPT = 5;          // $5 per point (MES)
 const DISCORD_RISK = 500;    // $500 per trade
 const DISCORD_PPT = 50;      // $50 per point (ES)
-const STARTING_BALANCE = 20000;
+const STARTING_BALANCE = 5000;  // $5,000 portfolio for ECFS Conservative (2% risk per trade)
 const DISCORD_STARTING_BALANCE = 5000; // $5,000 portfolio for ECFS Aggressive (10% risk per trade)
 
 // ===== DATABASE API =====

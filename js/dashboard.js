@@ -1165,14 +1165,14 @@ function renderGrowthComparison(containerId, ecfsAnnualR, discordAnnualR, suffix
     if (!container) return;
 
     // Compute weekly return rates from Annual R
-    // Annual R at 0.5% risk = annualR * 0.005 (return as fraction of account per year)
+    // Annual R at 2% risk = annualR * 0.02 (return as fraction of account per year)
     // Weekly compounding: (1 + weeklyRate)^52 = 1 + annualRate
     const spyAnnual = 0.146; // 14.6% CAGR — S&P 500 total return (with dividends reinvested), 15-year average (2011–2025)
-    // IMPORTANT: Both strategies use 0.5% risk for apples-to-apples edge comparison.
+    // IMPORTANT: Both strategies use 2% risk for apples-to-apples edge comparison.
     // This isolates edge quality (EV × frequency) from position-sizing differences.
-    // ECFS Aggressive's actual risk is 10% ($500 on $5K), but comparing at the SAME risk level 
+    // ECFS Aggressive's actual risk is 10% ($500 on $5K), but comparing at the SAME risk level
     // shows which edge is more powerful per unit of risk.
-    const compareRiskPct = 0.005; // 0.5% risk — equal basis for comparison
+    const compareRiskPct = 0.02; // 2% risk — equal basis for comparison (ECFS Conservative actual risk)
     const ecfsAnnual = ecfsAnnualR * compareRiskPct;
     const discordAnnual = discordAnnualR * compareRiskPct;
 
@@ -1273,7 +1273,7 @@ function renderGrowthComparison(containerId, ecfsAnnualR, discordAnnualR, suffix
     setH(`growth-subtitle-${suffix}`,
         `Annual R extrapolated from <strong style="color:#60a5fa;">${activeCount + discordCount} all-time trades</strong> ` +
         `(ECFS Conservative: ${activeCount}, ECFS Aggressive: ${discordCount}) as of <strong style="color:#60a5fa;">${latestDate}</strong>. ` +
-        `Compounded weekly — all strategies compared at equal 0.5% risk per trade to isolate edge quality. ECFS Aggressive actually trades at 10% risk ($500/trade on $5K) for higher absolute returns. S&P 500 uses 14.6% CAGR (15-year avg total return with dividends, 2011\u20132025). ` +
+        `Compounded weekly — all strategies compared at equal 2% risk per trade to isolate edge quality. ECFS Aggressive actually trades at 10% risk ($500/trade on $5K) for higher absolute returns. S&P 500 uses 14.6% CAGR (15-year avg total return with dividends, 2011\u20132025).` +
         `<span style="color:#60a5fa;">Updated weekly with new trade data.</span>`
     );
 
@@ -1815,7 +1815,7 @@ function renderCompareInsights(ak, dk) {
         icon: 'fa-shield-alt',
         color: '#d4af37',
         title: 'Different Risk, Same Edge Framework',
-        text: `ECFS Conservative risks $${ECFS_RISK}/trade (0.5% of $20K) while ECFS Aggressive risks $${DISCORD_RISK}/trade (10% of $5K). Dollar amounts differ, but R-normalized metrics tell the real story.`
+        text: `ECFS Conservative risks $${ECFS_RISK}/trade (2% of $5K) while ECFS Aggressive risks $${DISCORD_RISK}/trade (10% of $5K). Dollar amounts differ, but R-normalized metrics tell the real story.`
     });
 
     // 2. EV comparison in R
