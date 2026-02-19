@@ -64,6 +64,7 @@ async function handleCSVUpload(event, method) {
                 await DB.saveWeeklySnapshot(snap);
             }
             state.active.snapshots = snapshots;
+            localStorage.setItem('ecfs-snapshots', JSON.stringify(snapshots));
 
             showUploadSuccess('active', `${trades.length} total trades saved (${uniqueNew.length} new from ${file.name})`);
             showExportButton('active');
@@ -120,6 +121,7 @@ async function handleExcelUpload(event, method) {
                 await DB.saveWeeklySnapshot(snap);
             }
             state.discord.snapshots = snapshots;
+            localStorage.setItem('discord-snapshots', JSON.stringify(snapshots));
 
             const addedMsg = uniqueNew.length < newTrades.length 
                 ? ` (${uniqueNew.length} new, ${newTrades.length - uniqueNew.length} duplicates skipped)`
@@ -166,8 +168,11 @@ function clearData(method) {
     localStorage.removeItem(method === 'active' ? 'ecfs-trades' : 'discord-trades');
     localStorage.removeItem(method === 'active' ? 'ecfs-filename' : 'discord-filename');
     localStorage.removeItem(method === 'active' ? 'ecfs-upload-time' : 'discord-upload-time');
+    localStorage.removeItem(method === 'active' ? 'ecfs-snapshots' : 'discord-snapshots');
+    if (method === 'active') localStorage.removeItem('ecfs-raw-csv');
     state[method].allTrades = [];
     state[method].kpis = null;
+    state[method].snapshots = [];
     location.reload();
 }
 
@@ -2559,10 +2564,46 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     // Load weekly snapshots for historical charts
-    try {
-        state.active.snapshots = await DB.loadWeeklySnapshots('active');
-        state.discord.snapshots = await DB.loadWeeklySnapshots('discord');
-    } catch (e) { console.error('Error loading snapshots:', e); }
+    // Priority: localStorage → REST API DB → regenerate from trade data
+    const tryLoadSnapshotsFromStorage = (storageKey) => {
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+            } catch (e) { console.error(`Error parsing ${storageKey}:`, e); }
+        }
+        return null;
+    };
+
+    const activeSnaps = tryLoadSnapshotsFromStorage('ecfs-snapshots');
+    const discordSnaps = tryLoadSnapshotsFromStorage('discord-snapshots');
+
+    if (activeSnaps) {
+        state.active.snapshots = activeSnaps;
+    } else {
+        try {
+            state.active.snapshots = await DB.loadWeeklySnapshots('active');
+        } catch (e) { console.error('Error loading active snapshots from DB:', e); }
+    }
+
+    if (discordSnaps) {
+        state.discord.snapshots = discordSnaps;
+    } else {
+        try {
+            state.discord.snapshots = await DB.loadWeeklySnapshots('discord');
+        } catch (e) { console.error('Error loading discord snapshots from DB:', e); }
+    }
+
+    // If snapshots are still empty, regenerate from available trade data and cache them
+    if (state.active.snapshots.length === 0 && state.active.allTrades.length > 0) {
+        state.active.snapshots = generateWeeklySnapshots(state.active.allTrades, 'active', ECFS_RISK, ECFS_PPT);
+        localStorage.setItem('ecfs-snapshots', JSON.stringify(state.active.snapshots));
+    }
+    if (state.discord.snapshots.length === 0 && state.discord.allTrades.length > 0) {
+        state.discord.snapshots = generateWeeklySnapshots(state.discord.allTrades, 'discord', DISCORD_RISK, DISCORD_PPT);
+        localStorage.setItem('discord-snapshots', JSON.stringify(state.discord.snapshots));
+    }
 
     // Re-render growth charts now that BOTH strategies' data is available
     // (First render may have had missing cross-strategy data due to load order)
