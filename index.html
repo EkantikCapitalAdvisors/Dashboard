@@ -286,13 +286,31 @@
 
                     <!-- 1A. How Is The Edge Calculated? -->
                     <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-[#d4af37]/25 rounded-2xl p-6 sm:p-8 mb-6">
-                        <div class="flex items-center gap-3 mb-6">
+                        <div class="flex items-center gap-3 mb-4">
                             <div class="w-10 h-10 rounded-full bg-[#d4af37]/15 flex items-center justify-center flex-shrink-0">
                                 <span class="text-[#d4af37] font-bold text-lg">1</span>
                             </div>
                             <div>
                                 <h3 class="text-xl font-bold text-white">How Is The Edge Calculated?</h3>
                                 <p class="text-gray-400 text-xs mt-0.5">The mathematical formula behind every trading decision</p>
+                            </div>
+                        </div>
+
+                        <!-- Edge Timeframe Filter -->
+                        <div class="flex items-center justify-between mb-5 flex-wrap gap-2">
+                            <span class="text-gray-500 text-[10px] flex items-center gap-1.5">
+                                <i class="fas fa-filter text-[#d4af37]/60"></i>
+                                <span id="edge-period-label-active" class="text-gray-400">All-Time</span>
+                            </span>
+                            <div class="flex gap-1.5">
+                                <button onclick="setEdgePeriod('active','alltime')" id="edge-period-active-alltime"
+                                    class="edge-period-btn active-edge-period px-2.5 py-1 rounded text-[10px] font-bold transition-all">All-Time</button>
+                                <button onclick="setEdgePeriod('active','3months')" id="edge-period-active-3months"
+                                    class="edge-period-btn px-2.5 py-1 bg-[#0d1d35] text-gray-400 rounded text-[10px] font-bold border border-gray-700 hover:border-[#d4af37]/50 transition-all">3 Months</button>
+                                <button onclick="setEdgePeriod('active','1month')" id="edge-period-active-1month"
+                                    class="edge-period-btn px-2.5 py-1 bg-[#0d1d35] text-gray-400 rounded text-[10px] font-bold border border-gray-700 hover:border-[#d4af37]/50 transition-all">1 Month</button>
+                                <button onclick="setEdgePeriod('active','2weeks')" id="edge-period-active-2weeks"
+                                    class="edge-period-btn px-2.5 py-1 bg-[#0d1d35] text-gray-400 rounded text-[10px] font-bold border border-gray-700 hover:border-[#d4af37]/50 transition-all">2 Weeks</button>
                             </div>
                         </div>
 
@@ -831,13 +849,31 @@
 
                     <!-- 1A. How Is The Edge Calculated? (Discord) -->
                     <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-blue-400/25 rounded-2xl p-6 sm:p-8 mb-6">
-                        <div class="flex items-center gap-3 mb-6">
+                        <div class="flex items-center gap-3 mb-4">
                             <div class="w-10 h-10 rounded-full bg-blue-400/15 flex items-center justify-center flex-shrink-0">
                                 <span class="text-blue-400 font-bold text-lg">1</span>
                             </div>
                             <div>
                                 <h3 class="text-xl font-bold text-white">How Is The Edge Calculated?</h3>
                                 <p class="text-gray-400 text-xs mt-0.5">The mathematical formula behind every trading decision</p>
+                            </div>
+                        </div>
+
+                        <!-- Edge Timeframe Filter -->
+                        <div class="flex items-center justify-between mb-5 flex-wrap gap-2">
+                            <span class="text-gray-500 text-[10px] flex items-center gap-1.5">
+                                <i class="fas fa-filter text-blue-400/60"></i>
+                                <span id="edge-period-label-discord" class="text-gray-400">All-Time</span>
+                            </span>
+                            <div class="flex gap-1.5">
+                                <button onclick="setEdgePeriod('discord','alltime')" id="edge-period-discord-alltime"
+                                    class="edge-period-btn active-edge-period-blue px-2.5 py-1 rounded text-[10px] font-bold transition-all">All-Time</button>
+                                <button onclick="setEdgePeriod('discord','3months')" id="edge-period-discord-3months"
+                                    class="edge-period-btn px-2.5 py-1 bg-[#0d1d35] text-gray-400 rounded text-[10px] font-bold border border-gray-700 hover:border-blue-400/50 transition-all">3 Months</button>
+                                <button onclick="setEdgePeriod('discord','1month')" id="edge-period-discord-1month"
+                                    class="edge-period-btn px-2.5 py-1 bg-[#0d1d35] text-gray-400 rounded text-[10px] font-bold border border-gray-700 hover:border-blue-400/50 transition-all">1 Month</button>
+                                <button onclick="setEdgePeriod('discord','2weeks')" id="edge-period-discord-2weeks"
+                                    class="edge-period-btn px-2.5 py-1 bg-[#0d1d35] text-gray-400 rounded text-[10px] font-bold border border-gray-700 hover:border-blue-400/50 transition-all">2 Weeks</button>
                             </div>
                         </div>
 

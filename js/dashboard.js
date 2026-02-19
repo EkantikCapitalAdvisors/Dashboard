@@ -5,8 +5,8 @@
 
 // State
 const state = {
-    active: { allTrades: [], currentPeriod: 'alltime', selectedWeek: null, kpis: null, snapshots: [] },
-    discord: { allTrades: [], currentPeriod: 'alltime', selectedWeek: null, kpis: null, snapshots: [] }
+    active: { allTrades: [], currentPeriod: 'alltime', selectedWeek: null, kpis: null, snapshots: [], edgePeriod: 'alltime' },
+    discord: { allTrades: [], currentPeriod: 'alltime', selectedWeek: null, kpis: null, snapshots: [], edgePeriod: 'alltime' }
 };
 
 const chartInstances = {};
@@ -536,6 +536,9 @@ function refreshDashboard(method) {
 
     if (method === 'active') renderActive(kpis, trades, allTimeKPIs, allTrades);
     else if (method === 'discord') renderDiscord(kpis, trades, allTimeKPIs, allTrades);
+
+    // Update edge section with its own independent timeframe filter
+    updateEdgeSection(method);
 }
 
 function updateLastUpdated(trades) {
@@ -555,6 +558,100 @@ function updateLastUpdated(trades) {
         const d = new Date();
         document.getElementById('last-updated').textContent = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     }
+}
+
+// ===== EDGE TIMEFRAME FILTER =====
+function filterByTimeWindow(trades, period) {
+    if (period === 'alltime') return trades;
+    const days = period === '3months' ? 90 : period === '1month' ? 30 : 14;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    return trades.filter(t => {
+        const dateStr = t.exitTime || t.datetime || t.date || '';
+        if (!dateStr) return true;
+        const parts = dateStr.split(' ')[0].split('/');
+        if (parts.length < 3) return true;
+        const year = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+        const tradeDate = new Date(parseInt(year), parseInt(parts[0]) - 1, parseInt(parts[1]));
+        return tradeDate >= cutoff;
+    });
+}
+
+function setEdgePeriod(method, period) {
+    state[method].edgePeriod = period;
+    const activeClass = method === 'active' ? 'active-edge-period' : 'active-edge-period-blue';
+    document.querySelectorAll(`#panel-${method} .edge-period-btn`).forEach(b => {
+        b.classList.remove('active-edge-period', 'active-edge-period-blue');
+        b.classList.add('bg-[#0d1d35]', 'text-gray-400', 'border', 'border-gray-700');
+    });
+    const btn = document.getElementById(`edge-period-${method}-${period}`);
+    if (btn) {
+        btn.classList.add(activeClass);
+        btn.classList.remove('bg-[#0d1d35]', 'text-gray-400', 'border', 'border-gray-700');
+    }
+    updateEdgeSection(method);
+}
+
+function updateEdgeSection(method) {
+    const allTrades = state[method].allTrades;
+    if (!allTrades || allTrades.length === 0) return;
+
+    const edgePeriod = state[method].edgePeriod || 'alltime';
+    const edgeTrades = filterByTimeWindow(allTrades, edgePeriod);
+    const risk = method === 'active' ? ECFS_RISK : DISCORD_RISK;
+    const ppt = method === 'active' ? ECFS_PPT : DISCORD_PPT;
+    const startBal = method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
+    const edgeK = edgeTrades.length > 0 ? calculateKPIs(edgeTrades, risk, ppt, startBal) : null;
+    if (!edgeK) return;
+
+    const prefix = method === 'active' ? 'fc' : 'dfc';
+    const riskBudget = risk;
+    const setEl = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+
+    // Update trade count label
+    const labelMap = { alltime: 'All-Time', '3months': 'Last 3 Months', '1month': 'Last Month', '2weeks': 'Last 2 Weeks' };
+    const labelEl = document.getElementById(`edge-period-label-${method}`);
+    if (labelEl) labelEl.textContent = `${labelMap[edgePeriod] || 'All-Time'} · ${edgeTrades.length} trade${edgeTrades.length !== 1 ? 's' : ''}`;
+
+    if (method === 'active') {
+        const evBig = document.getElementById('active-ev-hero-big');
+        if (evBig) evBig.textContent = `${edgeK.evPlannedR >= 0 ? '+' : ''}${edgeK.evPlannedR.toFixed(1)}%R`;
+        setEl('active-ev-hero-sub', `${fmtDollar(edgeK.evPerTrade)} per trade (planned $100 risk)`);
+        const actualRisk = document.getElementById('active-ev-actual-risk');
+        if (actualRisk) actualRisk.innerHTML = `<strong>Actual risk-adjusted:</strong> ${edgeK.evActualR >= 0 ? '+' : ''}${edgeK.evActualR.toFixed(1)}%R (avg risk: ${fmtDollar(edgeK.avgRiskDollars)})`;
+        setColor('active-edge-avgwin', fmtDollar(edgeK.avgWinDollar), 1);
+        setEl('active-edge-avgwin-pts', `+${edgeK.avgWinPts.toFixed(2)} pts`);
+        setColor('active-edge-avgloss', fmtDollar(edgeK.avgLossDollar), -1);
+        setEl('active-edge-avgloss-pts', `${edgeK.avgLossPts.toFixed(2)} pts`);
+        setEl('active-edge-wr', `${edgeK.winRate.toFixed(1)}% (${edgeK.winCount}W / ${edgeK.lossCount}L)`);
+        setEl('active-edge-explanation', buildEdgeExplanation(edgeK));
+        setEl('active-edge-adherence', `${edgeK.riskAdherence.toFixed(0)}%`);
+    } else {
+        const evBig = document.getElementById('discord-ev-hero-big');
+        if (evBig) evBig.textContent = `${edgeK.evPlannedR >= 0 ? '+' : ''}${edgeK.evPlannedR.toFixed(1)}%R`;
+        setEl('discord-ev-hero-sub', `${fmtDollar(edgeK.evPerTrade)} per trade (planned $500 risk)`);
+        setColor('discord-edge-avgwin', fmtDollar(edgeK.avgWinDollar), 1);
+        setEl('discord-edge-avgwin-pts', `+${edgeK.avgWinPts.toFixed(2)} pts`);
+        setColor('discord-edge-avgloss', fmtDollar(edgeK.avgLossDollar), -1);
+        setEl('discord-edge-avgloss-pts', `${edgeK.avgLossPts.toFixed(2)} pts`);
+        setEl('discord-edge-wr', `${edgeK.winRate.toFixed(1)}% (${edgeK.winCount}W / ${edgeK.lossCount}L)`);
+        setEl('discord-edge-explanation', buildEdgeExplanation(edgeK));
+        setEl('discord-detail-wlratio', edgeK.wlRatio === Infinity ? '∞' : edgeK.wlRatio.toFixed(2));
+    }
+
+    // Formula elements
+    const edgeR = edgeK.evPlannedR;
+    const edgeSign = edgeR >= 0 ? '+' : '';
+    const winRateDec = edgeK.winRate / 100;
+    const lossRateDec = 1 - winRateDec;
+    const avgWinR = riskBudget > 0 ? edgeK.avgWinDollar / riskBudget : 0;
+    const avgLossR = riskBudget > 0 ? Math.abs(edgeK.avgLossDollar) / riskBudget : 0;
+
+    setEl(`${prefix}-win-rate`, `${edgeK.winRate.toFixed(1)}%`);
+    setEl(`${prefix}-ev-result`, `${edgeSign}${edgeR.toFixed(1)}%R`);
+    setEl(`${prefix}-formula-line1`, `EV = (${(winRateDec * 100).toFixed(0)}% × ${avgWinR.toFixed(2)}R) − (${(lossRateDec * 100).toFixed(0)}% × ${avgLossR.toFixed(2)}R)`);
+    setEl(`${prefix}-formula-line2`, `EV = ${(winRateDec * avgWinR).toFixed(3)}R − ${(lossRateDec * avgLossR).toFixed(3)}R`);
+    setEl(`${prefix}-formula-result`, `EV = ${edgeSign}${(edgeR / 100).toFixed(3)}R per trade (${edgeSign}${edgeR.toFixed(1)}%R)`);
 }
 
 // Helper: get the most recent trade date as formatted string
