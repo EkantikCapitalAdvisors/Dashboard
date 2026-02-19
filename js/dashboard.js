@@ -33,6 +33,7 @@ async function handleCSVUpload(event, method) {
                 const da = new Date(a.entryTime || a.date), db = new Date(b.entryTime || b.date);
                 return da - db;
             });
+            
 
             state.active.allTrades = trades;
             state.active.isSampleData = false;
