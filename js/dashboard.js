@@ -116,7 +116,7 @@ async function handleExcelUpload(event, method) {
             const batchId = `discord-${Date.now()}`;
             await DB.saveTrades('discord_trades', uniqueNew, batchId);
 
-            const snapshots = generateWeeklySnapshots(trades, 'discord', DISCORD_RISK, DISCORD_PPT);
+            const snapshots = generateWeeklySnapshots(trades, 'discord', DISCORD_RISK, DISCORD_PPT, DISCORD_STARTING_BALANCE);
             for (const snap of snapshots) {
                 await DB.saveWeeklySnapshot(snap);
             }
@@ -504,11 +504,12 @@ function refreshDashboard(method) {
 
     const risk = method === 'active' ? ECFS_RISK : DISCORD_RISK;
     const ppt = method === 'active' ? ECFS_PPT : DISCORD_PPT;
-    const kpis = calculateKPIs(trades, risk, ppt);
+    const startBal = method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
+    const kpis = calculateKPIs(trades, risk, ppt, startBal);
     state[method].kpis = kpis;
 
     // Also calculate all-time KPIs for cumulative metrics
-    const allTimeKPIs = calculateKPIs(allTrades, risk, ppt);
+    const allTimeKPIs = calculateKPIs(allTrades, risk, ppt, startBal);
 
     const rangeEl = document.getElementById(`period-range-${method}`);
     if (rangeEl) {
@@ -742,7 +743,7 @@ function renderDiscord(k, trades, allK, allTrades) {
     renderWeeklyTrend('chart-weekly-trend-discord', allK.weeklyPL, 'discord');
 
     // Monthly Summary
-    renderMonthlySummary('monthly-summary-discord', allTrades, DISCORD_RISK, DISCORD_PPT);
+    renderMonthlySummary('monthly-summary-discord', allTrades, DISCORD_RISK, DISCORD_PPT, DISCORD_STARTING_BALANCE);
 
     // Trade Log
     renderDiscordTradeLog('discord-trades-body', trades);
@@ -854,15 +855,20 @@ function renderFoodChain(method, k, allK, allTrades) {
     setEl(`${prefix}-formula-result`, `EV = ${edgeSign}${(edgeR / 100).toFixed(3)}R per trade (${edgeSign}${edgeR.toFixed(1)}%R)`);
 
     // --- Returns Scaling Bars ---
-    const accountSize = STARTING_BALANCE;
+    const accountSize = method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
     const barsContainer = el(`${prefix}-returns-bars`);
     if (barsContainer) {
         // Different risk levels (% of account)
-        const riskLevels = [
+        const riskLevels = method === 'active' ? [
             { pct: 0.25, label: '0.25%' },
             { pct: 0.50, label: '0.50%' },
             { pct: 1.00, label: '1.00%' },
             { pct: 2.00, label: '2.00%' }
+        ] : [
+            { pct: 2.50, label: '2.5%' },
+            { pct: 5.00, label: '5%' },
+            { pct: 10.00, label: '10%' },
+            { pct: 15.00, label: '15%' }
         ];
 
         const maxReturn = Math.max(...riskLevels.map(r => Math.abs(evR * (accountSize * r.pct / 100) / riskBudget * tradesPerYear * riskBudget)));
@@ -961,7 +967,8 @@ function computeAnnualRFromAllTrades(method) {
     if (!trades || trades.length === 0) return 0;
     const risk = method === 'active' ? ECFS_RISK : DISCORD_RISK;
     const ppt = method === 'active' ? ECFS_PPT : DISCORD_PPT;
-    const kpis = calculateKPIs(trades, risk, ppt);
+    const startBal = method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
+    const kpis = calculateKPIs(trades, risk, ppt, startBal);
     if (!kpis || kpis.totalTrades < 1) return 0;
     const evR = kpis.evPlannedR / 100;
     const tradingDays = kpis.tradingDays.length || 1;
@@ -977,7 +984,8 @@ function monteCarloMaxDD(method, { simulations = 5000, percentile = 95 } = {}) {
     if (!trades || trades.length < 5) return null; // need minimum sample
 
     const riskBudget = method === 'active' ? ECFS_RISK : DISCORD_RISK;
-    const kpis = calculateKPIs(trades, riskBudget, method === 'active' ? ECFS_PPT : DISCORD_PPT);
+    const startBal = method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
+    const kpis = calculateKPIs(trades, riskBudget, method === 'active' ? ECFS_PPT : DISCORD_PPT, startBal);
     if (!kpis || kpis.totalTrades < 5) return null;
 
     // Build outcome array in R-multiples (dollarPL / riskBudget)
@@ -1020,9 +1028,9 @@ function monteCarloMaxDD(method, { simulations = 5000, percentile = 95 } = {}) {
     const worstCaseDDR = maxDDs[p99Idx];
 
     // Convert R to % of starting balance
-    const ddPct = (ddAtPercentile * riskBudget / STARTING_BALANCE) * 100;
-    const medianDDPct = (medianDDR * riskBudget / STARTING_BALANCE) * 100;
-    const worstDDPct = (worstCaseDDR * riskBudget / STARTING_BALANCE) * 100;
+    const ddPct = (ddAtPercentile * riskBudget / startBal) * 100;
+    const medianDDPct = (medianDDR * riskBudget / startBal) * 100;
+    const worstDDPct = (worstCaseDDR * riskBudget / startBal) * 100;
 
     return {
         percentile,
@@ -1057,7 +1065,7 @@ function renderGrowthComparison(containerId, ecfsAnnualR, discordAnnualR, suffix
     const spyAnnual = 0.146; // 14.6% CAGR — S&P 500 total return (with dividends reinvested), 15-year average (2011–2025)
     // IMPORTANT: Both strategies use 0.5% risk for apples-to-apples edge comparison.
     // This isolates edge quality (EV × frequency) from position-sizing differences.
-    // ECFS Aggressive's actual risk is 2.5% (5×), but comparing at the SAME risk level 
+    // ECFS Aggressive's actual risk is 10% ($500 on $5K), but comparing at the SAME risk level 
     // shows which edge is more powerful per unit of risk.
     const compareRiskPct = 0.005; // 0.5% risk — equal basis for comparison
     const ecfsAnnual = ecfsAnnualR * compareRiskPct;
@@ -1160,7 +1168,7 @@ function renderGrowthComparison(containerId, ecfsAnnualR, discordAnnualR, suffix
     setH(`growth-subtitle-${suffix}`,
         `Annual R extrapolated from <strong style="color:#60a5fa;">${activeCount + discordCount} all-time trades</strong> ` +
         `(ECFS Active: ${activeCount}, ECFS Aggressive: ${discordCount}) as of <strong style="color:#60a5fa;">${latestDate}</strong>. ` +
-        `Compounded weekly — all strategies compared at equal 0.5% risk per trade to isolate edge quality. ECFS Aggressive actually trades at 2.5% (5×) for higher absolute returns. S&P 500 uses 14.6% CAGR (15-year avg total return with dividends, 2011\u20132025). ` +
+        `Compounded weekly — all strategies compared at equal 0.5% risk per trade to isolate edge quality. ECFS Aggressive actually trades at 10% risk ($500/trade on $5K) for higher absolute returns. S&P 500 uses 14.6% CAGR (15-year avg total return with dividends, 2011\u20132025). ` +
         `<span style="color:#60a5fa;">Updated weekly with new trade data.</span>`
     );
 
@@ -1504,7 +1512,8 @@ function getCompareKPIs(method) {
 
     const risk = method === 'active' ? ECFS_RISK : DISCORD_RISK;
     const ppt = method === 'active' ? ECFS_PPT : DISCORD_PPT;
-    return calculateKPIs(trades, risk, ppt);
+    const startBal = method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
+    return calculateKPIs(trades, risk, ppt, startBal);
 }
 
 function renderCompare() {
@@ -1701,7 +1710,7 @@ function renderCompareInsights(ak, dk) {
         icon: 'fa-shield-alt',
         color: '#d4af37',
         title: 'Different Risk, Same Edge Framework',
-        text: `ECFS Active risks $${ECFS_RISK}/trade (0.5% of $20K) while ECFS Aggressive risks $${DISCORD_RISK}/trade (2.5%). Dollar amounts differ, but R-normalized metrics tell the real story.`
+        text: `ECFS Active risks $${ECFS_RISK}/trade (0.5% of $20K) while ECFS Aggressive risks $${DISCORD_RISK}/trade (10% of $5K). Dollar amounts differ, but R-normalized metrics tell the real story.`
     });
 
     // 2. EV comparison in R
@@ -2265,7 +2274,7 @@ function renderRadarChart(ak, dk) {
 }
 
 // ===== MONTHLY PERFORMANCE SUMMARY TABLE =====
-function renderMonthlySummary(containerId, allTrades, riskBudget, ppt) {
+function renderMonthlySummary(containerId, allTrades, riskBudget, ppt, startingBalance = STARTING_BALANCE) {
     const container = document.getElementById(containerId);
     if (!container || !allTrades || allTrades.length === 0) return;
 
@@ -2297,7 +2306,7 @@ function renderMonthlySummary(containerId, allTrades, riskBudget, ppt) {
 
     for (const mk of months) {
         const mTrades = monthlyData[mk];
-        const mKPIs = calculateKPIs(mTrades, riskBudget, ppt);
+        const mKPIs = calculateKPIs(mTrades, riskBudget, ppt, startingBalance);
         cumPL += mKPIs.netPL;
 
         const parts = mk.split('/');
@@ -2601,7 +2610,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         localStorage.setItem('ecfs-snapshots', JSON.stringify(state.active.snapshots));
     }
     if (state.discord.snapshots.length === 0 && state.discord.allTrades.length > 0) {
-        state.discord.snapshots = generateWeeklySnapshots(state.discord.allTrades, 'discord', DISCORD_RISK, DISCORD_PPT);
+        state.discord.snapshots = generateWeeklySnapshots(state.discord.allTrades, 'discord', DISCORD_RISK, DISCORD_PPT, DISCORD_STARTING_BALANCE);
         localStorage.setItem('discord-snapshots', JSON.stringify(state.discord.snapshots));
     }
 
