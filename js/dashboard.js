@@ -26,7 +26,26 @@ async function handleCSVUpload(event, method) {
 
             // MERGE: Combine new trades with existing historical data
             // Dedup by entryTime+exitTime+direction to avoid duplicates on re-upload
-            const existingTrades = state.active.allTrades.filter(t => !t._isSample);
+            let existingTrades = state.active.allTrades.filter(t => !t._isSample);
+
+            // Race-condition guard: if state is empty (DB still loading), fetch from DB now
+            if (existingTrades.length === 0) {
+                try {
+                    const dbTrades = await DB.loadTrades('ecfs_trades');
+                    if (dbTrades.length > 0) {
+                        const seenKeys = new Set();
+                        existingTrades = dbTrades
+                            .filter(r => {
+                                const k = `${r.entry_time}|${r.exit_time}|${r.direction}|${r.dollar_pl}`;
+                                if (seenKeys.has(k)) return false;
+                                seenKeys.add(k);
+                                return true;
+                            })
+                            .map(dbRowToECFSTrade);
+                    }
+                } catch (e) { console.warn('Could not pre-load DB trades before merge:', e); }
+            }
+
             const existingKeys = new Set(existingTrades.map(t => `${t.entryTime}|${t.exitTime}|${t.direction}|${t.dollarPL}`));
             const uniqueNew = newTrades.filter(t => !existingKeys.has(`${t.entryTime}|${t.exitTime}|${t.direction}|${t.dollarPL}`));
             const trades = [...existingTrades, ...uniqueNew].sort((a, b) => {
@@ -46,7 +65,8 @@ async function handleCSVUpload(event, method) {
             const weeks = getWeeksList(trades);
             state.active.selectedWeek = weeks[0];
             populateWeekSelector('active', weeks);
-            refreshDashboard('active');
+            // Always reset to all-time after upload so user sees the full merged dataset
+            setPeriod('active', 'alltime');
 
             const addedMsg = uniqueNew.length < newTrades.length 
                 ? ` (${uniqueNew.length} new, ${newTrades.length - uniqueNew.length} duplicates skipped)`
@@ -90,7 +110,25 @@ async function handleExcelUpload(event, method) {
 
             // MERGE: Combine new trades with existing historical data
             // Dedup by tradeNum to avoid duplicates on re-upload
-            const existingTrades = state.discord.allTrades.filter(t => !t._isSample);
+            let existingTrades = state.discord.allTrades.filter(t => !t._isSample);
+
+            // Race-condition guard: if state is empty (DB still loading), fetch from DB now
+            if (existingTrades.length === 0) {
+                try {
+                    const dbTrades = await DB.loadTrades('discord_trades');
+                    if (dbTrades.length > 0) {
+                        const seenNums = new Set();
+                        existingTrades = dbTrades
+                            .filter(r => {
+                                if (seenNums.has(r.trade_num)) return false;
+                                seenNums.add(r.trade_num);
+                                return true;
+                            })
+                            .map(dbRowToDiscordTrade);
+                    }
+                } catch (e) { console.warn('Could not pre-load DB trades before merge:', e); }
+            }
+
             const existingNums = new Set(existingTrades.map(t => t.tradeNum));
             const uniqueNew = newTrades.filter(t => !existingNums.has(t.tradeNum));
             const trades = [...existingTrades, ...uniqueNew].sort((a, b) => {
@@ -107,7 +145,8 @@ async function handleExcelUpload(event, method) {
             const weeks = getWeeksList(trades);
             state.discord.selectedWeek = weeks[0];
             populateWeekSelector('discord', weeks);
-            refreshDashboard('discord');
+            // Always reset to all-time after upload so user sees the full merged dataset
+            setPeriod('discord', 'alltime');
 
             showUploadSuccess('discord', `${file.name} — ${trades.length} trades parsed`);
 
