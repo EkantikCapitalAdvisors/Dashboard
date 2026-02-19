@@ -322,16 +322,22 @@ function parseDiscordExcel(data) {
     const trades = [];
     for (let i = 1; i < json.length; i++) {
         const row = json[i];
-        if (!row || row.length < 10) continue;
-        
+        // Need at least datetime + enough columns for P&L data; skip blank rows
+        if (!row || row.length < 7 || !row[0]) continue;
+
         const netDollar = parseFloat(row[8]) || 0;
         const netPoints = parseFloat(row[6]) || 0;
         const riskPoints = parseFloat(row[7]) || 0;
-        const outcome = String(row[9] || '').toLowerCase();
-        
+        // Derive outcome from dollar P&L if the outcome column is absent or shorthand (W/L)
+        const outcomeRaw = String(row[9] || '').toLowerCase().trim();
+        const isWin = outcomeRaw.includes('win') || outcomeRaw === 'w' || outcomeRaw === 'yes'
+            || (outcomeRaw === '' && netDollar > 0);
+        // Use row index as fallback tradeNum so dedup never collapses all rows to one key
+        const tradeNum = row[1] != null && row[1] !== '' ? row[1] : `row-${i}`;
+
         trades.push({
             datetime: formatExcelDate(row[0]),
-            tradeNum: row[1] || '',
+            tradeNum,
             direction: row[2] || '',
             entryPrice: parseFloat(row[3]) || 0,
             stopPrice: parseFloat(row[4]) || 0,
@@ -340,8 +346,8 @@ function parseDiscordExcel(data) {
             riskPoints,
             dollarPL: netDollar,
             riskDollars: riskPoints * DISCORD_PPT,
-            isWin: outcome.includes('win'),
-            outcome: outcome.includes('win') ? 'Win' : 'Loss',
+            isWin,
+            outcome: isWin ? 'Win' : 'Loss',
             date: extractDate(formatExcelDate(row[0]))
         });
     }
