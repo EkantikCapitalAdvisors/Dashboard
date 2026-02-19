@@ -53,10 +53,10 @@ async function handleCSVUpload(event, method) {
                 : '';
             showUploadSuccess('active', `${file.name} — ${trades.length} total trades${addedMsg}`);
 
-            // Save only NEW trades to DB in background (avoid duplicates)
+            // Save all merged trades to DB so the full history is preserved if localStorage is lost
             showUploadProgress('active', 'Saving to database...');
             const batchId = `ecfs-${Date.now()}`;
-            await DB.saveTrades('ecfs_trades', uniqueNew, batchId);
+            await DB.saveTrades('ecfs_trades', trades, batchId);
 
             // Generate and save weekly snapshots
             const snapshots = generateWeeklySnapshots(trades, 'active', ECFS_RISK, ECFS_PPT);
@@ -111,10 +111,10 @@ async function handleExcelUpload(event, method) {
 
             showUploadSuccess('discord', `${file.name} — ${trades.length} trades parsed`);
 
-            // Save only NEW trades to DB (avoid duplicates)
+            // Save all merged trades to DB so the full history is preserved if localStorage is lost
             showUploadProgress('discord', 'Saving to database...');
             const batchId = `discord-${Date.now()}`;
-            await DB.saveTrades('discord_trades', uniqueNew, batchId);
+            await DB.saveTrades('discord_trades', trades, batchId);
 
             const snapshots = generateWeeklySnapshots(trades, 'discord', DISCORD_RISK, DISCORD_PPT, DISCORD_STARTING_BALANCE);
             for (const snap of snapshots) {
@@ -2569,7 +2569,15 @@ document.addEventListener('DOMContentLoaded', async function () {
         try {
             const dbTrades = await DB.loadTrades('ecfs_trades');
             if (dbTrades.length > 0) {
-                state.active.allTrades = dbTrades.map(dbRowToECFSTrade);
+                // Deduplicate by key in case the same trade was saved multiple times
+                const seenKeys = new Set();
+                const uniqueDbTrades = dbTrades.filter(row => {
+                    const key = `${row.entry_time}|${row.exit_time}|${row.direction}|${row.dollar_pl}`;
+                    if (seenKeys.has(key)) return false;
+                    seenKeys.add(key);
+                    return true;
+                });
+                state.active.allTrades = uniqueDbTrades.map(dbRowToECFSTrade);
                 // Use the most recent DB record's updated_at as the upload time
                 const maxUpdated = Math.max(...dbTrades.map(r => r.updated_at || r.created_at || 0));
                 if (maxUpdated > 0 && !localStorage.getItem('ecfs-upload-time')) {
@@ -2595,6 +2603,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                 const trades = parseTradovateCSV(csvText);
 
                 if (trades.length > 0) {
+                    trades.forEach(t => t._isSample = true);
                     state.active.allTrades = trades;
                     state.active.isSampleData = true;
                     const weeks = getWeeksList(trades);
@@ -2632,7 +2641,15 @@ document.addEventListener('DOMContentLoaded', async function () {
         try {
             const dbTrades = await DB.loadTrades('discord_trades');
             if (dbTrades.length > 0) {
-                state.discord.allTrades = dbTrades.map(dbRowToDiscordTrade);
+                // Deduplicate by key in case the same trade was saved multiple times
+                const seenKeys = new Set();
+                const uniqueDbTrades = dbTrades.filter(row => {
+                    const key = `${row.datetime}|${row.direction}|${row.dollar_pl}`;
+                    if (seenKeys.has(key)) return false;
+                    seenKeys.add(key);
+                    return true;
+                });
+                state.discord.allTrades = uniqueDbTrades.map(dbRowToDiscordTrade);
                 // Use the most recent DB record's updated_at as the upload time
                 const maxUpdated = Math.max(...dbTrades.map(r => r.updated_at || r.created_at || 0));
                 if (maxUpdated > 0 && !localStorage.getItem('discord-upload-time')) {
@@ -2656,6 +2673,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             if (resp.ok) {
                 const trades = await resp.json();
                 if (trades.length > 0) {
+                    trades.forEach(t => t._isSample = true);
                     state.discord.allTrades = trades;
                     state.discord.isSampleData = true;
                     const weeks = getWeeksList(trades);
