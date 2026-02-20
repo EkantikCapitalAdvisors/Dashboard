@@ -121,6 +121,7 @@ async function handleCSVUpload(event, method) {
             catch (e) { console.warn('Could not cache snapshots:', e); }
 
             showUploadSuccess('active', `${trades.length} total trades saved (${uniqueNew.length} new from ${file.name})`);
+            recordSyncTime('active');
             showExportButton('active');
         } catch (err) {
             showUploadError('active', 'Error parsing CSV: ' + err.message);
@@ -224,6 +225,7 @@ async function handleExcelUpload(event, method) {
                 ? ` (${uniqueNew.length} new, ${newTrades.length - uniqueNew.length} duplicates skipped)`
                 : '';
             showUploadSuccess('discord', `${file.name} — ${trades.length} total trades${addedMsg}`);
+            recordSyncTime('discord');
             showExportButton('discord');
         } catch (err) {
             showUploadError('discord', 'Error parsing Excel: ' + err.message);
@@ -380,6 +382,16 @@ function switchExecution(method) {
     });
 
     if (method === 'compare') renderCompare();
+
+    // Sync mobile bottom tab bar
+    ['active', 'discord', 'compare'].forEach(m => {
+        const btn = document.getElementById(`mobile-tab-${m}`);
+        if (!btn) return;
+        btn.classList.remove('mobile-tab-active', 'mobile-tab-active-blue');
+        if (m === method) {
+            btn.classList.add(m === 'discord' ? 'mobile-tab-active-blue' : 'mobile-tab-active');
+        }
+    });
 
     // Resize charts after tab switch
     setTimeout(() => {
@@ -653,6 +665,7 @@ function toggleDetailedDashboard(method) {
 function refreshDashboard(method) {
     const allTrades = state[method].allTrades;
     if (!allTrades || allTrades.length === 0) return;
+    resetTradeLogFilter(method);
 
     const period = state[method].currentPeriod;
     const selectedWeek = state[method].selectedWeek;
@@ -686,6 +699,8 @@ function refreshDashboard(method) {
         syncHLButtons(method, 'alltime');
         updateHLRangeLabel(method);
     }
+
+    state[method].periodTrades = trades; // saved for trade log filter/sort
 
     const risk = method === 'active' ? ECFS_RISK : DISCORD_RISK;
     const ppt = method === 'active' ? ECFS_PPT : DISCORD_PPT;
@@ -2744,6 +2759,10 @@ function setColor(elId, text, value) {
 document.addEventListener('DOMContentLoaded', async function () {
     switchExecution('active');
     updateGitHubSyncIndicators();
+    updateSyncStatus('active');
+    updateSyncStatus('discord');
+    showSkeletonKPIs('active');
+    showSkeletonKPIs('discord');
 
     let ecfsLoaded = false;
 
@@ -2785,6 +2804,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                     showUploadProgress('active', `Syncing ${missing.length} missing trades to database…`);
                     await DB.saveTrades('ecfs_trades', missing, `ecfs-sync-${Date.now()}`);
                     showUploadSuccess('active', `${lsTrades.length} trades · ${missing.length} synced to database`);
+                    recordSyncTime('active');
                 }
             } catch (e) { console.warn('[DB sync] ECFS background sync failed:', e); }
         })();
@@ -2880,6 +2900,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                     showUploadProgress('discord', `Syncing ${missing.length} missing trades to database…`);
                     await DB.saveTrades('discord_trades', missing, `discord-sync-${Date.now()}`);
                     showUploadSuccess('discord', `${lsTrades.length} trades · ${missing.length} synced to database`);
+                    recordSyncTime('discord');
                 }
             } catch (e) { console.warn('[DB sync] Discord background sync failed:', e); }
         })();
@@ -3095,4 +3116,170 @@ function showExportToast(msg) {
             toast.classList.remove('animate-fade-in');
         }, 4000);
     }
+}
+
+// =====================================================
+// USABILITY ENHANCEMENTS v1.0
+// =====================================================
+
+// ===== TRADE LOG FILTER + SORT =====
+const tradeLogState = {
+    active:  { filter: 'all', sortCol: null, sortDir: 1 },
+    discord: { filter: 'all', sortCol: null, sortDir: 1 }
+};
+
+function filterTradeLog(method, filter) {
+    tradeLogState[method].filter = filter;
+    // Active style class depends on method
+    const activeClass = method === 'discord' ? 'trade-filter-active-blue' : 'trade-filter-active';
+    ['all', 'win', 'loss', 'long', 'short'].forEach(f => {
+        const btn = document.getElementById(`${method}-filter-${f}`);
+        if (!btn) return;
+        if (f === filter) {
+            btn.className = `trade-filter-btn ${activeClass} px-2.5 py-1 rounded text-[10px] border border-transparent`;
+        } else {
+            btn.className = 'trade-filter-btn px-2.5 py-1 rounded text-[10px] font-semibold bg-[#0d1d35] text-gray-400 border border-gray-700';
+        }
+    });
+    _rerenderTradeLog(method);
+}
+
+function sortTradeLog(method, col) {
+    const s = tradeLogState[method];
+    if (s.sortCol === col) {
+        s.sortDir *= -1; // toggle direction
+    } else {
+        s.sortCol = col;
+        s.sortDir = -1; // default: descending (biggest first)
+    }
+    // Clear all sort indicators
+    ['pts','pl','r','rr'].forEach(c => {
+        const el = document.getElementById(`${method}-sort-${c}`);
+        if (el) el.className = '';
+    });
+    // Set active sort indicator
+    const indicator = document.getElementById(`${method}-sort-${col}`);
+    if (indicator) indicator.className = s.sortDir === 1 ? 'sort-asc' : 'sort-desc';
+    _rerenderTradeLog(method);
+}
+
+function applyTradeFilter(trades, filter) {
+    switch (filter) {
+        case 'win':   return trades.filter(t => t.isWin);
+        case 'loss':  return trades.filter(t => !t.isWin);
+        case 'long':  return trades.filter(t => {
+            const d = (t.direction || '').toLowerCase();
+            return !d.includes('sell') && !d.includes('short');
+        });
+        case 'short': return trades.filter(t => {
+            const d = (t.direction || '').toLowerCase();
+            return d.includes('sell') || d.includes('short');
+        });
+        default: return trades;
+    }
+}
+
+function applyTradeSort(trades, col, dir) {
+    if (!col) return trades;
+    return [...trades].sort((a, b) => {
+        let va, vb;
+        switch (col) {
+            case 'pts': va = a.pointsPL ?? 0; vb = b.pointsPL ?? 0; break;
+            case 'pl':  va = a.dollarPL ?? 0; vb = b.dollarPL ?? 0; break;
+            case 'r':   va = (a.dollarPL ?? 0) / (a.riskDollars || 1);
+                        vb = (b.dollarPL ?? 0) / (b.riskDollars || 1); break;
+            case 'rr':  va = a.rewardRisk ?? 0; vb = b.rewardRisk ?? 0; break;
+            default: return 0;
+        }
+        return (va - vb) * dir;
+    });
+}
+
+function _rerenderTradeLog(method) {
+    const s = tradeLogState[method];
+    const allTrades = state[method]?.periodTrades || state[method]?.allTrades || [];
+    const filtered = applyTradeFilter(allTrades, s.filter);
+    const sorted   = applyTradeSort(filtered, s.sortCol, s.sortDir);
+
+    // Update label
+    const label = document.getElementById(`${method}-filter-label`);
+    if (label) {
+        label.textContent = filtered.length !== allTrades.length
+            ? `${sorted.length} of ${allTrades.length} trades`
+            : (s.sortCol ? `${sorted.length} trades` : '');
+    }
+
+    if (method === 'active') {
+        renderTradeLog('active-trades-body', sorted, ECFS_RISK);
+    } else {
+        renderDiscordTradeLog('discord-trades-body', sorted);
+    }
+}
+
+// Reset filters when a new period is selected (keeps UX clean)
+function resetTradeLogFilter(method) {
+    tradeLogState[method].filter = 'all';
+    tradeLogState[method].sortCol = null;
+    tradeLogState[method].sortDir = 1;
+    ['all','win','loss','long','short'].forEach(f => {
+        const btn = document.getElementById(`${method}-filter-${f}`);
+        if (!btn) return;
+        const isAll = f === 'all';
+        const activeClass = method === 'discord' ? 'trade-filter-active-blue' : 'trade-filter-active';
+        btn.className = isAll
+            ? `trade-filter-btn ${activeClass} px-2.5 py-1 rounded text-[10px] border border-transparent`
+            : 'trade-filter-btn px-2.5 py-1 rounded text-[10px] font-semibold bg-[#0d1d35] text-gray-400 border border-gray-700';
+    });
+    ['pts','pl','r','rr'].forEach(c => {
+        const el = document.getElementById(`${method}-sort-${c}`);
+        if (el) el.className = '';
+    });
+    const label = document.getElementById(`${method}-filter-label`);
+    if (label) label.textContent = '';
+}
+
+// ===== GITHUB SYNC TIMESTAMP =====
+function recordSyncTime(method) {
+    const ts = Date.now();
+    try { localStorage.setItem(`${method}-sync-time`, ts.toString()); } catch(e) {}
+    updateSyncStatus(method, ts);
+}
+
+function updateSyncStatus(method, ts) {
+    const stored = ts || parseInt(localStorage.getItem(`${method}-sync-time`) || '0');
+    const el = document.getElementById(`sync-status-${method}`);
+    const textEl = document.getElementById(`sync-status-${method}-text`);
+    if (!el || !textEl || !stored) return;
+
+    function fmt(ms) {
+        const secs = Math.floor((Date.now() - ms) / 1000);
+        if (secs < 60)  return 'just now';
+        if (secs < 3600) return `${Math.floor(secs/60)} min ago`;
+        if (secs < 86400) return `${Math.floor(secs/3600)}h ago`;
+        return new Date(ms).toLocaleDateString();
+    }
+
+    el.classList.remove('hidden');
+    textEl.textContent = `Synced to GitHub ${fmt(stored)}`;
+
+    // Refresh the "X min ago" text every 60 seconds
+    clearInterval(el._syncInterval);
+    el._syncInterval = setInterval(() => {
+        textEl.textContent = `Synced to GitHub ${fmt(stored)}`;
+    }, 60000);
+}
+
+// ===== SKELETON LOADING HELPERS =====
+function showSkeletonKPIs(method) {
+    const ids = method === 'active'
+        ? ['active-hero-pnl','active-hero-return','active-hero-ev','active-hero-wr','active-hero-pf','active-hero-dd']
+        : ['discord-hero-pnl','discord-hero-return','discord-hero-ev','discord-hero-wr','discord-hero-pf','discord-hero-dd'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '<span class="skeleton skeleton-text-lg">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>';
+    });
+}
+
+function clearSkeletonKPIs(method) {
+    // KPIs will be overwritten by refreshDashboard — no action needed
 }

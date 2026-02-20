@@ -280,6 +280,10 @@
                             </div>
                         </div>
                         <div id="upload-status-active" class="mt-3 hidden"></div>
+                        <div id="sync-status-active" class="mt-1.5 hidden flex items-center gap-1.5 text-[10px] text-gray-600">
+                            <i class="fas fa-cloud text-[9px]"></i>
+                            <span id="sync-status-active-text"></span>
+                        </div>
                     </div>
 
                     <!-- ╔══════════════════════════════════════════════════════╗ -->
@@ -732,9 +736,22 @@
                     </div>
 
                     <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-gray-700/30 rounded-2xl p-6 mb-8">
-                        <div class="flex items-center justify-between mb-4">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                             <h3 class="text-sm font-bold text-white flex items-center"><i class="fas fa-list-alt text-[#d4af37] mr-2"></i>Trade Log</h3>
                             <span class="text-xs text-gray-500" id="active-trade-count"></span>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-1.5 mb-3">
+                            <button onclick="filterTradeLog('active','all')" id="active-filter-all"
+                                class="trade-filter-btn trade-filter-active px-2.5 py-1 rounded text-[10px] border border-transparent">All</button>
+                            <button onclick="filterTradeLog('active','win')" id="active-filter-win"
+                                class="trade-filter-btn px-2.5 py-1 rounded text-[10px] font-semibold bg-[#0d1d35] text-gray-400 border border-gray-700">Wins ✓</button>
+                            <button onclick="filterTradeLog('active','loss')" id="active-filter-loss"
+                                class="trade-filter-btn px-2.5 py-1 rounded text-[10px] font-semibold bg-[#0d1d35] text-gray-400 border border-gray-700">Losses ✗</button>
+                            <button onclick="filterTradeLog('active','long')" id="active-filter-long"
+                                class="trade-filter-btn px-2.5 py-1 rounded text-[10px] font-semibold bg-[#0d1d35] text-gray-400 border border-gray-700">Long</button>
+                            <button onclick="filterTradeLog('active','short')" id="active-filter-short"
+                                class="trade-filter-btn px-2.5 py-1 rounded text-[10px] font-semibold bg-[#0d1d35] text-gray-400 border border-gray-700">Short</button>
+                            <span class="text-[10px] text-gray-600 ml-auto italic" id="active-filter-label"></span>
                         </div>
                         <div class="trade-table">
                             <table>
@@ -748,10 +765,10 @@
                                         <th class="text-gray-400 text-[10px]">Stop</th>
                                         <th class="text-gray-400 text-[10px]">Exit</th>
                                         <th class="text-gray-400 text-[10px]">Risk($)</th>
-                                        <th class="text-gray-400 text-[10px]">Pts</th>
-                                        <th class="text-gray-400 text-[10px]">P&L</th>
-                                        <th class="text-gray-400 text-[10px]">%R</th>
-                                        <th class="text-gray-400 text-[10px]">R:R</th>
+                                        <th class="text-gray-400 text-[10px] sortable-th" onclick="sortTradeLog('active','pts')">Pts <span id="active-sort-pts"></span></th>
+                                        <th class="text-gray-400 text-[10px] sortable-th" onclick="sortTradeLog('active','pl')">P&amp;L <span id="active-sort-pl"></span></th>
+                                        <th class="text-gray-400 text-[10px] sortable-th" onclick="sortTradeLog('active','r')">%R <span id="active-sort-r"></span></th>
+                                        <th class="text-gray-400 text-[10px] sortable-th" onclick="sortTradeLog('active','rr')">R:R <span id="active-sort-rr"></span></th>
                                         <th class="text-gray-400 text-[10px]">Result</th>
                                     </tr>
                                 </thead>
@@ -810,6 +827,10 @@
                             </div>
                         </div>
                         <div id="upload-status-discord" class="mt-3 hidden"></div>
+                        <div id="sync-status-discord" class="mt-1.5 hidden flex items-center gap-1.5 text-[10px] text-gray-600">
+                            <i class="fas fa-cloud text-[9px]"></i>
+                            <span id="sync-status-discord-text"></span>
+                        </div>
                     </div>
 
                     <!-- ╔══════════════════════════════════════════════════════╗ -->
@@ -1243,9 +1264,22 @@
 
                     <!-- Trade Log (Discord) -->
                     <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-gray-700/30 rounded-2xl p-6 mb-8">
-                        <div class="flex items-center justify-between mb-4">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                             <h3 class="text-sm font-bold text-white flex items-center"><i class="fas fa-list-alt text-blue-400 mr-2"></i>Trade Log</h3>
                             <span class="text-xs text-gray-500" id="discord-trade-count"></span>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-1.5 mb-3">
+                            <button onclick="filterTradeLog('discord','all')" id="discord-filter-all"
+                                class="trade-filter-btn trade-filter-active-blue px-2.5 py-1 rounded text-[10px] border border-transparent">All</button>
+                            <button onclick="filterTradeLog('discord','win')" id="discord-filter-win"
+                                class="trade-filter-btn px-2.5 py-1 rounded text-[10px] font-semibold bg-[#0d1d35] text-gray-400 border border-gray-700">Wins ✓</button>
+                            <button onclick="filterTradeLog('discord','loss')" id="discord-filter-loss"
+                                class="trade-filter-btn px-2.5 py-1 rounded text-[10px] font-semibold bg-[#0d1d35] text-gray-400 border border-gray-700">Losses ✗</button>
+                            <button onclick="filterTradeLog('discord','long')" id="discord-filter-long"
+                                class="trade-filter-btn px-2.5 py-1 rounded text-[10px] font-semibold bg-[#0d1d35] text-gray-400 border border-gray-700">Long</button>
+                            <button onclick="filterTradeLog('discord','short')" id="discord-filter-short"
+                                class="trade-filter-btn px-2.5 py-1 rounded text-[10px] font-semibold bg-[#0d1d35] text-gray-400 border border-gray-700">Short</button>
+                            <span class="text-[10px] text-gray-600 ml-auto italic" id="discord-filter-label"></span>
                         </div>
                         <div class="trade-table">
                             <table>
@@ -1257,9 +1291,9 @@
                                         <th class="text-gray-400 text-[10px]">Entry</th>
                                         <th class="text-gray-400 text-[10px]">Stop</th>
                                         <th class="text-gray-400 text-[10px]">Trail</th>
-                                        <th class="text-gray-400 text-[10px]">Net Pts</th>
+                                        <th class="text-gray-400 text-[10px] sortable-th" onclick="sortTradeLog('discord','pts')">Net Pts <span id="discord-sort-pts"></span></th>
                                         <th class="text-gray-400 text-[10px]">Risk(Pts)</th>
-                                        <th class="text-gray-400 text-[10px]">Net$ (1ES)</th>
+                                        <th class="text-gray-400 text-[10px] sortable-th" onclick="sortTradeLog('discord','pl')">Net$ <span id="discord-sort-pl"></span></th>
                                         <th class="text-gray-400 text-[10px]">Result</th>
                                     </tr>
                                 </thead>
@@ -2195,6 +2229,27 @@
 
                 <p class="text-gray-600 text-[9px] text-center mt-3">By continuing you acknowledge this is for informational purposes only. <a href="#compliance-footer" onclick="acceptDisclaimer()" class="underline">Full disclosure</a></p>
             </div>
+        </div>
+    </div>
+
+    <!-- Mobile Sticky Tab Bar -->
+    <div id="mobile-tab-bar" class="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-[#0d1d35]/97 backdrop-blur-md border-t border-gray-700/50">
+        <div class="flex">
+            <button onclick="switchExecution('active')" id="mobile-tab-active"
+                class="mobile-tab-btn mobile-tab-active flex-1 py-3 flex flex-col items-center gap-0.5">
+                <i class="fas fa-bolt text-sm"></i>
+                <span class="text-[9px] font-bold tracking-wide">Conservative</span>
+            </button>
+            <button onclick="switchExecution('discord')" id="mobile-tab-discord"
+                class="mobile-tab-btn flex-1 py-3 flex flex-col items-center gap-0.5">
+                <i class="fas fa-chart-line text-sm"></i>
+                <span class="text-[9px] font-bold tracking-wide">Aggressive</span>
+            </button>
+            <button onclick="switchExecution('compare')" id="mobile-tab-compare"
+                class="mobile-tab-btn flex-1 py-3 flex flex-col items-center gap-0.5">
+                <i class="fas fa-balance-scale text-sm"></i>
+                <span class="text-[9px] font-bold tracking-wide">Compare</span>
+            </button>
         </div>
     </div>
 
