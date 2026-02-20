@@ -202,5 +202,39 @@
     "outcome": "Loss",
     "trade_date": "2/13/2026",
     "upload_batch": "discord-1771557017843"
+  },
+  {
+    "week_key": "02/16/2026",
+    "datetime": "2026-02-19 13:41:40",
+    "trade_num": "F12",
+    "direction": "Buy",
+    "entry_price": 6855,
+    "stop_price": 0,
+    "trailing_profit": "—",
+    "points_pl": 4,
+    "risk_points": 0,
+    "dollar_pl": 10,
+    "risk_dollars": 0,
+    "is_win": true,
+    "outcome": "Win",
+    "trade_date": "2/19/2026",
+    "upload_batch": "discord-1771620208123"
+  },
+  {
+    "week_key": "02/16/2026",
+    "datetime": "2026-02-20 09:10:04",
+    "trade_num": "F13",
+    "direction": "Buy",
+    "entry_price": 6901,
+    "stop_price": 0,
+    "trailing_profit": 6908,
+    "points_pl": 7,
+    "risk_points": 0,
+    "dollar_pl": 10,
+    "risk_dollars": 0,
+    "is_win": true,
+    "outcome": "Win",
+    "trade_date": "2/20/2026",
+    "upload_batch": "discord-1771620208123"
   }
 ]
