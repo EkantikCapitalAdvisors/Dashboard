@@ -551,6 +551,21 @@ function setPeriod(method, period) {
     syncHLButtons(method, period);
     updateHLRangeLabel(method);
 
+    // Sync edge section period to match main timeframe
+    const edgePeriodMap = { alltime: 'alltime', '3months': '3months', '6months': 'alltime', monthly: '1month', week: '2weeks' };
+    const mappedEdgePeriod = edgePeriodMap[period] || 'alltime';
+    state[method].edgePeriod = mappedEdgePeriod;
+    const activeEdgeClass = method === 'active' ? 'active-edge-period' : 'active-edge-period-blue';
+    document.querySelectorAll(`#panel-${method} .edge-period-btn`).forEach(b => {
+        b.classList.remove('active-edge-period', 'active-edge-period-blue');
+        b.classList.add('bg-[#0d1d35]', 'text-gray-400', 'border', 'border-gray-700');
+    });
+    const edgeBtn = document.getElementById(`edge-period-${method}-${mappedEdgePeriod}`);
+    if (edgeBtn) {
+        edgeBtn.classList.add(activeEdgeClass);
+        edgeBtn.classList.remove('bg-[#0d1d35]', 'text-gray-400', 'border', 'border-gray-700');
+    }
+
     refreshDashboard(method);
 }
 
