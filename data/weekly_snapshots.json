@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "method": "discord",
+    "week_key": "02/16/2026",
+    "net_pl": 0,
+    "net_points": -10,
+    "return_pct": 0,
+    "total_trades": 1,
+    "win_count": 0,
+    "loss_count": 1,
+    "win_rate": 0,
+    "profit_factor": 999,
+    "ev_planned_r": 0,
+    "ev_actual_r": 0,
+    "max_dd": 0,
+    "cumulative_pl": 0,
+    "cumulative_balance": 5000,
+    "cumulative_return": 0
+  }
+]
