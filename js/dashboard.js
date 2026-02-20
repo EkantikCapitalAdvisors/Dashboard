@@ -222,8 +222,10 @@ async function handleExcelUpload(event, method) {
             try { localStorage.setItem('discord-snapshots', JSON.stringify(snapshots)); }
             catch (e) { console.warn('Could not cache snapshots:', e); }
 
-            const addedMsg = uniqueNew.length < newTrades.length 
-                ? ` (${uniqueNew.length} new, ${newTrades.length - uniqueNew.length} duplicates skipped)`
+            const overwritten = existingTrades.length - notOverwritten.length;
+            const newCount = newTrades.length - overwritten;
+            const addedMsg = overwritten > 0
+                ? ` (${newCount} new, ${overwritten} updated)`
                 : '';
             showUploadSuccess('discord', `${file.name} — ${trades.length} total trades${addedMsg}`);
             recordSyncTime('discord');
