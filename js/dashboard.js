@@ -463,6 +463,9 @@ function updateHLRangeLabel(method) {
         } else {
             el.textContent = 'Month view';
         }
+    } else if (period === '1week') {
+        const trades = filterByTimeWindow(allTrades, '1week');
+        el.textContent = `Last Week · ${trades.length} trades`;
     } else if (period === '3months') {
         const trades = filterByTimeWindow(allTrades, '3months');
         el.textContent = `Last 3 Months · ${trades.length} trades`;
@@ -554,7 +557,7 @@ function setPeriod(method, period) {
     updateHLRangeLabel(method);
 
     // Sync edge section period to match main timeframe
-    const edgePeriodMap = { alltime: 'alltime', '3months': '3months', '6months': 'alltime', monthly: '1month', week: '2weeks' };
+    const edgePeriodMap = { alltime: 'alltime', '1week': '1week', '3months': '3months', '6months': 'alltime', monthly: '1month', week: '2weeks' };
     const mappedEdgePeriod = edgePeriodMap[period] || 'alltime';
     state[method].edgePeriod = mappedEdgePeriod;
     const activeEdgeClass = method === 'active' ? 'active-edge-period' : 'active-edge-period-blue';
@@ -693,7 +696,7 @@ function refreshDashboard(method) {
         trades = filterByWeek(allTrades, selectedWeek);
     } else if (period === 'monthly') {
         trades = filterByMonth(allTrades, selectedWeek);
-    } else if (period === '3months' || period === '6months') {
+    } else if (period === '1week' || period === '3months' || period === '6months') {
         trades = filterByTimeWindow(allTrades, period);
     } else {
         trades = allTrades;
@@ -788,7 +791,7 @@ function updateLastUpdated(trades) {
 // ===== EDGE TIMEFRAME FILTER =====
 function filterByTimeWindow(trades, period) {
     if (period === 'alltime') return trades;
-    const days = period === '6months' ? 180 : period === '3months' ? 90 : period === '1month' ? 30 : 14;
+    const days = period === '6months' ? 180 : period === '3months' ? 90 : period === '1month' ? 30 : period === '2weeks' ? 14 : 7;
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
     return trades.filter(t => {
@@ -834,7 +837,7 @@ function updateEdgeSection(method) {
     const setEl = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
 
     // Update trade count label
-    const labelMap = { alltime: 'All-Time', '3months': 'Last 3 Months', '1month': 'Last Month', '2weeks': 'Last 2 Weeks' };
+    const labelMap = { alltime: 'All-Time', '1week': 'Last Week', '3months': 'Last 3 Months', '1month': 'Last Month', '2weeks': 'Last 2 Weeks' };
     const labelEl = document.getElementById(`edge-period-label-${method}`);
     if (labelEl) labelEl.textContent = `${labelMap[edgePeriod] || 'All-Time'} · ${edgeTrades.length} trade${edgeTrades.length !== 1 ? 's' : ''}`;
 
@@ -1832,6 +1835,8 @@ function getCompareKPIs(method) {
 
     if (comparePeriod === 'weekly') {
         trades = filterByWeek(allTrades, selectedWeek);
+    } else if (comparePeriod === '1week') {
+        trades = filterByTimeWindow(allTrades, '1week');
     } else if (comparePeriod === 'monthly') {
         trades = filterByMonth(allTrades, selectedWeek);
     } else {
@@ -1851,7 +1856,7 @@ function renderCompare() {
     const dk = getCompareKPIs('discord');
 
     // Period label
-    const periodLabels = { weekly: 'This Week', monthly: 'This Month', alltime: 'All-Time' };
+    const periodLabels = { weekly: 'This Week', '1week': 'Last Week', monthly: 'This Month', alltime: 'All-Time' };
     const labelEl = document.getElementById('compare-period-label');
     if (labelEl) labelEl.textContent = periodLabels[comparePeriod] || 'All-Time';
 
