@@ -673,7 +673,7 @@ function getWeeksList(trades) {
         const wk = getWeekKey(t.date);
         if (wk) weeks.add(wk);
     });
-    return [...weeks].sort().reverse();
+    return [...weeks].sort((a, b) => parseWeekKey(a) - parseWeekKey(b)).reverse();
 }
 
 function filterByWeek(trades, weekKey) {
