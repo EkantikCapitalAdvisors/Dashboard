@@ -448,6 +448,12 @@ function updateHLRangeLabel(method) {
         } else {
             el.textContent = 'Month view';
         }
+    } else if (period === '3months') {
+        const trades = filterByTimeWindow(allTrades, '3months');
+        el.textContent = `Last 3 Months · ${trades.length} trades`;
+    } else if (period === '6months') {
+        const trades = filterByTimeWindow(allTrades, '6months');
+        el.textContent = `Last 6 Months · ${trades.length} trades`;
     } else {
         el.textContent = `All-Time · ${allTrades.length} trades`;
     }
@@ -656,6 +662,8 @@ function refreshDashboard(method) {
         trades = filterByWeek(allTrades, selectedWeek);
     } else if (period === 'monthly') {
         trades = filterByMonth(allTrades, selectedWeek);
+    } else if (period === '3months' || period === '6months') {
+        trades = filterByTimeWindow(allTrades, period);
     } else {
         trades = allTrades;
     }
@@ -703,6 +711,8 @@ function refreshDashboard(method) {
                 rangeEl.textContent = `Month view · ${trades.length} trades`;
             }
         }
+        else if (period === '3months') rangeEl.textContent = `Last 3 months · ${trades.length} trades`;
+        else if (period === '6months') rangeEl.textContent = `Last 6 months · ${trades.length} trades`;
         else rangeEl.textContent = `All-time (${allTrades.length} trades)`;
     }
 
@@ -744,7 +754,7 @@ function updateLastUpdated(trades) {
 // ===== EDGE TIMEFRAME FILTER =====
 function filterByTimeWindow(trades, period) {
     if (period === 'alltime') return trades;
-    const days = period === '3months' ? 90 : period === '1month' ? 30 : 14;
+    const days = period === '6months' ? 180 : period === '3months' ? 90 : period === '1month' ? 30 : 14;
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
     return trades.filter(t => {
