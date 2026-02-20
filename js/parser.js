@@ -40,10 +40,8 @@ const DB = {
     // Write a data file to the repo via GitHub Contents API
     async _write(filename, data, message) {
         const token = DB._token();
-        if (!token) {
-            console.warn('[GitHubDB] No token — write skipped. Configure via ⚙ GitHub Sync button.');
-            return false;
-        }
+        if (!token) throw new Error('No GitHub token — click ⚙ GitHub Sync to add your token.');
+
         const apiUrl = `https://api.github.com/repos/${DB.OWNER}/${DB.REPO}/contents/data/${filename}.json`;
         const headers = {
             Authorization: `token ${token}`,
@@ -51,25 +49,41 @@ const DB = {
             'Content-Type': 'application/json'
         };
 
-        // Get current file SHA (required by GitHub API to update an existing file)
-        let sha = null;
-        const infoRes = await fetch(`${apiUrl}?ref=${DB.BRANCH}`, { headers });
-        if (infoRes.ok) {
-            sha = (await infoRes.json()).sha;
-        } else if (infoRes.status !== 404) {
-            throw new Error(`SHA fetch failed: ${infoRes.status}`);
-        }
+        // One attempt: fetch fresh SHA then PUT
+        const attempt = async () => {
+            let sha = null;
+            const infoRes = await fetch(`${apiUrl}?ref=${DB.BRANCH}`, { headers });
+            if (infoRes.ok) {
+                sha = (await infoRes.json()).sha;
+            } else if (infoRes.status !== 404) {
+                throw new Error(`SHA fetch failed: ${infoRes.status}`);
+            }
 
-        const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
-        const body = { message, content, branch: DB.BRANCH };
-        if (sha) body.sha = sha;
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+            const body = { message, content, branch: DB.BRANCH };
+            if (sha) body.sha = sha;
 
-        const res = await fetch(apiUrl, { method: 'PUT', headers, body: JSON.stringify(body) });
-        if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.message || `Write failed: ${res.status}`);
+            const res = await fetch(apiUrl, { method: 'PUT', headers, body: JSON.stringify(body) });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                const e = new Error(err.message || `Write failed: ${res.status}`);
+                e.status = res.status;
+                throw e;
+            }
+            return true;
+        };
+
+        try {
+            return await attempt();
+        } catch (e) {
+            // 409 Conflict = stale SHA (another write landed between our SHA fetch and PUT)
+            // Re-fetch SHA and try once more
+            if (e.status === 409) {
+                console.warn('[GitHubDB] Stale SHA (409) — retrying with fresh SHA…');
+                return await attempt();
+            }
+            throw e;
         }
-        return true;
     },
 
     // ─── Public API (same interface as before — dashboard.js unchanged) ──────
@@ -80,75 +94,71 @@ const DB = {
     },
 
     async saveTrades(tableName, trades, batchId) {
-        try {
-            const existing = await DB._read(tableName);
-            const norm = v => Math.round(parseFloat(v) * 10000) / 10000;
-            let merged;
+        const existing = await DB._read(tableName);
+        const norm = v => Math.round(parseFloat(v) * 10000) / 10000;
+        let merged;
 
-            if (tableName === 'ecfs_trades') {
-                const keys = new Set(existing.map(r =>
-                    `${r.entry_time}|${r.exit_time}|${r.direction}|${norm(r.dollar_pl)}`
-                ));
-                const newRows = trades
-                    .filter(t => !keys.has(`${t.entryTime}|${t.exitTime}|${t.direction}|${norm(t.dollarPL)}`))
-                    .map(t => ({
-                        week_key:     getWeekKey(t.date),
-                        entry_time:   t.entryTime   || '',
-                        exit_time:    t.exitTime    || '',
-                        direction:    t.direction,
-                        entry_price:  t.entryPrice,
-                        exit_price:   t.exitPrice,
-                        stop_price:   t.stopPrice   || 0,
-                        contracts:    t.contracts,
-                        points_pl:    t.pointsPL,
-                        dollar_pl:    t.dollarPL,
-                        risk_points:  t.riskPoints  || 0,
-                        risk_dollars: t.riskDollars || 0,
-                        reward_risk:  t.rewardRisk  || 0,
-                        is_win:       t.isWin,
-                        trade_date:   t.date,
-                        upload_batch: batchId
-                    }));
-                merged = [...existing, ...newRows];
-            } else {
-                // discord_trades — dedup by trade_num
-                const nums = new Set(existing.map(r => r.trade_num));
-                const newRows = trades
-                    .filter(t => !nums.has(t.tradeNum))
-                    .map(t => ({
-                        week_key:        getWeekKey(t.date),
-                        datetime:        t.datetime        || '',
-                        trade_num:       t.tradeNum        || '',
-                        direction:       t.direction       || '',
-                        entry_price:     t.entryPrice      || 0,
-                        stop_price:      t.stopPrice       || 0,
-                        trailing_profit: t.trailingProfit  || '',
-                        points_pl:       t.pointsPL        || 0,
-                        risk_points:     t.riskPoints      || 0,
-                        dollar_pl:       t.dollarPL        || 0,
-                        risk_dollars:    t.riskDollars     || 0,
-                        is_win:          t.isWin,
-                        outcome:         t.outcome         || '',
-                        trade_date:      t.date,
-                        upload_batch:    batchId
-                    }));
-                merged = [...existing, ...newRows];
-            }
+        if (tableName === 'ecfs_trades') {
+            const keys = new Set(existing.map(r =>
+                `${r.entry_time}|${r.exit_time}|${r.direction}|${norm(r.dollar_pl)}`
+            ));
+            const newRows = trades
+                .filter(t => !keys.has(`${t.entryTime}|${t.exitTime}|${t.direction}|${norm(t.dollarPL)}`))
+                .map(t => ({
+                    week_key:     getWeekKey(t.date),
+                    entry_time:   t.entryTime   || '',
+                    exit_time:    t.exitTime    || '',
+                    direction:    t.direction,
+                    entry_price:  t.entryPrice,
+                    exit_price:   t.exitPrice,
+                    stop_price:   t.stopPrice   || 0,
+                    contracts:    t.contracts,
+                    points_pl:    t.pointsPL,
+                    dollar_pl:    t.dollarPL,
+                    risk_points:  t.riskPoints  || 0,
+                    risk_dollars: t.riskDollars || 0,
+                    reward_risk:  t.rewardRisk  || 0,
+                    is_win:       t.isWin,
+                    trade_date:   t.date,
+                    upload_batch: batchId
+                }));
+            merged = [...existing, ...newRows];
+        } else {
+            // discord_trades — dedup by trade_num
+            const nums = new Set(existing.map(r => r.trade_num));
+            const newRows = trades
+                .filter(t => !nums.has(t.tradeNum))
+                .map(t => ({
+                    week_key:        getWeekKey(t.date),
+                    datetime:        t.datetime        || '',
+                    trade_num:       t.tradeNum        || '',
+                    direction:       t.direction       || '',
+                    entry_price:     t.entryPrice      || 0,
+                    stop_price:      t.stopPrice       || 0,
+                    trailing_profit: t.trailingProfit  || '',
+                    points_pl:       t.pointsPL        || 0,
+                    risk_points:     t.riskPoints      || 0,
+                    dollar_pl:       t.dollarPL        || 0,
+                    risk_dollars:    t.riskDollars     || 0,
+                    is_win:          t.isWin,
+                    outcome:         t.outcome         || '',
+                    trade_date:      t.date,
+                    upload_batch:    batchId
+                }));
+            merged = [...existing, ...newRows];
+        }
 
-            await DB._write(tableName, merged,
-                `Update ${tableName}: +${trades.length} trades [${batchId}]`);
-        } catch (e) { console.warn(`[GitHubDB] saveTrades(${tableName}):`, e); }
+        await DB._write(tableName, merged,
+            `Update ${tableName}: +${trades.length} trades [${batchId}]`);
     },
 
     // Saves all snapshots for one method in a single GitHub write (efficient)
     async saveAllWeeklySnapshots(method, snapshots) {
-        try {
-            const all = await DB._read('weekly_snapshots');
-            // Keep the other method's snapshots, replace this method's entirely
-            const merged = [...all.filter(s => s.method !== method), ...snapshots];
-            await DB._write('weekly_snapshots', merged,
-                `Snapshots ${method}: ${snapshots.length} weeks [${new Date().toISOString().slice(0, 10)}]`);
-        } catch (e) { console.warn('[GitHubDB] saveAllWeeklySnapshots:', e); }
+        const all = await DB._read('weekly_snapshots');
+        // Keep the other method's snapshots, replace this method's entirely
+        const merged = [...all.filter(s => s.method !== method), ...snapshots];
+        await DB._write('weekly_snapshots', merged,
+            `Snapshots ${method}: ${snapshots.length} weeks [${new Date().toISOString().slice(0, 10)}]`);
     },
 
     // Single-snapshot upsert (kept for compatibility — prefer saveAllWeeklySnapshots)

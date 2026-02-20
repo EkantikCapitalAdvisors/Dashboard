@@ -103,16 +103,16 @@ async function handleCSVUpload(event, method) {
                 : '';
             showUploadSuccess('active', `${file.name} — ${trades.length} total trades${addedMsg}`);
 
-            // Full DB sync: ensure every merged trade is in the database.
-            // We compare against the CURRENT DB state (not just local state) so that
-            // any trade missing from the DB — whether new from this CSV or an old trade
-            // that failed to save in a prior session — gets written now.
-            // This guarantees all trades are visible from any computer/browser.
+            // Generate snapshots from in-memory trades (no DB needed for this step)
+            const snapshots = generateWeeklySnapshots(trades, 'active', ECFS_RISK, ECFS_PPT);
+            state.active.snapshots = snapshots;
+            try { localStorage.setItem('ecfs-snapshots', JSON.stringify(snapshots)); } catch (e) {}
+
+            // Full DB sync — trades + snapshots written to GitHub so any device can read them
             showUploadProgress('active', 'Syncing to database...');
             try {
                 const batchId = `ecfs-${Date.now()}`;
                 const currentDbRows = await DB.loadTrades('ecfs_trades');
-                // Normalize dollar_pl to avoid float-precision key mismatches
                 const norm = v => Math.round(parseFloat(v) * 10000) / 10000;
                 const dbKeys = new Set(currentDbRows.map(r =>
                     `${r.entry_time}|${r.exit_time}|${r.direction}|${norm(r.dollar_pl)}`
@@ -123,17 +123,16 @@ async function handleCSVUpload(event, method) {
                 if (missingFromDb.length > 0) {
                     await DB.saveTrades('ecfs_trades', missingFromDb, batchId);
                 }
-            } catch (e) { console.warn('DB sync error (local data is safe):', e); }
-
-            // Generate and save weekly snapshots (single GitHub write for all weeks)
-            const snapshots = generateWeeklySnapshots(trades, 'active', ECFS_RISK, ECFS_PPT);
-            await DB.saveAllWeeklySnapshots('active', snapshots);
-            state.active.snapshots = snapshots;
-            try { localStorage.setItem('ecfs-snapshots', JSON.stringify(snapshots)); }
-            catch (e) { console.warn('Could not cache snapshots:', e); }
-
-            showUploadSuccess('active', `${trades.length} total trades saved (${uniqueNew.length} new from ${file.name})`);
-            recordSyncTime('active');
+                await DB.saveAllWeeklySnapshots('active', snapshots);
+                showUploadSuccess('active', `${trades.length} total trades saved (${uniqueNew.length} new from ${file.name})`);
+                recordSyncTime('active');
+            } catch (e) {
+                const hint = e.message.includes('token')
+                    ? 'No GitHub token — click ⚙ GitHub Sync to add your token. Trades are saved locally only.'
+                    : `Database error: ${e.message} — trades saved locally only, other devices will not see them.`;
+                showUploadWarning('active', hint);
+                console.error('[DB sync] ECFS save failed:', e);
+            }
             showExportButton('active');
         } catch (err) {
             showUploadError('active', 'Error parsing CSV: ' + err.message);
@@ -223,9 +222,12 @@ async function handleExcelUpload(event, method) {
             // Always save upload timestamp separately
             try { localStorage.setItem('discord-upload-time', Date.now().toString()); } catch (e) {}
 
-            showUploadSuccess('discord', `${file.name} — ${trades.length} trades parsed`);
+            // Generate snapshots from in-memory trades (no DB needed for this step)
+            const snapshots = generateWeeklySnapshots(trades, 'discord', DISCORD_RISK, DISCORD_PPT, DISCORD_STARTING_BALANCE);
+            state.discord.snapshots = snapshots;
+            try { localStorage.setItem('discord-snapshots', JSON.stringify(snapshots)); } catch (e) {}
 
-            // Full DB sync: ensure every merged trade is in the database.
+            // Full DB sync — trades + snapshots written to GitHub so any device can read them
             showUploadProgress('discord', 'Syncing to database...');
             try {
                 const batchId = `discord-${Date.now()}`;
@@ -235,21 +237,19 @@ async function handleExcelUpload(event, method) {
                 if (missingFromDb.length > 0) {
                     await DB.saveTrades('discord_trades', missingFromDb, batchId);
                 }
-            } catch (e) { console.warn('DB sync error (local data is safe):', e); }
-
-            const snapshots = generateWeeklySnapshots(trades, 'discord', DISCORD_RISK, DISCORD_PPT, DISCORD_STARTING_BALANCE);
-            await DB.saveAllWeeklySnapshots('discord', snapshots);
-            state.discord.snapshots = snapshots;
-            try { localStorage.setItem('discord-snapshots', JSON.stringify(snapshots)); }
-            catch (e) { console.warn('Could not cache snapshots:', e); }
-
-            const overwritten = existingTrades.length - notOverwritten.length;
-            const newCount = newTrades.length - overwritten;
-            const addedMsg = overwritten > 0
-                ? ` (${newCount} new, ${overwritten} updated)`
-                : '';
-            showUploadSuccess('discord', `${file.name} — ${trades.length} total trades${addedMsg}`);
-            recordSyncTime('discord');
+                await DB.saveAllWeeklySnapshots('discord', snapshots);
+                const overwritten = existingTrades.length - notOverwritten.length;
+                const newCount = newTrades.length - overwritten;
+                const addedMsg = overwritten > 0 ? ` (${newCount} new, ${overwritten} updated)` : '';
+                showUploadSuccess('discord', `${file.name} — ${trades.length} total trades${addedMsg}`);
+                recordSyncTime('discord');
+            } catch (e) {
+                const hint = e.message.includes('token')
+                    ? 'No GitHub token — click ⚙ GitHub Sync to add your token. Trades are saved locally only.'
+                    : `Database error: ${e.message} — trades saved locally only, other devices will not see them.`;
+                showUploadWarning('discord', hint);
+                console.error('[DB sync] Discord save failed:', e);
+            }
             showExportButton('discord');
         } catch (err) {
             showUploadError('discord', 'Error parsing Excel: ' + err.message);
@@ -283,6 +283,15 @@ function showUploadError(method, msg) {
     statusEl.innerHTML = `<div class="bg-red-900/30 border border-red-500/50 rounded-lg p-3 flex items-center gap-2">
         <i class="fas fa-exclamation-circle text-red-400"></i>
         <span class="text-red-300 text-sm font-semibold">${msg}</span>
+    </div>`;
+}
+
+function showUploadWarning(method, msg) {
+    const statusEl = document.getElementById(`upload-status-${method}`);
+    statusEl.classList.remove('hidden');
+    statusEl.innerHTML = `<div class="bg-yellow-900/30 border border-yellow-500/50 rounded-lg p-3 flex items-center gap-2">
+        <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+        <span class="text-yellow-300 text-sm font-semibold">${msg}</span>
     </div>`;
 }
 
