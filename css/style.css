@@ -176,3 +176,68 @@
     .stat-card { border: 1px solid #ddd; }
     .bg-gradient-to-br { background: white !important; }
 }
+
+/* ===== MOBILE STICKY TAB BAR ===== */
+#mobile-tab-bar { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+.mobile-tab-btn { transition: color 0.2s ease, background 0.2s ease; }
+.mobile-tab-btn.mobile-tab-active {
+    color: #d4af37;
+    border-top: 2px solid #d4af37;
+    background: rgba(212,175,55,0.06);
+}
+.mobile-tab-btn.mobile-tab-active-blue {
+    color: #60a5fa;
+    border-top: 2px solid #60a5fa;
+    background: rgba(96,165,250,0.06);
+}
+.mobile-tab-btn:not(.mobile-tab-active):not(.mobile-tab-active-blue) {
+    color: #6b7280;
+    border-top: 2px solid transparent;
+}
+
+/* Body padding so content doesn't hide behind mobile tab bar */
+@media (max-width: 1023px) {
+    body { padding-bottom: 64px; }
+    #share-fab { bottom: 80px; }
+}
+
+/* ===== TRADE LOG FILTER BUTTONS ===== */
+.trade-filter-btn { transition: all 0.15s ease; cursor: pointer; }
+.trade-filter-btn:hover { border-color: rgba(212,175,55,0.4) !important; color: #d4af37 !important; }
+.trade-filter-active {
+    background: linear-gradient(135deg, #d4af37 0%, #f4c430 100%) !important;
+    color: #0a1628 !important;
+    border-color: transparent !important;
+    font-weight: 700;
+}
+.trade-filter-active-blue {
+    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%) !important;
+    color: #0a1628 !important;
+    border-color: transparent !important;
+    font-weight: 700;
+}
+
+/* ===== TRADE LOG SORT HEADERS ===== */
+.sortable-th { cursor: pointer; user-select: none; }
+.sortable-th:hover { color: #d4af37 !important; }
+.sort-asc::after { content: ' ↑'; color: #d4af37; }
+.sort-desc::after { content: ' ↓'; color: #d4af37; }
+
+/* ===== SYNC STATUS BADGE ===== */
+.sync-status-badge { transition: opacity 0.3s ease; }
+
+/* ===== SKELETON LOADER ===== */
+@keyframes skeleton-shimmer {
+    0% { background-position: -200px 0; }
+    100% { background-position: calc(200px + 100%) 0; }
+}
+.skeleton {
+    background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+    background-size: 200px 100%;
+    animation: skeleton-shimmer 1.4s infinite;
+    border-radius: 4px;
+    display: inline-block;
+}
+.skeleton-text { height: 1em; width: 4rem; }
+.skeleton-text-lg { height: 1.5em; width: 5rem; }
