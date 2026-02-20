@@ -177,9 +177,10 @@ async function handleExcelUpload(event, method) {
                 } catch (e) { console.warn('Could not pre-load DB trades before merge:', e); }
             }
 
-            const existingNums = new Set(existingTrades.map(t => t.tradeNum));
-            const uniqueNew = newTrades.filter(t => !existingNums.has(t.tradeNum));
-            const trades = [...existingTrades, ...uniqueNew].sort((a, b) => {
+            // New upload overwrites existing trades with the same tradeNum (upsert semantics)
+            const newTradeNums = new Set(newTrades.map(t => t.tradeNum));
+            const notOverwritten = existingTrades.filter(t => !newTradeNums.has(t.tradeNum));
+            const trades = [...notOverwritten, ...newTrades].sort((a, b) => {
                 const da = new Date(a.datetime), db = new Date(b.datetime);
                 return da - db;
             });
@@ -549,6 +550,21 @@ function setPeriod(method, period) {
     // Sync high-level period buttons
     syncHLButtons(method, period);
     updateHLRangeLabel(method);
+
+    // Sync edge section period to match main timeframe
+    const edgePeriodMap = { alltime: 'alltime', '3months': '3months', '6months': 'alltime', monthly: '1month', week: '2weeks' };
+    const mappedEdgePeriod = edgePeriodMap[period] || 'alltime';
+    state[method].edgePeriod = mappedEdgePeriod;
+    const activeEdgeClass = method === 'active' ? 'active-edge-period' : 'active-edge-period-blue';
+    document.querySelectorAll(`#panel-${method} .edge-period-btn`).forEach(b => {
+        b.classList.remove('active-edge-period', 'active-edge-period-blue');
+        b.classList.add('bg-[#0d1d35]', 'text-gray-400', 'border', 'border-gray-700');
+    });
+    const edgeBtn = document.getElementById(`edge-period-${method}-${mappedEdgePeriod}`);
+    if (edgeBtn) {
+        edgeBtn.classList.add(activeEdgeClass);
+        edgeBtn.classList.remove('bg-[#0d1d35]', 'text-gray-400', 'border', 'border-gray-700');
+    }
 
     refreshDashboard(method);
 }

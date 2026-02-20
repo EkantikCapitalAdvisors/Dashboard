@@ -370,9 +370,12 @@ function parseDiscordExcel(data) {
         if (row[0] != null && row[0] !== '') lastDateRaw = row[0];
         if (!lastDateRaw) continue; // no date seen yet — still in header area
 
-        const netDollar = parseFloat(row[8]) || 0;
+        // Buy trades: Net $ is in col H (row[7]); Sell trades: Net $ is in col I (row[8])
+        const direction = row[2] || '';
+        const isBuy = direction.toLowerCase() === 'buy';
         const netPoints = parseFloat(row[6]) || 0;
-        const riskPoints = parseFloat(row[7]) || 0;
+        const riskPoints = isBuy ? 0 : (parseFloat(row[7]) || 0);
+        const netDollar = isBuy ? (parseFloat(row[7]) || 0) : (parseFloat(row[8]) || 0);
 
         // Skip rows that carry no trade data at all (spacer / summary rows)
         if (netDollar === 0 && netPoints === 0 && !row[2]) continue;
@@ -388,7 +391,7 @@ function parseDiscordExcel(data) {
         trades.push({
             datetime: datetimeStr,
             tradeNum,
-            direction: row[2] || '',
+            direction,
             entryPrice: parseFloat(row[3]) || 0,
             stopPrice: parseFloat(row[4]) || 0,
             trailingProfit: row[5] || '—',
@@ -670,7 +673,7 @@ function getWeeksList(trades) {
         const wk = getWeekKey(t.date);
         if (wk) weeks.add(wk);
     });
-    return [...weeks].sort().reverse();
+    return [...weeks].sort((a, b) => parseWeekKey(a) - parseWeekKey(b)).reverse();
 }
 
 function filterByWeek(trades, weekKey) {
