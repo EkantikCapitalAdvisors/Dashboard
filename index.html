@@ -257,6 +257,9 @@
                                 <button onclick="clearData('active')" class="px-4 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all">
                                     <i class="fas fa-trash"></i>
                                 </button>
+                                <button onclick="showGitHubSettings()" class="gh-sync-btn px-3 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all flex items-center gap-1.5" title="GitHub Sync: Not configured — click to set token">
+                                    <i class="fab fa-github"></i><span class="text-yellow-400 text-xs">⚙</span>
+                                </button>
                             </div>
                         </div>
                         <div id="upload-status-active" class="mt-3 hidden"></div>
@@ -567,6 +570,8 @@
                         <div class="flex items-center gap-2">
                             <button onclick="setPeriod('active','weekly')" id="period-active-weekly" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-[#d4af37]/50 transition-all">This Week</button>
                             <button onclick="setPeriod('active','monthly')" id="period-active-monthly" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-[#d4af37]/50 transition-all">This Month</button>
+                            <button onclick="setPeriod('active','3months')" id="period-active-3months" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-[#d4af37]/50 transition-all">3 Months</button>
+                            <button onclick="setPeriod('active','6months')" id="period-active-6months" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-[#d4af37]/50 transition-all">6 Months</button>
                             <button onclick="setPeriod('active','alltime')" id="period-active-alltime" class="period-btn active-period px-4 py-2 rounded-lg text-xs font-bold transition-all">All-Time</button>
                         </div>
                         <div class="flex items-center gap-2">
@@ -778,6 +783,9 @@
                                 </button>
                                 <button onclick="clearData('discord')" class="px-4 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all">
                                     <i class="fas fa-trash"></i>
+                                </button>
+                                <button onclick="showGitHubSettings()" class="gh-sync-btn px-3 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all flex items-center gap-1.5" title="GitHub Sync: Not configured — click to set token">
+                                    <i class="fab fa-github"></i><span class="text-yellow-400 text-xs">⚙</span>
                                 </button>
                             </div>
                         </div>
@@ -1124,6 +1132,8 @@
                         <div class="flex items-center gap-2">
                             <button onclick="setPeriod('discord','weekly')" id="period-discord-weekly" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-blue-400/50 transition-all">This Week</button>
                             <button onclick="setPeriod('discord','monthly')" id="period-discord-monthly" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-blue-400/50 transition-all">This Month</button>
+                            <button onclick="setPeriod('discord','3months')" id="period-discord-3months" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-blue-400/50 transition-all">3 Months</button>
+                            <button onclick="setPeriod('discord','6months')" id="period-discord-6months" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-blue-400/50 transition-all">6 Months</button>
                             <button onclick="setPeriod('discord','alltime')" id="period-discord-alltime" class="period-btn active-period px-4 py-2 rounded-lg text-xs font-bold transition-all">All-Time</button>
                         </div>
                         <div class="flex items-center gap-2">
