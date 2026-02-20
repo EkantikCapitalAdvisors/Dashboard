@@ -380,12 +380,12 @@ function parseDiscordExcel(data) {
         if (row[0] != null && row[0] !== '') lastDateRaw = row[0];
         if (!lastDateRaw) continue; // no date seen yet — still in header area
 
-        // Buy trades: Net $ is in col H (row[7]); Sell trades: Net $ is in col I (row[8])
+        // Net $ is always in col I (row[8]) for both Buy and Sell.
+        // Col H (row[7]) is risk points (may be blank for Buy rows).
         const direction = row[2] || '';
-        const isBuy = direction.toLowerCase() === 'buy';
         const netPoints = parseFloat(row[6]) || 0;
-        const riskPoints = isBuy ? 0 : (parseFloat(row[7]) || 0);
-        const netDollar = isBuy ? (parseFloat(row[7]) || 0) : (parseFloat(row[8]) || 0);
+        const riskPoints = parseFloat(row[7]) || 0;
+        const netDollar = parseFloat(row[8]) || 0;
 
         // Skip rows that carry no trade data at all (spacer / summary rows)
         if (netDollar === 0 && netPoints === 0 && !row[2]) continue;
