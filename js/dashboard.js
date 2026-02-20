@@ -731,24 +731,25 @@ function refreshDashboard(method) {
 function updateLastUpdated(trades) {
     if (!trades || trades.length === 0) return;
 
-    // Derive from the most recent trade date — correct on every device regardless
-    // of whether data came from localStorage, DB, or a fresh upload
-    const lastDate = getLastTradeDate(trades);
-    if (lastDate) {
-        document.getElementById('last-updated').textContent = lastDate;
-        return;
-    }
-
-    // Fallback: upload timestamp (only available on the uploading device)
+    // Prefer the upload timestamp — shows when data was last pushed to this dashboard,
+    // which is what "Last Updated" means to the person maintaining it.
     const ecfsUploadTime = parseInt(localStorage.getItem('ecfs-upload-time') || '0');
     const discordUploadTime = parseInt(localStorage.getItem('discord-upload-time') || '0');
     const latestUpload = Math.max(ecfsUploadTime, discordUploadTime);
     if (latestUpload > 0) {
         const d = new Date(latestUpload);
         document.getElementById('last-updated').textContent = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    } else {
-        document.getElementById('last-updated').textContent = '—';
+        return;
     }
+
+    // Fallback for other devices (no local upload): show the most recent trade date
+    const lastDate = getLastTradeDate(trades);
+    if (lastDate) {
+        document.getElementById('last-updated').textContent = lastDate;
+        return;
+    }
+
+    document.getElementById('last-updated').textContent = '—';
 }
 
 // ===== EDGE TIMEFRAME FILTER =====
