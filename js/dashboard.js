@@ -78,12 +78,24 @@ async function handleCSVUpload(event, method) {
             setPeriod('active', 'alltime');
 
             // Persist to localStorage (guarded — quota errors must not abort the upload)
+            let lsSaveOk = false;
             try {
                 localStorage.setItem('ecfs-trades', JSON.stringify(trades));
                 localStorage.setItem('ecfs-filename', file.name);
-                localStorage.setItem('ecfs-upload-time', Date.now().toString());
-            } catch (e) { console.warn('localStorage save failed (quota?), data safe in DB:', e); }
-            try { localStorage.setItem('ecfs-raw-csv', csvText); }
+                lsSaveOk = true;
+            } catch (e) {
+                // Quota exceeded: free space by removing cached raw CSVs, then retry
+                try {
+                    localStorage.removeItem('ecfs-raw-csv');
+                    localStorage.removeItem('discord-raw-csv');
+                    localStorage.setItem('ecfs-trades', JSON.stringify(trades));
+                    localStorage.setItem('ecfs-filename', file.name);
+                    lsSaveOk = true;
+                } catch (e2) { console.warn('localStorage trade save failed (quota):', e2); }
+            }
+            // Always save upload timestamp separately — it's a tiny string and must not be lost
+            try { localStorage.setItem('ecfs-upload-time', Date.now().toString()); } catch (e) {}
+            try { if (lsSaveOk) localStorage.setItem('ecfs-raw-csv', csvText); }
             catch (e) { console.warn('Could not cache raw CSV (storage quota):', e); }
 
             const addedMsg = uniqueNew.length < newTrades.length 
@@ -199,8 +211,17 @@ async function handleExcelUpload(event, method) {
             try {
                 localStorage.setItem('discord-trades', JSON.stringify(trades));
                 localStorage.setItem('discord-filename', file.name);
-                localStorage.setItem('discord-upload-time', Date.now().toString());
-            } catch (e) { console.warn('localStorage save failed (quota?), data safe in DB:', e); }
+            } catch (e) {
+                // Quota exceeded: free space and retry
+                try {
+                    localStorage.removeItem('ecfs-raw-csv');
+                    localStorage.removeItem('discord-raw-csv');
+                    localStorage.setItem('discord-trades', JSON.stringify(trades));
+                    localStorage.setItem('discord-filename', file.name);
+                } catch (e2) { console.warn('localStorage trade save failed (quota):', e2); }
+            }
+            // Always save upload timestamp separately
+            try { localStorage.setItem('discord-upload-time', Date.now().toString()); } catch (e) {}
 
             showUploadSuccess('discord', `${file.name} — ${trades.length} trades parsed`);
 
@@ -2807,27 +2828,61 @@ document.addEventListener('DOMContentLoaded', async function () {
         } catch (e) { console.error('Error loading ECFS data:', e); }
     }
 
-    // Background DB sync: if localStorage has trades the DB doesn't, push the delta.
-    // Runs silently after page load so Computer B always sees the full history.
+    // Background DB sync: bidirectional — push local-only trades to DB, and pull
+    // DB-only trades into localStorage. This ensures a failed localStorage save
+    // on a previous upload doesn't leave the user stuck with stale data.
     if (ecfsLoaded && state.active.allTrades.length > 0 && !state.active.isSampleData) {
         (async () => {
             try {
                 const lsTrades = state.active.allTrades.filter(t => !t._isSample);
-                if (lsTrades.length === 0) return;
                 const dbRows = await DB.loadTrades('ecfs_trades');
                 const norm = v => Math.round(parseFloat(v) * 10000) / 10000;
+
+                // Push: local trades missing from DB
                 const dbKeys = new Set(dbRows.map(r =>
                     `${r.entry_time}|${r.exit_time}|${r.direction}|${norm(r.dollar_pl)}`
                 ));
-                const missing = lsTrades.filter(t =>
+                const missingInDb = lsTrades.filter(t =>
                     !dbKeys.has(`${t.entryTime}|${t.exitTime}|${t.direction}|${norm(t.dollarPL)}`)
                 );
-                if (missing.length > 0) {
-                    console.log(`[DB sync] Pushing ${missing.length} missing ECFS trades to DB`);
-                    showUploadProgress('active', `Syncing ${missing.length} missing trades to database…`);
-                    await DB.saveTrades('ecfs_trades', missing, `ecfs-sync-${Date.now()}`);
-                    showUploadSuccess('active', `${lsTrades.length} trades · ${missing.length} synced to database`);
+                if (missingInDb.length > 0) {
+                    console.log(`[DB sync] Pushing ${missingInDb.length} missing ECFS trades to DB`);
+                    await DB.saveTrades('ecfs_trades', missingInDb, `ecfs-sync-${Date.now()}`);
                     recordSyncTime('active');
+                }
+
+                // Pull: DB trades missing from localStorage (e.g. from a failed localStorage save)
+                const lsKeys = new Set(lsTrades.map(t =>
+                    `${t.entryTime}|${t.exitTime}|${t.direction}|${norm(t.dollarPL)}`
+                ));
+                const missingInLs = dbRows.filter(r =>
+                    !lsKeys.has(`${r.entry_time}|${r.exit_time}|${r.direction}|${norm(r.dollar_pl)}`)
+                );
+                if (missingInLs.length > 0) {
+                    console.log(`[DB sync] Pulling ${missingInLs.length} newer ECFS trades from DB`);
+                    const merged = [...lsTrades, ...missingInLs.map(dbRowToECFSTrade)]
+                        .sort((a, b) => new Date(a.entryTime || a.date) - new Date(b.entryTime || b.date));
+                    state.active.allTrades = merged;
+                    // Recover upload timestamp from DB batch IDs
+                    const maxBatchTime = Math.max(...dbRows.map(r => {
+                        const ts = parseInt((r.upload_batch || '').split('-').pop() || '0');
+                        return isNaN(ts) ? 0 : ts;
+                    }));
+                    if (maxBatchTime > 0) {
+                        try { localStorage.setItem('ecfs-upload-time', maxBatchTime.toString()); } catch (e) {}
+                    }
+                    try { localStorage.setItem('ecfs-trades', JSON.stringify(merged)); } catch (e) {
+                        try {
+                            localStorage.removeItem('ecfs-raw-csv');
+                            localStorage.removeItem('discord-raw-csv');
+                            localStorage.setItem('ecfs-trades', JSON.stringify(merged));
+                        } catch (e2) {}
+                    }
+                    const weeks = getWeeksList(merged);
+                    state.active.selectedWeek = weeks[0];
+                    populateWeekSelector('active', weeks);
+                    refreshDashboard('active');
+                    showUploadSuccess('active', `${merged.length} trades (${missingInLs.length} recovered from database)`);
                 }
             } catch (e) { console.warn('[DB sync] ECFS background sync failed:', e); }
         })();
