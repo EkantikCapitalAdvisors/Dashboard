@@ -177,9 +177,10 @@ async function handleExcelUpload(event, method) {
                 } catch (e) { console.warn('Could not pre-load DB trades before merge:', e); }
             }
 
-            const existingNums = new Set(existingTrades.map(t => t.tradeNum));
-            const uniqueNew = newTrades.filter(t => !existingNums.has(t.tradeNum));
-            const trades = [...existingTrades, ...uniqueNew].sort((a, b) => {
+            // New upload overwrites existing trades with the same tradeNum (upsert semantics)
+            const newTradeNums = new Set(newTrades.map(t => t.tradeNum));
+            const notOverwritten = existingTrades.filter(t => !newTradeNums.has(t.tradeNum));
+            const trades = [...notOverwritten, ...newTrades].sort((a, b) => {
                 const da = new Date(a.datetime), db = new Date(b.datetime);
                 return da - db;
             });
