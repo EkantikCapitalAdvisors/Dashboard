@@ -200,6 +200,23 @@
         </div>
     </section>
 
+    <!-- Educational Disclosure Bar -->
+    <div class="bg-amber-950/40 border-y border-amber-500/20">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-6xl mx-auto py-2.5 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center">
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <i class="fas fa-graduation-cap text-amber-400 text-xs"></i>
+                    <span class="text-amber-400 text-[10px] font-bold uppercase tracking-widest">Educational Use Only</span>
+                </div>
+                <span class="hidden sm:block text-amber-500/30 text-xs">|</span>
+                <p class="text-amber-200/60 text-[10px] leading-relaxed">
+                    This dashboard is for <strong class="text-amber-200/80">informational and educational purposes only</strong>. Nothing herein constitutes investment advice. All projected returns are based on a <strong class="text-amber-200/80">$5,000 starting portfolio</strong> and are mathematical extrapolations — not guarantees. Past performance is not indicative of future results.
+                    <a href="#compliance-footer" class="text-amber-400/70 underline hover:text-amber-400 ml-1">Full disclosure ↓</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
     <!-- Execution Method Tabs -->
     <section class="py-6 bg-[#0d1d35]/30">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -484,6 +501,9 @@
 
                         <!-- Returns Scaling Bars -->
                         <div class="bg-[#0a1628]/60 border border-[#d4af37]/15 rounded-xl p-5 mb-5">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="inline-flex items-center gap-1.5 bg-[#d4af37]/10 border border-[#d4af37]/25 rounded-full px-3 py-1 text-[10px] font-bold text-[#d4af37]"><i class="fas fa-wallet text-[9px]"></i>Per $5,000 starting capital</span>
+                            </div>
                             <p class="text-gray-400 text-[10px] mb-4" id="fc-scale-subtitle">Based on your validated edge, returns multiply with risk taken:</p>
                             <div class="space-y-3" id="fc-returns-bars"></div>
                             <div class="mt-4 bg-[#d4af37]/8 border border-[#d4af37]/20 rounded-lg p-3">
@@ -1046,6 +1066,9 @@
 
                         <!-- Returns Scaling Bars -->
                         <div class="bg-[#0a1628]/60 border border-blue-400/15 rounded-xl p-5 mb-5">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="inline-flex items-center gap-1.5 bg-blue-400/10 border border-blue-400/25 rounded-full px-3 py-1 text-[10px] font-bold text-blue-300"><i class="fas fa-wallet text-[9px]"></i>Per $5,000 starting capital</span>
+                            </div>
                             <p class="text-gray-400 text-[10px] mb-4" id="dfc-scale-subtitle">Based on your validated edge, returns multiply with risk taken:</p>
                             <div class="space-y-3" id="dfc-returns-bars"></div>
                             <div class="mt-4 bg-blue-400/8 border border-blue-400/20 rounded-lg p-3">
@@ -2117,10 +2140,10 @@
                 <!-- Regulatory Disclosure — Collapsible -->
                 <div class="text-center mb-4">
                     <button onclick="document.getElementById('full-disclosure').classList.toggle('hidden'); this.querySelector('i').classList.toggle('fa-chevron-down'); this.querySelector('i').classList.toggle('fa-chevron-up');" class="text-gray-500 text-[10px] hover:text-gray-400 transition-colors">
-                        <i class="fas fa-chevron-down mr-1 text-[8px]"></i>Full Regulatory Disclosure
+                        <i class="fas fa-chevron-up mr-1 text-[8px]"></i>Full Regulatory Disclosure
                     </button>
                 </div>
-                <div id="full-disclosure" class="hidden bg-[#0a1628]/60 border border-gray-700/30 rounded-lg p-5 mb-6">
+                <div id="full-disclosure" class="bg-[#0a1628]/60 border border-gray-700/30 rounded-lg p-5 mb-6">
                     <div class="space-y-2.5 text-gray-600 text-[10px] leading-relaxed">
                         <p><strong class="text-gray-500">Risk Disclosure:</strong> Futures trading involves substantial risk of loss and is not suitable for all investors. Past performance is not necessarily indicative of future results.</p>
                         <p><strong class="text-gray-500">Not Investment Advice:</strong> This dashboard is for informational and educational purposes only. Nothing herein constitutes investment advice or a recommendation to trade.</p>
