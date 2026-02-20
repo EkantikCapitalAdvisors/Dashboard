@@ -113,11 +113,9 @@ async function handleCSVUpload(event, method) {
                 }
             } catch (e) { console.warn('DB sync error (local data is safe):', e); }
 
-            // Generate and save weekly snapshots
+            // Generate and save weekly snapshots (single GitHub write for all weeks)
             const snapshots = generateWeeklySnapshots(trades, 'active', ECFS_RISK, ECFS_PPT);
-            for (const snap of snapshots) {
-                await DB.saveWeeklySnapshot(snap);
-            }
+            await DB.saveAllWeeklySnapshots('active', snapshots);
             state.active.snapshots = snapshots;
             try { localStorage.setItem('ecfs-snapshots', JSON.stringify(snapshots)); }
             catch (e) { console.warn('Could not cache snapshots:', e); }
@@ -217,9 +215,7 @@ async function handleExcelUpload(event, method) {
             } catch (e) { console.warn('DB sync error (local data is safe):', e); }
 
             const snapshots = generateWeeklySnapshots(trades, 'discord', DISCORD_RISK, DISCORD_PPT, DISCORD_STARTING_BALANCE);
-            for (const snap of snapshots) {
-                await DB.saveWeeklySnapshot(snap);
-            }
+            await DB.saveAllWeeklySnapshots('discord', snapshots);
             state.discord.snapshots = snapshots;
             try { localStorage.setItem('discord-snapshots', JSON.stringify(snapshots)); }
             catch (e) { console.warn('Could not cache snapshots:', e); }
@@ -275,6 +271,86 @@ function clearData(method) {
     state[method].kpis = null;
     state[method].snapshots = [];
     location.reload();
+}
+
+// ===== GITHUB SYNC SETTINGS =====
+function showGitHubSettings() {
+    // Remove any existing panel
+    const existing = document.getElementById('gh-settings-panel');
+    if (existing) { existing.remove(); return; }
+
+    const hasToken = !!localStorage.getItem('gh-token');
+    const panel = document.createElement('div');
+    panel.id = 'gh-settings-panel';
+    panel.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm';
+    panel.innerHTML = `
+        <div class="bg-[#0d1d35] border border-[#d4af37]/30 rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-white font-bold text-lg flex items-center gap-2">
+                    <i class="fab fa-github text-[#d4af37]"></i> GitHub Sync
+                </h3>
+                <button onclick="document.getElementById('gh-settings-panel').remove()" class="text-gray-400 hover:text-white text-xl leading-none">&times;</button>
+            </div>
+
+            <div class="mb-4 p-3 rounded-lg ${hasToken ? 'bg-emerald-900/30 border border-emerald-500/30' : 'bg-yellow-900/30 border border-yellow-500/30'}">
+                <p class="text-sm ${hasToken ? 'text-emerald-300' : 'text-yellow-300'} font-semibold">
+                    <i class="fas ${hasToken ? 'fa-check-circle' : 'fa-exclamation-triangle'} mr-1"></i>
+                    ${hasToken ? 'Token configured — writes synced to GitHub' : 'No token — reads work, but uploads won\'t persist cross-device'}
+                </p>
+            </div>
+
+            <p class="text-gray-400 text-xs mb-4">
+                Paste a GitHub Personal Access Token with <strong class="text-white">Contents → Read &amp; Write</strong>
+                for the <code class="text-[#d4af37]">EkantikCapitalAdvisors/Dashboard</code> repo.
+                The token is stored only on this device (localStorage) and never sent anywhere except GitHub's API.
+                <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" class="text-[#d4af37] underline ml-1">Create token ↗</a>
+            </p>
+
+            <div class="flex gap-2 mb-4">
+                <input id="gh-token-input" type="password" placeholder="github_pat_…"
+                    value="${hasToken ? localStorage.getItem('gh-token') : ''}"
+                    class="flex-1 bg-[#0a1628] border border-gray-600 text-white text-sm rounded-lg px-3 py-2 font-mono focus:border-[#d4af37] focus:outline-none">
+                <button onclick="document.getElementById('gh-token-input').type = document.getElementById('gh-token-input').type === 'password' ? 'text' : 'password'"
+                    class="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-sm">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="saveGitHubToken()" class="flex-1 py-2.5 gradient-gold text-[#0a1628] font-bold text-sm rounded-lg hover:shadow-lg transition-all">
+                    Save Token
+                </button>
+                ${hasToken ? `<button onclick="clearGitHubToken()" class="px-4 py-2.5 bg-red-900/50 hover:bg-red-800/50 text-red-300 font-semibold text-sm rounded-lg transition-all">Remove</button>` : ''}
+            </div>
+        </div>`;
+    document.body.appendChild(panel);
+    panel.addEventListener('click', e => { if (e.target === panel) panel.remove(); });
+    setTimeout(() => document.getElementById('gh-token-input')?.focus(), 50);
+}
+
+function saveGitHubToken() {
+    const val = (document.getElementById('gh-token-input')?.value || '').trim();
+    if (!val) { alert('Please enter a token.'); return; }
+    localStorage.setItem('gh-token', val);
+    document.getElementById('gh-settings-panel')?.remove();
+    // Refresh the sync indicator buttons
+    updateGitHubSyncIndicators();
+}
+
+function clearGitHubToken() {
+    if (!confirm('Remove GitHub token from this device?')) return;
+    localStorage.removeItem('gh-token');
+    document.getElementById('gh-settings-panel')?.remove();
+    updateGitHubSyncIndicators();
+}
+
+function updateGitHubSyncIndicators() {
+    const hasToken = !!localStorage.getItem('gh-token');
+    document.querySelectorAll('.gh-sync-btn').forEach(btn => {
+        btn.title = hasToken ? 'GitHub Sync: Connected' : 'GitHub Sync: Not configured — click to set token';
+        btn.querySelector('span')?.classList.toggle('text-emerald-400', hasToken);
+        btn.querySelector('span')?.classList.toggle('text-yellow-400', !hasToken);
+    });
 }
 
 // ===== TAB SWITCHING =====
@@ -2656,6 +2732,7 @@ function setColor(elId, text, value) {
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', async function () {
     switchExecution('active');
+    updateGitHubSyncIndicators();
 
     let ecfsLoaded = false;
 

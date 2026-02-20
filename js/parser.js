@@ -10,135 +10,176 @@ const DISCORD_PPT = 50;      // $50 per point (ES)
 const STARTING_BALANCE = 5000;  // $5,000 portfolio for ECFS Conservative (2% risk per trade)
 const DISCORD_STARTING_BALANCE = 5000; // $5,000 portfolio for ECFS Aggressive (10% risk per trade)
 
-// ===== DATABASE API =====
+// ===== DATABASE API — GitHub-backed persistence =====
+// Reads: raw.githubusercontent.com (public CDN, no auth, cache-busted)
+// Writes: GitHub Contents API (requires a Personal Access Token in localStorage['gh-token'])
+//
+// Token setup (one-time, on the admin device only):
+//   1. GitHub → Settings → Developer Settings → Personal Access Tokens → Fine-grained
+//   2. Scope: Contents → Read & Write for EkantikCapitalAdvisors/Dashboard
+//   3. Click the ⚙ GitHub Sync button near the upload section and paste the token
+//
+// Computer B (mobile/viewer) needs NO token — reads work on any device without auth.
 const DB = {
+    OWNER: 'EkantikCapitalAdvisors',
+    REPO:  'Dashboard',
+    BRANCH: 'main',
+
+    _token() { return localStorage.getItem('gh-token') || ''; },
+
+    // Fetch a data file from the repo — no auth needed (public repo, CDN)
+    async _read(filename) {
+        const url = `https://raw.githubusercontent.com/${DB.OWNER}/${DB.REPO}/${DB.BRANCH}/data/${filename}.json?cb=${Date.now()}`;
+        const res = await fetch(url);
+        if (res.status === 404) return [];
+        if (!res.ok) throw new Error(`Read ${filename}: HTTP ${res.status}`);
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+    },
+
+    // Write a data file to the repo via GitHub Contents API
+    async _write(filename, data, message) {
+        const token = DB._token();
+        if (!token) {
+            console.warn('[GitHubDB] No token — write skipped. Configure via ⚙ GitHub Sync button.');
+            return false;
+        }
+        const apiUrl = `https://api.github.com/repos/${DB.OWNER}/${DB.REPO}/contents/data/${filename}.json`;
+        const headers = {
+            Authorization: `token ${token}`,
+            Accept: 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+        };
+
+        // Get current file SHA (required by GitHub API to update an existing file)
+        let sha = null;
+        const infoRes = await fetch(`${apiUrl}?ref=${DB.BRANCH}`, { headers });
+        if (infoRes.ok) {
+            sha = (await infoRes.json()).sha;
+        } else if (infoRes.status !== 404) {
+            throw new Error(`SHA fetch failed: ${infoRes.status}`);
+        }
+
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+        const body = { message, content, branch: DB.BRANCH };
+        if (sha) body.sha = sha;
+
+        const res = await fetch(apiUrl, { method: 'PUT', headers, body: JSON.stringify(body) });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.message || `Write failed: ${res.status}`);
+        }
+        return true;
+    },
+
+    // ─── Public API (same interface as before — dashboard.js unchanged) ──────
+
     async loadTrades(tableName) {
-        try {
-            const allTrades = [];
-            let page = 1;
-            let hasMore = true;
-            while (hasMore) {
-                const res = await fetch(`tables/${tableName}?page=${page}&limit=100&sort=entry_time`);
-                if (!res.ok) return [];
-                const json = await res.json();
-                allTrades.push(...json.data);
-                hasMore = json.data.length === 100;
-                page++;
-            }
-            return allTrades;
-        } catch (e) { console.error(`DB load ${tableName}:`, e); return []; }
+        try { return await DB._read(tableName); }
+        catch (e) { console.warn(`[GitHubDB] loadTrades(${tableName}):`, e); return []; }
     },
 
     async saveTrades(tableName, trades, batchId) {
-        const rows = trades.map(t => {
-            if (tableName === 'ecfs_trades') {
-                return {
-                    week_key: getWeekKey(t.date),
-                    entry_time: t.entryTime || '',
-                    exit_time: t.exitTime || '',
-                    direction: t.direction,
-                    entry_price: t.entryPrice,
-                    exit_price: t.exitPrice,
-                    stop_price: t.stopPrice || 0,
-                    contracts: t.contracts,
-                    points_pl: t.pointsPL,
-                    dollar_pl: t.dollarPL,
-                    risk_points: t.riskPoints || 0,
-                    risk_dollars: t.riskDollars || 0,
-                    reward_risk: t.rewardRisk || 0,
-                    is_win: t.isWin,
-                    trade_date: t.date,
-                    upload_batch: batchId
-                };
-            } else {
-                return {
-                    week_key: getWeekKey(t.date),
-                    datetime: t.datetime || '',
-                    trade_num: t.tradeNum || '',
-                    direction: t.direction || '',
-                    entry_price: t.entryPrice || 0,
-                    stop_price: t.stopPrice || 0,
-                    trailing_profit: t.trailingProfit || '',
-                    points_pl: t.pointsPL || 0,
-                    risk_points: t.riskPoints || 0,
-                    dollar_pl: t.dollarPL || 0,
-                    risk_dollars: t.riskDollars || 0,
-                    is_win: t.isWin,
-                    outcome: t.outcome || '',
-                    trade_date: t.date,
-                    upload_batch: batchId
-                };
-            }
-        });
+        try {
+            const existing = await DB._read(tableName);
+            const norm = v => Math.round(parseFloat(v) * 10000) / 10000;
+            let merged;
 
-        // Save in batches of 20
-        for (let i = 0; i < rows.length; i += 20) {
-            const batch = rows.slice(i, i + 20);
-            try {
-                for (const row of batch) {
-                    await fetch(`tables/${tableName}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(row)
-                    });
-                }
-            } catch (e) { console.error(`DB save batch ${tableName}:`, e); }
-        }
+            if (tableName === 'ecfs_trades') {
+                const keys = new Set(existing.map(r =>
+                    `${r.entry_time}|${r.exit_time}|${r.direction}|${norm(r.dollar_pl)}`
+                ));
+                const newRows = trades
+                    .filter(t => !keys.has(`${t.entryTime}|${t.exitTime}|${t.direction}|${norm(t.dollarPL)}`))
+                    .map(t => ({
+                        week_key:     getWeekKey(t.date),
+                        entry_time:   t.entryTime   || '',
+                        exit_time:    t.exitTime    || '',
+                        direction:    t.direction,
+                        entry_price:  t.entryPrice,
+                        exit_price:   t.exitPrice,
+                        stop_price:   t.stopPrice   || 0,
+                        contracts:    t.contracts,
+                        points_pl:    t.pointsPL,
+                        dollar_pl:    t.dollarPL,
+                        risk_points:  t.riskPoints  || 0,
+                        risk_dollars: t.riskDollars || 0,
+                        reward_risk:  t.rewardRisk  || 0,
+                        is_win:       t.isWin,
+                        trade_date:   t.date,
+                        upload_batch: batchId
+                    }));
+                merged = [...existing, ...newRows];
+            } else {
+                // discord_trades — dedup by trade_num
+                const nums = new Set(existing.map(r => r.trade_num));
+                const newRows = trades
+                    .filter(t => !nums.has(t.tradeNum))
+                    .map(t => ({
+                        week_key:        getWeekKey(t.date),
+                        datetime:        t.datetime        || '',
+                        trade_num:       t.tradeNum        || '',
+                        direction:       t.direction       || '',
+                        entry_price:     t.entryPrice      || 0,
+                        stop_price:      t.stopPrice       || 0,
+                        trailing_profit: t.trailingProfit  || '',
+                        points_pl:       t.pointsPL        || 0,
+                        risk_points:     t.riskPoints      || 0,
+                        dollar_pl:       t.dollarPL        || 0,
+                        risk_dollars:    t.riskDollars     || 0,
+                        is_win:          t.isWin,
+                        outcome:         t.outcome         || '',
+                        trade_date:      t.date,
+                        upload_batch:    batchId
+                    }));
+                merged = [...existing, ...newRows];
+            }
+
+            await DB._write(tableName, merged,
+                `Update ${tableName}: +${trades.length} trades [${batchId}]`);
+        } catch (e) { console.warn(`[GitHubDB] saveTrades(${tableName}):`, e); }
     },
 
+    // Saves all snapshots for one method in a single GitHub write (efficient)
+    async saveAllWeeklySnapshots(method, snapshots) {
+        try {
+            const all = await DB._read('weekly_snapshots');
+            // Keep the other method's snapshots, replace this method's entirely
+            const merged = [...all.filter(s => s.method !== method), ...snapshots];
+            await DB._write('weekly_snapshots', merged,
+                `Snapshots ${method}: ${snapshots.length} weeks [${new Date().toISOString().slice(0, 10)}]`);
+        } catch (e) { console.warn('[GitHubDB] saveAllWeeklySnapshots:', e); }
+    },
+
+    // Single-snapshot upsert (kept for compatibility — prefer saveAllWeeklySnapshots)
     async saveWeeklySnapshot(snapshot) {
         try {
-            // Check if snapshot exists for this method+week
-            const res = await fetch(`tables/weekly_snapshots?search=${snapshot.week_key}&limit=100`);
-            const json = await res.json();
-            const existing = json.data.find(s => s.method === snapshot.method && s.week_key === snapshot.week_key);
-            if (existing) {
-                await fetch(`tables/weekly_snapshots/${existing.id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(snapshot)
-                });
-            } else {
-                await fetch(`tables/weekly_snapshots`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(snapshot)
-                });
-            }
-        } catch (e) { console.error('DB save snapshot:', e); }
+            const all = await DB._read('weekly_snapshots');
+            const idx = all.findIndex(s => s.method === snapshot.method && s.week_key === snapshot.week_key);
+            if (idx >= 0) all[idx] = snapshot; else all.push(snapshot);
+            await DB._write('weekly_snapshots', all,
+                `Snapshot ${snapshot.method} ${snapshot.week_key}`);
+        } catch (e) { console.warn('[GitHubDB] saveWeeklySnapshot:', e); }
     },
 
     async loadWeeklySnapshots(method) {
         try {
-            const allSnapshots = [];
-            let page = 1;
-            let hasMore = true;
-            while (hasMore) {
-                const res = await fetch(`tables/weekly_snapshots?page=${page}&limit=100`);
-                if (!res.ok) return [];
-                const json = await res.json();
-                allSnapshots.push(...json.data);
-                hasMore = json.data.length === 100;
-                page++;
-            }
-            return allSnapshots.filter(s => s.method === method).sort((a, b) => {
-                const da = parseWeekKey(a.week_key);
-                const db = parseWeekKey(b.week_key);
-                return da - db;
-            });
-        } catch (e) { console.error('DB load snapshots:', e); return []; }
+            const all = await DB._read('weekly_snapshots');
+            return all
+                .filter(s => s.method === method)
+                .sort((a, b) => parseWeekKey(a.week_key) - parseWeekKey(b.week_key));
+        } catch (e) { console.warn('[GitHubDB] loadWeeklySnapshots:', e); return []; }
     },
 
     async deleteTradesByBatch(tableName, batchId) {
         try {
-            const res = await fetch(`tables/${tableName}?search=${batchId}&limit=100`);
-            const json = await res.json();
-            for (const row of json.data) {
-                if (row.upload_batch === batchId) {
-                    await fetch(`tables/${tableName}/${row.id}`, { method: 'DELETE' });
-                }
+            const existing = await DB._read(tableName);
+            const filtered = existing.filter(r => r.upload_batch !== batchId);
+            if (filtered.length < existing.length) {
+                await DB._write(tableName, filtered,
+                    `Delete batch ${batchId} from ${tableName}`);
             }
-        } catch (e) { console.error('DB delete:', e); }
+        } catch (e) { console.warn('[GitHubDB] deleteTradesByBatch:', e); }
     }
 };
 
