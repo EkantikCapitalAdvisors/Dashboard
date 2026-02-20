@@ -124,11 +124,11 @@ const DB = {
                 }));
             merged = [...existing, ...newRows];
         } else {
-            // discord_trades — dedup by trade_num
-            const nums = new Set(existing.map(r => r.trade_num));
-            const newRows = trades
-                .filter(t => !nums.has(t.tradeNum))
-                .map(t => ({
+            // discord_trades — upsert by trade_num: new upload overwrites existing records
+            // so corrected data (e.g. fixed dollar amounts) always replaces stale DB rows
+            const existingByNum = new Map(existing.map(r => [r.trade_num, r]));
+            trades.forEach(t => {
+                existingByNum.set(t.tradeNum || '', {
                     week_key:        getWeekKey(t.date),
                     datetime:        t.datetime        || '',
                     trade_num:       t.tradeNum        || '',
@@ -144,8 +144,10 @@ const DB = {
                     outcome:         t.outcome         || '',
                     trade_date:      t.date,
                     upload_batch:    batchId
-                }));
-            merged = [...existing, ...newRows];
+                });
+            });
+            merged = Array.from(existingByNum.values())
+                .sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
         }
 
         await DB._write(tableName, merged,
