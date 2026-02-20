@@ -1222,5 +1222,41 @@
     "is_win": false,
     "trade_date": "2/19/2026",
     "upload_batch": "ecfs-sync-1771556613865"
+  },
+  {
+    "week_key": "02/16/2026",
+    "entry_time": "02/20/2026 08:32:27",
+    "exit_time": "02/20/2026 08:35:18",
+    "direction": "Short",
+    "entry_price": 6858.75,
+    "exit_price": 6866,
+    "stop_price": 6866,
+    "contracts": 2,
+    "points_pl": -7.25,
+    "dollar_pl": -72.5,
+    "risk_points": 7.25,
+    "risk_dollars": 72.5,
+    "reward_risk": -1,
+    "is_win": false,
+    "trade_date": "2/20/2026",
+    "upload_batch": "ecfs-1771620187933"
+  },
+  {
+    "week_key": "02/16/2026",
+    "entry_time": "02/20/2026 08:40:10",
+    "exit_time": "02/20/2026 08:42:38",
+    "direction": "Short",
+    "entry_price": 6869,
+    "exit_price": 6880.25,
+    "stop_price": 6880.25,
+    "contracts": 2,
+    "points_pl": -11.25,
+    "dollar_pl": -112.5,
+    "risk_points": 11.25,
+    "risk_dollars": 112.5,
+    "reward_risk": -1,
+    "is_win": false,
+    "trade_date": "2/20/2026",
+    "upload_batch": "ecfs-1771620187933"
   }
 ]
