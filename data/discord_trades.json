@@ -1,1 +1,19 @@
-[]
+[
+  {
+    "week_key": "02/16/2026",
+    "datetime": "2026-02-18 08:29:18",
+    "trade_num": "F11",
+    "direction": "Buy",
+    "entry_price": 6875,
+    "stop_price": 0,
+    "trailing_profit": "—",
+    "points_pl": -10,
+    "risk_points": 0,
+    "dollar_pl": 0,
+    "risk_dollars": 0,
+    "is_win": false,
+    "outcome": "Loss",
+    "trade_date": "2/18/2026",
+    "upload_batch": "discord-1771556654644"
+  }
+]
