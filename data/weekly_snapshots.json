@@ -56,20 +56,20 @@
   {
     "method": "discord",
     "week_key": "02/02/2026",
-    "net_pl": 1825,
-    "net_points": 36.5,
-    "return_pct": 36.5,
+    "net_pl": 1425,
+    "net_points": 28.5,
+    "return_pct": 28.499999999999996,
     "total_trades": 6,
     "win_count": 4,
     "loss_count": 2,
     "win_rate": 66.66666666666666,
-    "profit_factor": 8.3,
-    "ev_planned_r": 60.83333333333334,
-    "ev_actual_r": 67.5925925925926,
+    "profit_factor": 6.7,
+    "ev_planned_r": 47.5,
+    "ev_actual_r": 52.77777777777778,
     "max_dd": 250,
-    "cumulative_pl": 1825,
-    "cumulative_balance": 6825,
-    "cumulative_return": 36.5
+    "cumulative_pl": 1425,
+    "cumulative_balance": 6425,
+    "cumulative_return": 28.499999999999996
   },
   {
     "method": "discord",
@@ -85,9 +85,9 @@
     "ev_planned_r": 14.000000000000002,
     "ev_actual_r": 13.023255813953488,
     "max_dd": 500,
-    "cumulative_pl": 2175,
-    "cumulative_balance": 7175,
-    "cumulative_return": 43.5
+    "cumulative_pl": 1775,
+    "cumulative_balance": 6775,
+    "cumulative_return": 35.5
   },
   {
     "method": "discord",
@@ -103,8 +103,8 @@
     "ev_planned_r": 70,
     "ev_actual_r": 70,
     "max_dd": 0,
-    "cumulative_pl": 3225,
-    "cumulative_balance": 8225,
-    "cumulative_return": 64.5
+    "cumulative_pl": 2825,
+    "cumulative_balance": 7825,
+    "cumulative_return": 56.49999999999999
   }
 ]
