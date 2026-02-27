@@ -1258,5 +1258,23 @@
     "is_win": false,
     "trade_date": "2/20/2026",
     "upload_batch": "ecfs-1771620187933"
+  },
+  {
+    "week_key": "02/23/2026",
+    "entry_time": "02/23/2026 08:30:26",
+    "exit_time": "02/23/2026 08:32:34",
+    "direction": "Short",
+    "entry_price": 6915.25,
+    "exit_price": 6926.5,
+    "stop_price": 6926.5,
+    "contracts": 2,
+    "points_pl": -11.25,
+    "dollar_pl": -112.5,
+    "risk_points": 11.25,
+    "risk_dollars": 112.5,
+    "reward_risk": -1,
+    "is_win": false,
+    "trade_date": "2/23/2026",
+    "upload_batch": "ecfs-1772211591162"
   }
 ]
