@@ -1148,17 +1148,17 @@ function renderFoodChain(method, k, allK, allTrades) {
     const period = state[method].currentPeriod;
     const periodLabel = period === 'weekly' ? 'This Week' : period === 'monthly' ? 'This Month' : 'All-Time';
 
-    // --- Core metrics ---
-    const edgeR = k.evPlannedR;           // EV as % of planned risk
-    const edgePct = edgeR;                 // same thing (e.g., +25 means +25%R)
-    const winRate = k.winRate;
-    const avgWin = k.avgWinDollar;
-    const avgLoss = Math.abs(k.avgLossDollar);
-    const rr = avgLoss > 0 ? avgWin / avgLoss : 0;  // reward:risk ratio
+    // --- Core metrics — always use ALL-TIME data for extrapolation regardless of selected period ---
+    const edgeR = allK.evPlannedR;
+    const edgePct = edgeR;
+    const winRate = allK.winRate;
+    const avgWin = allK.avgWinDollar;
+    const avgLoss = Math.abs(allK.avgLossDollar);
+    const rr = avgLoss > 0 ? avgWin / avgLoss : 0;
 
-    // Trades per month estimate
-    const tradingDays = k.tradingDays.length || 1;
-    const tradesPerDay = k.totalTrades / tradingDays;
+    // Trades per month — derived from all-time trade frequency
+    const tradingDays = allK.tradingDays.length || 1;
+    const tradesPerDay = allK.totalTrades / tradingDays;
     const tradesPerMonth = tradesPerDay * 21; // ~21 trading days per month
     const tradesPerYear = tradesPerMonth * 12;
 
@@ -1176,7 +1176,7 @@ function renderFoodChain(method, k, allK, allTrades) {
     // --- Update Annual R header note with data-as-of context ---
     const lastTradeDate = getLastTradeDate(allTrades) || 'latest upload';
     const headerNoteEl = el(`${prefix}-annual-r-header-note`);
-    if (headerNoteEl) headerNoteEl.textContent = `extrapolated · ${k.totalTrades} trades · as of ${lastTradeDate}`;
+    if (headerNoteEl) headerNoteEl.textContent = `extrapolated · ${allK.totalTrades} trades (all-time) · as of ${lastTradeDate}`;
 
     // --- Your Strategy Row ---
     const edgeSign = edgeR >= 0 ? '+' : '';
@@ -1192,9 +1192,9 @@ function renderFoodChain(method, k, allK, allTrades) {
     // Summary callout: explicit math so the user knows exactly how Annual R was derived
     const strategyLabel = method === 'active' ? 'ECFS Active (MES)' : 'ECFS Selective (ES)';
     const riskLabel = method === 'active' ? '$100' : '$500';
-    const dataAsOf = `<span style="color:#9ca3af;font-weight:normal;"><i class="fas fa-sync-alt" style="font-size:9px;margin-right:3px;"></i>Extrapolated from <strong>${k.totalTrades} all-time trades</strong> as of ${lastTradeDate} · updated weekly with new data</span>`;
+    const dataAsOf = `<span style="color:#9ca3af;font-weight:normal;"><i class="fas fa-sync-alt" style="font-size:9px;margin-right:3px;"></i>Extrapolated from <strong>${allK.totalTrades} all-time trades</strong> as of ${lastTradeDate} · updated weekly with new data</span>`;
     setHTML(`${prefix}-summary-text`,
-        `<strong style="color:${accentColor}">${strategyLabel}</strong> · ${periodLabel}: ` +
+        `<strong style="color:${accentColor}">${strategyLabel}</strong> · All-Time: ` +
         `<strong>${edgeSign}${edgeR.toFixed(1)}%R</strong> edge/trade × ` +
         `<strong>${Math.round(tradesPerMonth)}</strong> trades/mo × 12 = ` +
         `<strong style="color:${accentColor}">≈${annualR.toFixed(0)} R/year</strong> ` +
@@ -1283,16 +1283,16 @@ function renderFoodChain(method, k, allK, allTrades) {
     }
 
     // Math formula subtitle — with data-as-of context
-    setHTML(`${prefix}-math-formula`, `Return = ${edgeSign}${edgeR.toFixed(1)}%R × Risk$/Trade × ${Math.round(tradesPerYear)} trades/yr <span style="color:#6b7280;font-size:9px;font-weight:normal;">· extrapolated from ${k.totalTrades} trades as of ${lastTradeDate}</span>`);
+    setHTML(`${prefix}-math-formula`, `Return = ${edgeSign}${edgeR.toFixed(1)}%R × Risk$/Trade × ${Math.round(tradesPerYear)} trades/yr <span style="color:#6b7280;font-size:9px;font-weight:normal;">· extrapolated from ${allK.totalTrades} all-time trades as of ${lastTradeDate}</span>`);
 
     // Scale subtitle: add data confidence note with data-as-of
-    const confidence = k.totalTrades < 30 ? '⚠️ Early projection' : k.totalTrades < 100 ? 'Developing confidence' : '✅ Statistically significant';
-    const confColor = k.totalTrades < 30 ? '#f59e0b' : k.totalTrades < 100 ? '#60a5fa' : '#22c55e';
+    const confidence = allK.totalTrades < 30 ? '⚠️ Early projection' : allK.totalTrades < 100 ? 'Developing confidence' : '✅ Statistically significant';
+    const confColor = allK.totalTrades < 30 ? '#f59e0b' : allK.totalTrades < 100 ? '#60a5fa' : '#22c55e';
     setHTML(`${prefix}-scale-subtitle`,
-        `<strong style="color:${confColor}">${confidence}</strong> · Extrapolated from <strong>${k.totalTrades} all-time trades</strong> as of <strong>${lastTradeDate}</strong>. ` +
+        `<strong style="color:${confColor}">${confidence}</strong> · Extrapolated from <strong>${allK.totalTrades} all-time trades</strong> as of <strong>${lastTradeDate}</strong>. ` +
         `Returns multiply linearly with risk taken (not compounded). ` +
         `<span style="color:#60a5fa;">These projections update automatically every week as new trade data is loaded.</span>` +
-        (k.totalTrades < 50 ? ` <span style="color:#f59e0b;">Sample size is small; projections stabilize with 100+ trades.</span>` : '')
+        (allK.totalTrades < 50 ? ` <span style="color:#f59e0b;">Sample size is small; projections stabilize with 100+ trades.</span>` : '')
     );
 
     // --- What R Means ---
