@@ -366,6 +366,100 @@ function buildRoundTrip(entryOrders, exitOrder, contracts, stopOrders, allOrders
     };
 }
 
+// ===== DISCORD ALERT PARSER =====
+// Parses raw Discord alert text (e.g. "F16: b 6939 / F16: sl6934 / F16: tp6944 / F16: + 5")
+// into the same trade object format used by parseDiscordExcel.
+function parseDiscordAlerts(text, datetimeLocal) {
+    // Convert datetime-local value (YYYY-MM-DDTHH:MM) to dashboard format (M/D/YYYY HH:MM)
+    let datetimeStr = '';
+    let dateStr = '';
+    if (datetimeLocal) {
+        // Parse as local time to avoid UTC offset issues
+        const [datePart, timePart] = datetimeLocal.split('T');
+        const [yr, mo, dy] = datePart.split('-').map(Number);
+        const [hh, mm] = (timePart || '00:00').split(':').map(Number);
+        datetimeStr = `${mo}/${dy}/${yr} ${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+        dateStr = `${mo}/${dy}/${yr}`;
+    }
+
+    const tradesMap = {};
+    const tradeOrder = []; // preserve first-seen order
+
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+
+    for (const line of lines) {
+        // Match "F16: <content>" — case-insensitive trade ID
+        const m = line.match(/^(F\d+):\s*(.+)$/i);
+        if (!m) continue;
+
+        const tradeId = m[1].toUpperCase();
+        const content = m[2].trim();
+
+        if (!tradesMap[tradeId]) {
+            tradesMap[tradeId] = { tradeNum: tradeId };
+            tradeOrder.push(tradeId);
+        }
+        const t = tradesMap[tradeId];
+
+        // Entry — "b 6939" (buy) or "s 6939" (sell/short)
+        const entryM = content.match(/^([bs])\s+([\d.]+)$/i);
+        if (entryM) {
+            t.direction = entryM[1].toLowerCase() === 'b' ? 'Buy' : 'Sell';
+            t.entryPrice = parseFloat(entryM[2]);
+            continue;
+        }
+
+        // Stop loss — "sl6934" or "sl 6934"
+        const slM = content.match(/^sl\s*([\d.]+)$/i);
+        if (slM) { t.stopPrice = parseFloat(slM[1]); continue; }
+
+        // Take profit — "tp6944" or "tp 6944"
+        const tpM = content.match(/^tp\s*([\d.]+)$/i);
+        if (tpM) { t.trailingProfit = String(tpM[1]); continue; }
+
+        // Manual exit — "exit"
+        if (/^exit$/i.test(content)) {
+            if (!t.trailingProfit) t.trailingProfit = 'exit';
+            continue;
+        }
+
+        // Result — "+ 5", "+5", "- 3", "-3"
+        const resM = content.match(/^([+-])\s*([\d.]+)$/);
+        if (resM) {
+            t.pointsPL = (resM[1] === '+' ? 1 : -1) * parseFloat(resM[2]);
+            continue;
+        }
+    }
+
+    const result = [];
+    for (const id of tradeOrder) {
+        const t = tradesMap[id];
+        // Skip incomplete records (must have entry price and a result)
+        if (t.entryPrice === undefined || t.pointsPL === undefined) continue;
+
+        const riskPoints = t.stopPrice != null ? Math.abs(t.entryPrice - t.stopPrice) : 0;
+        const dollarPL   = t.pointsPL * DISCORD_PPT;
+        const isWin      = t.pointsPL > 0;
+
+        result.push({
+            datetime:       datetimeStr,
+            tradeNum:       t.tradeNum,
+            direction:      t.direction || 'Buy',
+            entryPrice:     t.entryPrice,
+            stopPrice:      t.stopPrice || 0,
+            trailingProfit: t.trailingProfit || '—',
+            pointsPL:       t.pointsPL,
+            riskPoints,
+            dollarPL,
+            riskDollars:    riskPoints * DISCORD_PPT,
+            isWin,
+            outcome:        isWin ? 'Win' : 'Loss',
+            date:           dateStr
+        });
+    }
+    return result;
+}
+
 // ===== EXCEL PARSER (Discord Selective) =====
 function parseDiscordExcel(data) {
     const workbook = XLSX.read(data, { type: 'array' });

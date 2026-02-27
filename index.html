@@ -879,29 +879,101 @@
                         </div>
                     </div>
 
-                    <!-- Excel Upload -->
+                    <!-- Upload Card — tabbed: Discord Parser | Excel Upload -->
                     <div class="bg-gradient-to-br from-blue-900/10 to-[#0d1d35] border border-blue-400/20 rounded-xl p-5 mb-6">
-                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                            <div class="flex-1">
-                                <h3 class="text-sm font-bold text-white mb-1"><i class="fas fa-file-excel mr-2 text-blue-400"></i>Upload Weekly Excel Report</h3>
-                                <p class="text-xs text-gray-400">10-column format: Date, Trade#, B/S, Entry, Stop, Trail, Net Pts, Risk, Net$, Win/Lose</p>
-                            </div>
-                            <div class="flex gap-2 flex-wrap">
-                                <label class="cursor-pointer px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold text-sm rounded-lg transition-all inline-flex items-center">
-                                    <i class="fas fa-upload mr-2"></i>Upload Excel
-                                    <input type="file" id="excel-upload-discord" accept=".xlsx,.xls" class="hidden" onchange="handleExcelUpload(event, 'discord')">
-                                </label>
-                                <button id="export-btn-discord" onclick="exportDiscordData()" class="hidden px-4 py-2.5 bg-emerald-600/80 hover:bg-emerald-500 text-white font-semibold text-sm rounded-lg transition-all inline-flex items-center" title="Download for GitHub deployment">
-                                    <i class="fas fa-download mr-1.5"></i>Export
-                                </button>
-                                <button onclick="clearData('discord')" class="px-4 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                                <button onclick="showGitHubSettings()" class="gh-sync-btn px-3 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all flex items-center gap-1.5" title="GitHub Sync: Not configured — click to set token">
-                                    <i class="fab fa-github"></i><span class="text-yellow-400 text-xs">⚙</span>
-                                </button>
+
+                        <!-- Tab headers -->
+                        <div class="flex gap-1.5 mb-4 border-b border-blue-400/15 pb-3">
+                            <button id="tab-discord-parser" onclick="switchUploadTab('parser')"
+                                class="px-4 py-2 text-sm font-semibold rounded-lg transition-all bg-blue-500/20 border border-blue-400/40 text-blue-300">
+                                <i class="fab fa-discord mr-2"></i>Discord Parser
+                            </button>
+                            <button id="tab-discord-excel" onclick="switchUploadTab('excel')"
+                                class="px-4 py-2 text-sm font-semibold rounded-lg transition-all text-gray-500 hover:text-gray-300">
+                                <i class="fas fa-file-excel mr-2"></i>Excel Upload
+                            </button>
+                        </div>
+
+                        <!-- ── Tab: Discord Parser ── -->
+                        <div id="tab-content-parser">
+                            <div class="grid md:grid-cols-2 gap-4">
+
+                                <!-- Left: inputs -->
+                                <div>
+                                    <!-- Date & Time -->
+                                    <div class="mb-3">
+                                        <label class="text-xs font-semibold text-gray-400 mb-1.5 block">Alert Date &amp; Time</label>
+                                        <div class="flex gap-2">
+                                            <input type="datetime-local" id="discord-parser-datetime" oninput="livePreviewDiscord()"
+                                                class="flex-1 bg-[#0a1628] border border-blue-400/25 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-400/60">
+                                            <button onclick="setDiscordParserNow()"
+                                                class="px-3 py-2 bg-blue-500/20 border border-blue-400/30 hover:bg-blue-500/30 text-blue-300 text-xs font-semibold rounded-lg transition-all whitespace-nowrap">
+                                                Now
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Paste area -->
+                                    <div class="mb-3">
+                                        <label class="text-xs font-semibold text-gray-400 mb-1.5 block">Paste Discord Alerts</label>
+                                        <textarea id="discord-parser-input" oninput="livePreviewDiscord()"
+                                            placeholder="F16: b 6939&#10;F16: sl6934&#10;F16: tp6944&#10;F16: + 5&#10;&#10;F17: b 6900.5&#10;F17: sl6897&#10;F17: exit&#10;F17: +3"
+                                            class="w-full bg-[#0a1628] border border-blue-400/25 rounded-lg px-3 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-blue-400/60 resize-none h-44 placeholder-gray-700"></textarea>
+                                    </div>
+
+                                    <!-- Actions -->
+                                    <div class="flex gap-2">
+                                        <button id="discord-parser-upload-btn" onclick="submitDiscordParser()" disabled
+                                            class="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm rounded-lg transition-all">
+                                            <i class="fas fa-upload mr-2"></i>Upload Trades
+                                        </button>
+                                        <button id="export-btn-discord" onclick="exportDiscordData()" class="hidden px-4 py-2.5 bg-emerald-600/80 hover:bg-emerald-500 text-white font-semibold text-sm rounded-lg transition-all inline-flex items-center" title="Export JSON">
+                                            <i class="fas fa-download mr-1.5"></i>Export
+                                        </button>
+                                        <button onclick="clearData('discord')" class="px-4 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all" title="Clear all trades">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        <button onclick="showGitHubSettings()" class="gh-sync-btn px-3 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all flex items-center gap-1.5" title="GitHub Sync">
+                                            <i class="fab fa-github"></i><span class="text-yellow-400 text-xs">⚙</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Right: live preview -->
+                                <div>
+                                    <label class="text-xs font-semibold text-gray-400 mb-1.5 block">Live Preview</label>
+                                    <div id="discord-parser-preview"
+                                        class="bg-[#0a1628] border border-blue-400/20 rounded-lg p-3 min-h-[14rem] max-h-72 overflow-y-auto">
+                                        <p class="text-gray-600 text-xs text-center mt-10">Paste Discord alerts on the left to preview parsed trades</p>
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
+
+                        <!-- ── Tab: Excel Upload ── -->
+                        <div id="tab-content-excel" class="hidden">
+                            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                                <div class="flex-1">
+                                    <h3 class="text-sm font-bold text-white mb-1"><i class="fas fa-file-excel mr-2 text-blue-400"></i>Upload Weekly Excel Report</h3>
+                                    <p class="text-xs text-gray-400">10-column format: Date, Trade#, B/S, Entry, Stop, Trail, Net Pts, Risk, Net$, Win/Lose</p>
+                                </div>
+                                <div class="flex gap-2 flex-wrap">
+                                    <label class="cursor-pointer px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold text-sm rounded-lg transition-all inline-flex items-center">
+                                        <i class="fas fa-upload mr-2"></i>Upload Excel
+                                        <input type="file" id="excel-upload-discord" accept=".xlsx,.xls" class="hidden" onchange="handleExcelUpload(event, 'discord')">
+                                    </label>
+                                    <button onclick="clearData('discord')" class="px-4 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    <button onclick="showGitHubSettings()" class="gh-sync-btn px-3 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all flex items-center gap-1.5" title="GitHub Sync: Not configured — click to set token">
+                                        <i class="fab fa-github"></i><span class="text-yellow-400 text-xs">⚙</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Shared status bars -->
                         <div id="upload-status-discord" class="mt-3 hidden"></div>
                         <div id="sync-status-discord" class="mt-1.5 hidden flex items-center gap-1.5 text-[10px] text-gray-600">
                             <i class="fas fa-cloud text-[9px]"></i>
