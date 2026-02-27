@@ -253,5 +253,22 @@
     "outcome": "Win",
     "trade_date": "2/20/2026",
     "upload_batch": "discord-1771642082350"
+  },
+  {
+    "week_key": "02/23/2026",
+    "datetime": "2/24/2026 12:38",
+    "trade_num": "F15",
+    "direction": "Sell",
+    "entry_price": 6906,
+    "stop_price": 6911,
+    "trailing_profit": "—",
+    "points_pl": 4,
+    "risk_points": 5,
+    "dollar_pl": 200,
+    "risk_dollars": 250,
+    "is_win": true,
+    "outcome": "Win",
+    "trade_date": "2/24/2026",
+    "upload_batch": "discord-1772211314902"
   }
 ]
