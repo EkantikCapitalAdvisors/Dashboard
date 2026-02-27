@@ -32,7 +32,7 @@
         "@context": "https://schema.org",
         "@type": "WebPage",
         "name": "Real-Time Proof of Structural Edge | Ekantik Capital",
-        "description": "Validate in real-time a structural trading edge with 30+ KPIs, updated weekly. Statistical verification across ECFS Active and ECFS Selective execution strategies.",
+        "description": "Validate in real-time a structural trading edge with 30+ KPIs, updated weekly. Statistical verification across ECFS Swing and ECFS Scalping execution strategies.",
         "url": "https://dashboard.ekantikcapital.com/",
         "publisher": {
             "@type": "Organization",
@@ -114,13 +114,13 @@
                     </a>
                 </div>
                 <nav class="flex items-center space-x-3 sm:space-x-5">
-                    <!-- Tab: ECFS Active -->
+                    <!-- Tab: ECFS Swing -->
                     <a href="#" onclick="switchExecution('active'); return false;" class="text-[#d4af37] font-semibold text-sm flex items-center hover:text-[#d4af37] transition-colors" id="nav-active">
-                        <i class="fas fa-bolt mr-1.5 text-xs"></i><span class="hidden sm:inline">ECFS Active</span><span class="sm:hidden">ECFS</span>
+                        <i class="fas fa-bolt mr-1.5 text-xs"></i><span class="hidden sm:inline">ECFS Swing</span><span class="sm:hidden">ECFS</span>
                     </a>
-                    <!-- Tab: ECFS Selective -->
+                    <!-- Tab: ECFS Scalping -->
                     <a href="#" onclick="switchExecution('discord'); return false;" class="text-gray-300 hover:text-blue-400 transition-colors text-sm font-medium flex items-center" id="nav-discord">
-                        <i class="fas fa-comments mr-1.5 text-xs"></i><span class="hidden sm:inline">ECFS Selective</span><span class="sm:hidden">Select</span>
+                        <i class="fas fa-comments mr-1.5 text-xs"></i><span class="hidden sm:inline">ECFS Scalping</span><span class="sm:hidden">Select</span>
                     </a>
                     <!-- Tab: Comparison -->
                     <a href="#" onclick="switchExecution('compare'); return false;" class="text-gray-300 hover:text-[#d4af37] transition-colors text-sm font-medium flex items-center" id="nav-compare">
@@ -223,10 +223,10 @@
             <div class="max-w-6xl mx-auto">
                 <div class="flex flex-wrap justify-center gap-3 mb-0">
                     <button onclick="switchExecution('active')" id="tab-active" class="tab-button active px-6 py-3 rounded-lg font-bold text-sm transition-all border-2 border-transparent">
-                        <i class="fas fa-bolt mr-2"></i>ECFS Active (MES)
+                        <i class="fas fa-bolt mr-2"></i>ECFS Swing (MES)
                     </button>
                     <button onclick="switchExecution('discord')" id="tab-discord" class="tab-button px-6 py-3 bg-[#0d1d35] text-gray-300 rounded-lg font-bold text-sm border-2 border-gray-600 hover:border-[#d4af37]">
-                        <i class="fas fa-comments mr-2"></i>ECFS Selective (ES)
+                        <i class="fas fa-comments mr-2"></i>ECFS Scalping (ES)
                     </button>
                     <button onclick="switchExecution('compare')" id="tab-compare" class="tab-button px-6 py-3 bg-[#0d1d35] text-gray-300 rounded-lg font-bold text-sm border-2 border-gray-600 hover:border-[#d4af37]">
                         <i class="fas fa-balance-scale mr-2"></i>Compare Both
@@ -246,7 +246,7 @@
                     <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-[#d4af37]/30 rounded-2xl p-6 mb-6">
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div class="mb-3 md:mb-0">
-                                <h2 class="font-playfair text-2xl sm:text-3xl font-bold text-white mb-1">ECFS Active Execution</h2>
+                                <h2 class="font-playfair text-2xl sm:text-3xl font-bold text-white mb-1">ECFS Swing Execution</h2>
                                 <p class="text-gray-400 text-sm">Automatic copy-trading with real-time execution</p>
                                 <p class="text-[#d4af37] text-xs mt-1"><i class="fas fa-chart-line mr-1"></i>Micro E-mini S&P 500 (MES) Futures | $5/point | Starting: $5,000</p>
                             </div>
@@ -618,10 +618,10 @@
                             </div>
                             <div>
                                 <h3 class="text-xl font-bold text-white">$100 Invested — Where Does It Go?</h3>
-                                <p class="text-gray-400 text-xs mt-0.5">Projected 5-year growth: S&P 500 vs ECFS Active vs ECFS Selective</p>
+                                <p class="text-gray-400 text-xs mt-0.5">Projected 5-year growth: S&P 500 vs ECFS Swing vs ECFS Scalping</p>
                             </div>
                         </div>
-                        <p class="text-gray-500 text-[10px] mb-5 ml-13" id="growth-subtitle-active">All strategies compared at equal 2% risk per trade to isolate edge quality. ECFS Selective actually trades at 10% risk. S&P 500 uses 14.6% CAGR (15yr avg with dividends).</p>
+                        <p class="text-gray-500 text-[10px] mb-5 ml-13" id="growth-subtitle-active">All strategies compared at equal 2% risk per trade to isolate edge quality. ECFS Scalping actually trades at 10% risk. S&P 500 uses 14.6% CAGR (15yr avg with dividends).</p>
 
                         <div id="chart-growth-comparison-active" style="height: 400px; width: 100%;"></div>
 
@@ -868,7 +868,7 @@
                     <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-blue-400/30 rounded-2xl p-6 mb-6">
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div class="mb-3 md:mb-0">
-                                <h2 class="font-playfair text-2xl sm:text-3xl font-bold text-white mb-1">ECFS Selective Execution</h2>
+                                <h2 class="font-playfair text-2xl sm:text-3xl font-bold text-white mb-1">ECFS Scalping Execution</h2>
                                 <p class="text-gray-400 text-sm">Fewer trades, higher conviction — manually selected from Discord alerts</p>
                                 <p class="text-blue-400 text-xs mt-1"><i class="fas fa-chart-bar mr-1"></i>E-mini S&P 500 (ES) Futures | $50/point | 1 Contract | Starting: $5,000</p>
                             </div>
@@ -879,29 +879,101 @@
                         </div>
                     </div>
 
-                    <!-- Excel Upload -->
+                    <!-- Upload Card — tabbed: Discord Parser | Excel Upload -->
                     <div class="bg-gradient-to-br from-blue-900/10 to-[#0d1d35] border border-blue-400/20 rounded-xl p-5 mb-6">
-                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                            <div class="flex-1">
-                                <h3 class="text-sm font-bold text-white mb-1"><i class="fas fa-file-excel mr-2 text-blue-400"></i>Upload Weekly Excel Report</h3>
-                                <p class="text-xs text-gray-400">10-column format: Date, Trade#, B/S, Entry, Stop, Trail, Net Pts, Risk, Net$, Win/Lose</p>
-                            </div>
-                            <div class="flex gap-2 flex-wrap">
-                                <label class="cursor-pointer px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold text-sm rounded-lg transition-all inline-flex items-center">
-                                    <i class="fas fa-upload mr-2"></i>Upload Excel
-                                    <input type="file" id="excel-upload-discord" accept=".xlsx,.xls" class="hidden" onchange="handleExcelUpload(event, 'discord')">
-                                </label>
-                                <button id="export-btn-discord" onclick="exportDiscordData()" class="hidden px-4 py-2.5 bg-emerald-600/80 hover:bg-emerald-500 text-white font-semibold text-sm rounded-lg transition-all inline-flex items-center" title="Download for GitHub deployment">
-                                    <i class="fas fa-download mr-1.5"></i>Export
-                                </button>
-                                <button onclick="clearData('discord')" class="px-4 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                                <button onclick="showGitHubSettings()" class="gh-sync-btn px-3 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all flex items-center gap-1.5" title="GitHub Sync: Not configured — click to set token">
-                                    <i class="fab fa-github"></i><span class="text-yellow-400 text-xs">⚙</span>
-                                </button>
+
+                        <!-- Tab headers -->
+                        <div class="flex gap-1.5 mb-4 border-b border-blue-400/15 pb-3">
+                            <button id="tab-discord-parser" onclick="switchUploadTab('parser')"
+                                class="px-4 py-2 text-sm font-semibold rounded-lg transition-all bg-blue-500/20 border border-blue-400/40 text-blue-300">
+                                <i class="fab fa-discord mr-2"></i>Discord Parser
+                            </button>
+                            <button id="tab-discord-excel" onclick="switchUploadTab('excel')"
+                                class="px-4 py-2 text-sm font-semibold rounded-lg transition-all text-gray-500 hover:text-gray-300">
+                                <i class="fas fa-file-excel mr-2"></i>Excel Upload
+                            </button>
+                        </div>
+
+                        <!-- ── Tab: Discord Parser ── -->
+                        <div id="tab-content-parser">
+                            <div class="grid md:grid-cols-2 gap-4">
+
+                                <!-- Left: inputs -->
+                                <div>
+                                    <!-- Date & Time -->
+                                    <div class="mb-3">
+                                        <label class="text-xs font-semibold text-gray-400 mb-1.5 block">Alert Date &amp; Time</label>
+                                        <div class="flex gap-2">
+                                            <input type="datetime-local" id="discord-parser-datetime" oninput="livePreviewDiscord()"
+                                                class="flex-1 bg-[#0a1628] border border-blue-400/25 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-400/60">
+                                            <button onclick="setDiscordParserNow()"
+                                                class="px-3 py-2 bg-blue-500/20 border border-blue-400/30 hover:bg-blue-500/30 text-blue-300 text-xs font-semibold rounded-lg transition-all whitespace-nowrap">
+                                                Now
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Paste area -->
+                                    <div class="mb-3">
+                                        <label class="text-xs font-semibold text-gray-400 mb-1.5 block">Paste Discord Alerts</label>
+                                        <textarea id="discord-parser-input" oninput="livePreviewDiscord()"
+                                            placeholder="F16: b 6939&#10;F16: sl6934&#10;F16: tp6944&#10;F16: + 5&#10;&#10;F17: b 6900.5&#10;F17: sl6897&#10;F17: exit&#10;F17: +3"
+                                            class="w-full bg-[#0a1628] border border-blue-400/25 rounded-lg px-3 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-blue-400/60 resize-none h-44 placeholder-gray-700"></textarea>
+                                    </div>
+
+                                    <!-- Actions -->
+                                    <div class="flex gap-2">
+                                        <button id="discord-parser-upload-btn" onclick="submitDiscordParser()" disabled
+                                            class="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm rounded-lg transition-all">
+                                            <i class="fas fa-upload mr-2"></i>Upload Trades
+                                        </button>
+                                        <button id="export-btn-discord" onclick="exportDiscordData()" class="hidden px-4 py-2.5 bg-emerald-600/80 hover:bg-emerald-500 text-white font-semibold text-sm rounded-lg transition-all inline-flex items-center" title="Export JSON">
+                                            <i class="fas fa-download mr-1.5"></i>Export
+                                        </button>
+                                        <button onclick="clearData('discord')" class="px-4 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all" title="Clear all trades">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        <button onclick="showGitHubSettings()" class="gh-sync-btn px-3 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all flex items-center gap-1.5" title="GitHub Sync">
+                                            <i class="fab fa-github"></i><span class="text-yellow-400 text-xs">⚙</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Right: live preview -->
+                                <div>
+                                    <label class="text-xs font-semibold text-gray-400 mb-1.5 block">Live Preview</label>
+                                    <div id="discord-parser-preview"
+                                        class="bg-[#0a1628] border border-blue-400/20 rounded-lg p-3 min-h-[14rem] max-h-72 overflow-y-auto">
+                                        <p class="text-gray-600 text-xs text-center mt-10">Paste Discord alerts on the left to preview parsed trades</p>
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
+
+                        <!-- ── Tab: Excel Upload ── -->
+                        <div id="tab-content-excel" class="hidden">
+                            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                                <div class="flex-1">
+                                    <h3 class="text-sm font-bold text-white mb-1"><i class="fas fa-file-excel mr-2 text-blue-400"></i>Upload Weekly Excel Report</h3>
+                                    <p class="text-xs text-gray-400">10-column format: Date, Trade#, B/S, Entry, Stop, Trail, Net Pts, Risk, Net$, Win/Lose</p>
+                                </div>
+                                <div class="flex gap-2 flex-wrap">
+                                    <label class="cursor-pointer px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold text-sm rounded-lg transition-all inline-flex items-center">
+                                        <i class="fas fa-upload mr-2"></i>Upload Excel
+                                        <input type="file" id="excel-upload-discord" accept=".xlsx,.xls" class="hidden" onchange="handleExcelUpload(event, 'discord')">
+                                    </label>
+                                    <button onclick="clearData('discord')" class="px-4 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    <button onclick="showGitHubSettings()" class="gh-sync-btn px-3 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all flex items-center gap-1.5" title="GitHub Sync: Not configured — click to set token">
+                                        <i class="fab fa-github"></i><span class="text-yellow-400 text-xs">⚙</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Shared status bars -->
                         <div id="upload-status-discord" class="mt-3 hidden"></div>
                         <div id="sync-status-discord" class="mt-1.5 hidden flex items-center gap-1.5 text-[10px] text-gray-600">
                             <i class="fas fa-cloud text-[9px]"></i>
@@ -939,7 +1011,7 @@
                             </div>
                             <div class="flex-1">
                                 <h3 class="text-lg font-bold text-white mb-2">Why 10% Position Size?</h3>
-                                <p class="text-gray-300 text-sm leading-relaxed mb-4">ECFS Selective risks <strong class="text-blue-400">$500 per trade (10%)</strong> on a $5,000 portfolio vs ECFS Active's <strong class="text-[#d4af37]">$100 per trade (2%)</strong> on a $5K portfolio. Here's why:</p>
+                                <p class="text-gray-300 text-sm leading-relaxed mb-4">ECFS Scalping risks <strong class="text-blue-400">$500 per trade (10%)</strong> on a $5,000 portfolio vs ECFS Swing's <strong class="text-[#d4af37]">$100 per trade (2%)</strong> on a $5K portfolio. Here's why:</p>
 
                                 <div class="grid sm:grid-cols-3 gap-3 mb-4">
                                     <div class="bg-[#0a1628]/80 border border-blue-400/15 rounded-lg p-3">
@@ -966,7 +1038,7 @@
                                 </div>
 
                                 <div class="bg-blue-500/8 border border-blue-400/20 rounded-lg p-3">
-                                    <p class="text-[11px] text-center"><i class="fas fa-balance-scale text-blue-400 mr-1.5"></i><strong class="text-white">The Logic:</strong> <span class="text-gray-300">ECFS Active takes <em>every</em> systematic signal at low risk ($100). ECFS Selective cherry-picks the best setups and concentrates risk ($500) — same portfolio, same capital, different execution philosophy.</span></p>
+                                    <p class="text-[11px] text-center"><i class="fas fa-balance-scale text-blue-400 mr-1.5"></i><strong class="text-white">The Logic:</strong> <span class="text-gray-300">ECFS Swing takes <em>every</em> systematic signal at low risk ($100). ECFS Scalping cherry-picks the best setups and concentrates risk ($500) — same portfolio, same capital, different execution philosophy.</span></p>
                                 </div>
                             </div>
                         </div>
@@ -1276,10 +1348,10 @@
                             </div>
                             <div>
                                 <h3 class="text-xl font-bold text-white">$100 Invested — Where Does It Go?</h3>
-                                <p class="text-gray-400 text-xs mt-0.5">Projected 5-year growth: S&P 500 vs ECFS Active vs ECFS Selective</p>
+                                <p class="text-gray-400 text-xs mt-0.5">Projected 5-year growth: S&P 500 vs ECFS Swing vs ECFS Scalping</p>
                             </div>
                         </div>
-                        <p class="text-gray-500 text-[10px] mb-5 ml-13" id="growth-subtitle-discord">All strategies compared at equal 2% risk per trade to isolate edge quality. ECFS Selective actually trades at 10% risk. S&P 500 uses 14.6% CAGR (15yr avg with dividends).</p>
+                        <p class="text-gray-500 text-[10px] mb-5 ml-13" id="growth-subtitle-discord">All strategies compared at equal 2% risk per trade to isolate edge quality. ECFS Scalping actually trades at 10% risk. S&P 500 uses 14.6% CAGR (15yr avg with dividends).</p>
 
                         <div id="chart-growth-comparison-discord" style="height: 400px; width: 100%;"></div>
 
@@ -1466,12 +1538,12 @@
                 <!-- ==================== COMPARE PANEL ==================== -->
                 <div id="panel-compare" class="execution-panel hidden">
                     <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-[#d4af37]/30 rounded-2xl p-6 mb-6">
-                        <h2 class="font-playfair text-2xl sm:text-3xl font-bold text-white mb-2 text-center">ECFS Active vs ECFS Selective</h2>
+                        <h2 class="font-playfair text-2xl sm:text-3xl font-bold text-white mb-2 text-center">ECFS Swing vs ECFS Scalping</h2>
                         <p class="text-gray-400 text-center text-sm mb-4">Same edge, different execution — all metrics normalized to R (risk units) for true comparison</p>
 
                         <!-- Risk Context Callout -->
                         <div class="bg-amber-500/5 border border-amber-400/20 rounded-lg p-3 mb-4 max-w-2xl mx-auto">
-                            <p class="text-[11px] text-center text-gray-300"><i class="fas fa-info-circle text-amber-400 mr-1.5"></i><strong class="text-white">Why different risk levels?</strong> ECFS Selective risks <strong class="text-blue-400">10% per trade</strong> ($500 on a $5K portfolio) because trades are manually filtered for highest conviction. R-normalization lets you compare edge quality regardless of position size.</p>
+                            <p class="text-[11px] text-center text-gray-300"><i class="fas fa-info-circle text-amber-400 mr-1.5"></i><strong class="text-white">Why different risk levels?</strong> ECFS Scalping risks <strong class="text-blue-400">10% per trade</strong> ($500 on a $5K portfolio) because trades are manually filtered for highest conviction. R-normalization lets you compare edge quality regardless of position size.</p>
                         </div>
 
                         <div class="grid sm:grid-cols-2 gap-3 max-w-lg mx-auto">
@@ -1512,7 +1584,7 @@
                         <!-- ECFS Column -->
                         <div class="bg-gradient-to-br from-yellow-900/10 to-[#0a1628] border-2 border-[#d4af37]/50 rounded-2xl p-6">
                             <div class="flex items-center justify-between mb-5">
-                                <div><h3 class="text-lg font-bold text-white">ECFS Active</h3><p class="text-[#d4af37] text-xs">MES | $5/pt | 1R = $100</p></div>
+                                <div><h3 class="text-lg font-bold text-white">ECFS Swing</h3><p class="text-[#d4af37] text-xs">MES | $5/pt | 1R = $100</p></div>
                                 <i class="fas fa-bolt text-[#d4af37] text-xl"></i>
                             </div>
                             <div class="space-y-3" id="compare-active-stats">
@@ -1522,7 +1594,7 @@
                         <!-- Discord Column -->
                         <div class="bg-gradient-to-br from-blue-900/10 to-[#0a1628] border-2 border-blue-400/50 rounded-2xl p-6">
                             <div class="flex items-center justify-between mb-5">
-                                <div><h3 class="text-lg font-bold text-white">ECFS Selective</h3><p class="text-blue-400 text-xs">ES | $50/pt | 1R = $500</p></div>
+                                <div><h3 class="text-lg font-bold text-white">ECFS Scalping</h3><p class="text-blue-400 text-xs">ES | $50/pt | 1R = $500</p></div>
                                 <i class="fas fa-comments text-blue-400 text-xl"></i>
                             </div>
                             <div class="space-y-3" id="compare-discord-stats">
@@ -1968,7 +2040,7 @@
                         </div>
                         <div>
                             <p class="text-white font-semibold text-sm mb-1">What you're looking at: Layer B — Tactical Income</p>
-                            <p class="text-gray-400 text-xs leading-relaxed">ECFS Active and ECFS Selective are both <strong class="text-white">Tactical execution strategies</strong> within a complete portfolio framework called <strong class="text-amber-400">EPIG</strong> (Enduring Principal Protection · Income & Growth). They represent 5-10% of total capital allocation — designed to harvest volatility and generate income through high-EV, risk-managed futures trading.</p>
+                            <p class="text-gray-400 text-xs leading-relaxed">ECFS Swing and ECFS Scalping are both <strong class="text-white">Tactical execution strategies</strong> within a complete portfolio framework called <strong class="text-amber-400">EPIG</strong> (Enduring Principal Protection · Income & Growth). They represent 5-10% of total capital allocation — designed to harvest volatility and generate income through high-EV, risk-managed futures trading.</p>
                         </div>
                     </div>
                 </div>
@@ -2042,7 +2114,7 @@
                             </div>
 
                             <p class="text-3xl font-bold text-amber-400 text-center italic">5-10%</p>
-                            <p class="text-[10px] text-amber-400/60 text-center mt-1">← ECFS Active & ECFS Selective</p>
+                            <p class="text-[10px] text-amber-400/60 text-center mt-1">← ECFS Swing & ECFS Scalping</p>
                         </div>
 
                         <!-- LAYER C: Episodic Pivot -->
@@ -2163,7 +2235,7 @@
                         <span class="text-[#d4af37] font-semibold text-sm"><i class="fas fa-chart-line mr-2"></i>REAL RESULTS · FULL TRANSPARENCY</span>
                     </div>
                     <h2 class="font-playfair text-3xl sm:text-4xl font-bold text-white mb-4">Two Ways to Access This Edge</h2>
-                    <p class="text-gray-400 max-w-2xl mx-auto">The same research, the same systematic approach — choose the path that matches how you want to participate. ECFS Active operates on a $5K portfolio (2% risk); ECFS Selective on a $5K portfolio (10% risk).</p>
+                    <p class="text-gray-400 max-w-2xl mx-auto">The same research, the same systematic approach — choose the path that matches how you want to participate. ECFS Swing operates on a $5K portfolio (2% risk); ECFS Scalping on a $5K portfolio (10% risk).</p>
                 </div>
 
                 <!-- Dual Cards -->
@@ -2234,7 +2306,7 @@
                         <p class="text-gray-300 text-sm leading-relaxed mb-6">Prefer a managed approach? Our income & growth strategy targets consistent returns with built-in principal protection — designed for investors who want results without the screen time.</p>
 
                         <div class="bg-emerald-500/5 border border-emerald-400/20 rounded-lg px-3 py-2 mb-5">
-                            <p class="text-[10px] text-center"><strong class="text-emerald-400">Includes ECFS Selective: $500/trade (10%)</strong> <span class="text-gray-400">· 10% position size · Highest-conviction trades only</span></p>
+                            <p class="text-[10px] text-center"><strong class="text-emerald-400">Includes ECFS Scalping: $500/trade (10%)</strong> <span class="text-gray-400">· 10% position size · Highest-conviction trades only</span></p>
                         </div>
 
                         <div class="space-y-3 mb-8">

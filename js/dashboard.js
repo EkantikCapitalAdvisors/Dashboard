@@ -3356,6 +3356,181 @@ function updateSyncStatus(method, ts) {
     }, 60000);
 }
 
+// ===== DISCORD PASTE PARSER UI =====
+let _discordParsedTrades = [];
+
+function switchUploadTab(tab) {
+    const isParser = tab === 'parser';
+    document.getElementById('tab-content-parser').classList.toggle('hidden', !isParser);
+    document.getElementById('tab-content-excel').classList.toggle('hidden', isParser);
+    const activeClass  = 'px-4 py-2 text-sm font-semibold rounded-lg transition-all bg-blue-500/20 border border-blue-400/40 text-blue-300';
+    const inactiveClass = 'px-4 py-2 text-sm font-semibold rounded-lg transition-all text-gray-500 hover:text-gray-300';
+    document.getElementById('tab-discord-parser').className = isParser  ? activeClass : inactiveClass;
+    document.getElementById('tab-discord-excel').className  = !isParser ? activeClass : inactiveClass;
+}
+
+function setDiscordParserNow() {
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    document.getElementById('discord-parser-datetime').value =
+        `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    livePreviewDiscord();
+}
+
+function livePreviewDiscord() {
+    const text     = (document.getElementById('discord-parser-input')    || {}).value || '';
+    const datetime = (document.getElementById('discord-parser-datetime') || {}).value || '';
+    const previewEl  = document.getElementById('discord-parser-preview');
+    const uploadBtn  = document.getElementById('discord-parser-upload-btn');
+    if (!previewEl) return;
+
+    if (!text.trim()) {
+        previewEl.innerHTML = '<p class="text-gray-600 text-xs text-center mt-8">Paste Discord alerts to preview parsed trades</p>';
+        if (uploadBtn) uploadBtn.disabled = true;
+        _discordParsedTrades = [];
+        return;
+    }
+    if (!datetime) {
+        previewEl.innerHTML = '<p class="text-yellow-500 text-xs text-center mt-8"><i class="fas fa-exclamation-triangle mr-1"></i>Set a date &amp; time first</p>';
+        if (uploadBtn) uploadBtn.disabled = true;
+        _discordParsedTrades = [];
+        return;
+    }
+
+    try {
+        const trades = parseDiscordAlerts(text, datetime);
+        _discordParsedTrades = trades;
+
+        if (trades.length === 0) {
+            previewEl.innerHTML = '<p class="text-gray-500 text-xs text-center mt-8">No complete trades found yet…<br><span class="text-[10px] text-gray-600">Need entry (b/s price), result (+/- pts), and stop (sl price)</span></p>';
+            if (uploadBtn) uploadBtn.disabled = true;
+            return;
+        }
+
+        if (uploadBtn) uploadBtn.disabled = false;
+
+        const rows = trades.map(t => `
+            <tr class="border-b border-gray-700/30 last:border-0">
+                <td class="py-1.5 pr-2 text-xs text-gray-300 font-mono">${t.tradeNum}</td>
+                <td class="py-1.5 pr-2 text-xs ${t.direction === 'Buy' ? 'text-emerald-400' : 'text-red-400'}">${t.direction === 'Buy' ? '▲ Buy' : '▼ Sell'}</td>
+                <td class="py-1.5 pr-2 text-xs text-gray-300">${t.entryPrice}</td>
+                <td class="py-1.5 pr-2 text-xs text-gray-500">${t.stopPrice || '—'}</td>
+                <td class="py-1.5 pr-2 text-xs text-gray-500">${t.trailingProfit !== '—' ? t.trailingProfit : '—'}</td>
+                <td class="py-1.5 pr-2 text-xs font-bold ${t.pointsPL >= 0 ? 'text-emerald-400' : 'text-red-400'}">${t.pointsPL > 0 ? '+' : ''}${t.pointsPL} pts</td>
+                <td class="py-1.5 text-xs font-bold ${t.isWin ? 'text-emerald-400' : 'text-red-400'}">${t.isWin ? '✓ Win' : '✗ Loss'}</td>
+            </tr>`).join('');
+
+        previewEl.innerHTML = `
+            <div class="mb-2 flex items-center justify-between">
+                <span class="text-xs text-gray-400 font-semibold">${trades.length} trade${trades.length > 1 ? 's' : ''} parsed</span>
+                <span class="text-[10px] text-gray-600">${datetime.replace('T',' ')}</span>
+            </div>
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-gray-700/50">
+                        <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5 pr-2">#</th>
+                        <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5 pr-2">Dir</th>
+                        <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5 pr-2">Entry</th>
+                        <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5 pr-2">SL</th>
+                        <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5 pr-2">TP</th>
+                        <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5 pr-2">Result</th>
+                        <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5">W/L</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>`;
+    } catch (err) {
+        previewEl.innerHTML = `<p class="text-red-400 text-xs text-center mt-8">Parse error: ${err.message}</p>`;
+        if (uploadBtn) uploadBtn.disabled = true;
+        _discordParsedTrades = [];
+    }
+}
+
+async function submitDiscordParser() {
+    if (!_discordParsedTrades || _discordParsedTrades.length === 0) return;
+    const btn = document.getElementById('discord-parser-upload-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Uploading…';
+    try {
+        await _handleDiscordParseUpload(_discordParsedTrades);
+        document.getElementById('discord-parser-input').value = '';
+        livePreviewDiscord();
+        btn.innerHTML = '<i class="fas fa-check mr-2"></i>Uploaded!';
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-upload mr-2"></i>Upload Trades'; btn.disabled = false; }, 2500);
+    } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-upload mr-2"></i>Upload Trades';
+        showUploadProgress('discord', `Error: ${err.message}`);
+    }
+}
+
+async function _handleDiscordParseUpload(newTrades) {
+    showUploadProgress('discord', 'Processing…');
+
+    // Same merge/upsert logic as handleExcelUpload
+    let existingTrades = state.discord.allTrades.filter(t => !t._isSample);
+    if (existingTrades.length === 0) {
+        try {
+            const lsJson = localStorage.getItem('discord-trades');
+            if (lsJson) {
+                const parsed = JSON.parse(lsJson);
+                if (Array.isArray(parsed)) existingTrades = parsed.filter(t => !t._isSample);
+            }
+        } catch (e) {}
+    }
+    if (existingTrades.length === 0) {
+        try {
+            const dbTrades = await DB.loadTrades('discord_trades');
+            if (dbTrades.length > 0) {
+                const seen = new Set();
+                existingTrades = dbTrades
+                    .filter(r => { if (seen.has(r.trade_num)) return false; seen.add(r.trade_num); return true; })
+                    .map(dbRowToDiscordTrade);
+            }
+        } catch (e) {}
+    }
+
+    const newNums = new Set(newTrades.map(t => t.tradeNum));
+    const retained = existingTrades.filter(t => !newNums.has(t.tradeNum));
+    const trades = [...retained, ...newTrades].sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
+
+    state.discord.allTrades   = trades;
+    state.discord.isSampleData = false;
+
+    const weeks = getWeeksList(trades);
+    state.discord.selectedWeek = weeks[0];
+    populateWeekSelector('discord', weeks);
+    setPeriod('discord', 'alltime');
+
+    try {
+        localStorage.setItem('discord-trades', JSON.stringify(trades));
+        localStorage.setItem('discord-filename', 'Discord Parser');
+    } catch (e) {
+        try { localStorage.removeItem('ecfs-raw-csv'); localStorage.setItem('discord-trades', JSON.stringify(trades)); } catch (e2) {}
+    }
+    try { localStorage.setItem('discord-upload-time', Date.now().toString()); } catch (e) {}
+
+    const snapshots = generateWeeklySnapshots(trades, 'discord', DISCORD_RISK, DISCORD_PPT, DISCORD_STARTING_BALANCE);
+    state.discord.snapshots = snapshots;
+    try { localStorage.setItem('discord-snapshots', JSON.stringify(snapshots)); } catch (e) {}
+
+    showUploadProgress('discord', 'Syncing to database…');
+    try {
+        const batchId = `discord-${Date.now()}`;
+        const currentDb = await DB.loadTrades('discord_trades');
+        const dbNums = new Set(currentDb.map(r => r.trade_num));
+        const missing = trades.filter(t => !dbNums.has(t.tradeNum));
+        if (missing.length > 0) await DB.saveTrades('discord_trades', missing, batchId);
+        await DB.saveAllWeeklySnapshots('discord', snapshots);
+        showUploadSuccess('discord', `${trades.length} total trades (${newTrades.length} added via Discord Parser)`);
+    } catch (dbErr) {
+        console.warn('DB sync failed:', dbErr);
+        showUploadSuccess('discord', `${trades.length} trades saved locally (DB sync pending)`);
+    }
+    const expBtn = document.getElementById('export-btn-discord');
+    if (expBtn) expBtn.classList.remove('hidden');
+}
+
 // ===== SKELETON LOADING HELPERS =====
 function showSkeletonKPIs(method) {
     const ids = method === 'active'
