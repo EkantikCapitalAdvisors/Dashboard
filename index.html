@@ -562,28 +562,22 @@
                                 <p class="text-gray-400 text-xs mt-0.5">Projected 5-year growth: S&P 500 vs ECFS Predisposal</p>
                             </div>
                         </div>
-                        <p class="text-gray-500 text-[10px] mb-5 ml-13" id="growth-subtitle-discord">All strategies compared at equal 2% risk per trade to isolate edge quality. ECFS Predisposal trades at 5% daily risk. S&P 500 uses 14.6% CAGR (15yr avg with dividends).</p>
+                        <p class="text-gray-500 text-[10px] mb-5 ml-13" id="growth-subtitle-discord">ECFS Predisposal at 5% daily risk ($500/day on $10K portfolio) vs S&P 500 at 14.6% CAGR. Updated weekly with new trade data.</p>
 
                         <div id="chart-growth-comparison-discord" style="height: 400px; width: 100%;"></div>
 
-                        <div class="grid grid-cols-3 gap-3 mt-5">
+                        <div class="grid grid-cols-2 gap-3 mt-5">
                             <div class="bg-gray-800/40 border border-gray-600/30 rounded-lg p-3 text-center">
                                 <p class="text-[10px] text-gray-400 font-bold">S&P 500</p>
                                 <p class="text-sm font-bold text-gray-300" id="growth-spy-discord">$100 → $200</p>
                                 <p class="text-[10px] text-gray-500">14.6% CAGR (15yr avg)</p>
                                 <p class="text-[9px] text-red-400/70 mt-0.5"><i class="fas fa-exclamation-triangle mr-0.5"></i>Avg drawdown: −14%</p>
                             </div>
-                            <div class="bg-[#d4af37]/8 border border-[#d4af37]/30 rounded-lg p-3 text-center">
-                                <p class="text-[10px] text-[#d4af37] font-bold">ECFS ACTIVE</p>
-                                <p class="text-sm font-bold text-[#d4af37]" id="growth-ecfs-discord">$100 → —</p>
-                                <p class="text-[10px] text-gray-500">at 2% risk</p>
-                                <p class="text-[9px] text-emerald-400/70 mt-0.5" id="growth-dd-ecfs-discord"><i class="fas fa-dice mr-0.5"></i>Est. Max DD: calculating…</p>
-                            </div>
                             <div class="bg-blue-500/8 border border-blue-400/30 rounded-lg p-3 text-center">
-                                <p class="text-[10px] text-blue-400 font-bold">ECFS AGGRESSIVE</p>
+                                <p class="text-[10px] text-blue-400 font-bold">ECFS PREDISPOSAL</p>
                                 <p class="text-sm font-bold text-blue-400" id="growth-discord-discord">$100 → —</p>
-                                <p class="text-[10px] text-gray-500">at 2% risk (equal basis)</p>
-                                <p class="text-[9px] text-blue-400/60">At 5% daily risk: ×10 vs S&P 500</p>
+                                <p class="text-[10px] text-gray-500">at 5% daily risk ($500/day)</p>
+                                <p class="text-[9px] text-blue-400/60" id="growth-ratio-discord">vs S&P 500: calculating…</p>
                                 <p class="text-[9px] text-emerald-400/70 mt-0.5" id="growth-dd-discord-discord"><i class="fas fa-dice mr-0.5"></i>Est. Max DD: calculating…</p>
                             </div>
                         </div>

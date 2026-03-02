@@ -1409,8 +1409,21 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
     const fmtGrowth = (v) => `$100 → $${v.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
     const setT = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
     const setH = (id, val) => { const e = document.getElementById(id); if (e) e.innerHTML = val; };
-    setT(`growth-spy-${suffix}`, fmtGrowth(spyData[spyData.length - 1]));
-    setT(`growth-discord-${suffix}`, fmtGrowth(discordData[discordData.length - 1]));
+    const spyFinal = spyData[spyData.length - 1];
+    const discordFinal = discordData[discordData.length - 1];
+    setT(`growth-spy-${suffix}`, fmtGrowth(spyFinal));
+    setT(`growth-discord-${suffix}`, fmtGrowth(discordFinal));
+
+    // Dynamic ratio vs S&P 500
+    const ratioVsSpy = spyFinal > 0 ? (discordFinal / spyFinal) : 0;
+    const ratioEl = document.getElementById(`growth-ratio-${suffix}`);
+    if (ratioEl) {
+        if (discordAnnualR > 0) {
+            ratioEl.textContent = `×${ratioVsSpy.toFixed(1)} vs S&P 500 over 5 yrs`;
+        } else {
+            ratioEl.textContent = 'Upload trade data to see ratio';
+        }
+    }
 
     // Update risk/drawdown context under strategy box — Monte Carlo simulated
     const discordMC = monteCarloMaxDD('discord');
@@ -1988,7 +2001,7 @@ function renderCompareInsights(ak, dk) {
         icon: 'fa-shield-alt',
         color: '#d4af37',
         title: 'Different Risk, Same Edge Framework',
-        text: `ECFS Active risks $${ECFS_RISK}/trade (2% of $5K) while ECFS Selective risks $${DISCORD_RISK}/trade (10% of $5K). Dollar amounts differ, but R-normalized metrics tell the real story.`
+        text: `ECFS Active risks $${ECFS_RISK}/trade (2% of $5K) while ECFS Predisposal risks $${DISCORD_RISK}/day (5% of $10K). Dollar amounts differ, but R-normalized metrics tell the real story.`
     });
 
     // 2. EV comparison in R
