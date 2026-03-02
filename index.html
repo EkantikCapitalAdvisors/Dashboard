@@ -233,112 +233,6 @@
                         </div>
                     </div>
 
-                    <!-- Upload Card — tabbed: Discord Parser | Excel Upload -->
-                    <div class="bg-gradient-to-br from-blue-900/10 to-[#0d1d35] border border-blue-400/20 rounded-xl p-5 mb-6">
-
-                        <!-- Tab headers -->
-                        <div class="flex gap-1.5 mb-4 border-b border-blue-400/15 pb-3">
-                            <button id="tab-discord-parser" onclick="switchUploadTab('parser')"
-                                class="px-4 py-2 text-sm font-semibold rounded-lg transition-all bg-blue-500/20 border border-blue-400/40 text-blue-300">
-                                <i class="fab fa-discord mr-2"></i>Discord Parser
-                            </button>
-                            <button id="tab-discord-excel" onclick="switchUploadTab('excel')"
-                                class="px-4 py-2 text-sm font-semibold rounded-lg transition-all text-gray-500 hover:text-gray-300">
-                                <i class="fas fa-file-excel mr-2"></i>Excel Upload
-                            </button>
-                        </div>
-
-                        <!-- ── Tab: Discord Parser ── -->
-                        <div id="tab-content-parser">
-                            <div class="grid md:grid-cols-2 gap-4">
-
-                                <!-- Left: inputs -->
-                                <div>
-                                    <!-- Date & Time -->
-                                    <div class="mb-3">
-                                        <label class="text-xs font-semibold text-gray-400 mb-1.5 block">Alert Date &amp; Time</label>
-                                        <div class="flex gap-2">
-                                            <input type="datetime-local" id="discord-parser-datetime" oninput="livePreviewDiscord()"
-                                                class="flex-1 bg-[#0a1628] border border-blue-400/25 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-400/60">
-                                            <button onclick="setDiscordParserNow()"
-                                                class="px-3 py-2 bg-blue-500/20 border border-blue-400/30 hover:bg-blue-500/30 text-blue-300 text-xs font-semibold rounded-lg transition-all whitespace-nowrap">
-                                                Now
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Paste area -->
-                                    <div class="mb-3">
-                                        <label class="text-xs font-semibold text-gray-400 mb-1.5 block">Paste Discord Alerts</label>
-                                        <textarea id="discord-parser-input" oninput="livePreviewDiscord()"
-                                            placeholder="F16: b 6939&#10;F16: sl6934&#10;F16: tp6944&#10;F16: + 5&#10;&#10;F17: b 6900.5&#10;F17: sl6897&#10;F17: exit&#10;F17: +3"
-                                            class="w-full bg-[#0a1628] border border-blue-400/25 rounded-lg px-3 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-blue-400/60 resize-none h-44 placeholder-gray-700"></textarea>
-                                    </div>
-
-                                    <!-- Actions -->
-                                    <div class="flex gap-2">
-                                        <button id="discord-parser-upload-btn" onclick="submitDiscordParser()" disabled
-                                            class="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm rounded-lg transition-all">
-                                            <i class="fas fa-upload mr-2"></i>Upload Trades
-                                        </button>
-                                        <button id="export-btn-discord" onclick="exportDiscordData()" class="hidden px-4 py-2.5 bg-emerald-600/80 hover:bg-emerald-500 text-white font-semibold text-sm rounded-lg transition-all inline-flex items-center" title="Export JSON">
-                                            <i class="fas fa-download mr-1.5"></i>Export
-                                        </button>
-                                        <button onclick="clearData('discord')" class="px-4 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all" title="Clear all trades">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                        <button onclick="showGitHubSettings()" class="gh-sync-btn px-3 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all flex items-center gap-1.5" title="GitHub Sync">
-                                            <i class="fab fa-github"></i><span class="text-yellow-400 text-xs">⚙</span>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Right: live preview -->
-                                <div>
-                                    <label class="text-xs font-semibold text-gray-400 mb-1.5 block">Live Preview</label>
-                                    <div id="discord-parser-preview"
-                                        class="bg-[#0a1628] border border-blue-400/20 rounded-lg p-3 min-h-[14rem] max-h-72 overflow-y-auto">
-                                        <p class="text-gray-600 text-xs text-center mt-10">Paste Discord alerts on the left to preview parsed trades</p>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-
-                        <!-- ── Tab: Excel Upload ── -->
-                        <div id="tab-content-excel" class="hidden">
-                            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                                <div class="flex-1">
-                                    <h3 class="text-sm font-bold text-white mb-1"><i class="fas fa-file-excel mr-2 text-blue-400"></i>Upload Weekly Excel Report</h3>
-                                    <p class="text-xs text-gray-400">10-column format: Date, Trade#, B/S, Entry, Stop, Trail, Net Pts, Risk, Net$, Win/Lose</p>
-                                </div>
-                                <div class="flex gap-2 flex-wrap">
-                                    <label class="cursor-pointer px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold text-sm rounded-lg transition-all inline-flex items-center">
-                                        <i class="fas fa-upload mr-2"></i>Upload Excel
-                                        <input type="file" id="excel-upload-discord" accept=".xlsx,.xls" class="hidden" onchange="handleExcelUpload(event, 'discord')">
-                                    </label>
-                                    <button onclick="clearData('discord')" class="px-4 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                    <button onclick="showGitHubSettings()" class="gh-sync-btn px-3 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all flex items-center gap-1.5" title="GitHub Sync: Not configured — click to set token">
-                                        <i class="fab fa-github"></i><span class="text-yellow-400 text-xs">⚙</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Shared status bars -->
-                        <div id="upload-status-discord" class="mt-3 hidden"></div>
-                        <div id="sync-status-discord" class="mt-1.5 hidden flex items-center gap-1.5 text-[10px] text-gray-600">
-                            <i class="fas fa-cloud text-[9px]"></i>
-                            <span id="sync-status-discord-text"></span>
-                        </div>
-                    </div>
-
-                    <!-- ╔══════════════════════════════════════════════════════╗ -->
-                    <!-- ║  SECTION 1: UNDERSTANDING THE EDGE (Discord)        ║ -->
-                    <!-- ╚══════════════════════════════════════════════════════╝ -->
-
                     <!-- Live Update Banner (Discord) -->
                     <div class="bg-gradient-to-r from-emerald-900/20 to-[#0a1628] border border-emerald-500/20 rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div class="flex items-center gap-3">
@@ -357,46 +251,9 @@
                         </div>
                     </div>
 
-                    <!-- WHY 10% POSITION SIZE — Positioning Callout -->
-                    <div class="bg-gradient-to-r from-blue-900/20 to-[#0a1628] border border-blue-400/25 rounded-2xl p-6 sm:p-8 mb-6">
-                        <div class="flex items-start gap-4">
-                            <div class="w-12 h-12 rounded-xl bg-blue-500/15 border border-blue-400/25 flex items-center justify-center flex-shrink-0">
-                                <span class="text-blue-400 font-bold text-xl">10%</span>
-                            </div>
-                            <div class="flex-1">
-                                <h3 class="text-lg font-bold text-white mb-2">Why 10% Position Size?</h3>
-                                <p class="text-gray-300 text-sm leading-relaxed mb-4">ECFS Predisposal risks <strong class="text-blue-400">$1,000 per trade (10%)</strong> on a $10,000 portfolio. Here's why:</p>
-
-                                <div class="grid sm:grid-cols-3 gap-3 mb-4">
-                                    <div class="bg-[#0a1628]/80 border border-blue-400/15 rounded-lg p-3">
-                                        <div class="flex items-center gap-2 mb-1.5">
-                                            <i class="fas fa-filter text-blue-400 text-xs"></i>
-                                            <p class="text-white text-xs font-bold">Selective Execution</p>
-                                        </div>
-                                        <p class="text-gray-400 text-[11px] leading-relaxed">Only the highest-conviction setups from Discord alerts are taken — not every signal, only the best.</p>
-                                    </div>
-                                    <div class="bg-[#0a1628]/80 border border-blue-400/15 rounded-lg p-3">
-                                        <div class="flex items-center gap-2 mb-1.5">
-                                            <i class="fas fa-hand-paper text-blue-400 text-xs"></i>
-                                            <p class="text-white text-xs font-bold">Manual Confirmation</p>
-                                        </div>
-                                        <p class="text-gray-400 text-[11px] leading-relaxed">Every trade is manually reviewed before entry — adding a human conviction filter that auto-copy doesn't have.</p>
-                                    </div>
-                                    <div class="bg-[#0a1628]/80 border border-blue-400/15 rounded-lg p-3">
-                                        <div class="flex items-center gap-2 mb-1.5">
-                                            <i class="fas fa-compress-arrows-alt text-blue-400 text-xs"></i>
-                                            <p class="text-white text-xs font-bold">Fewer, Bigger Trades</p>
-                                        </div>
-                                        <p class="text-gray-400 text-[11px] leading-relaxed">Lower trade frequency means each trade carries more conviction — warranting a larger position size per setup.</p>
-                                    </div>
-                                </div>
-
-                                <div class="bg-blue-500/8 border border-blue-400/20 rounded-lg p-3">
-                                    <p class="text-[11px] text-center"><i class="fas fa-balance-scale text-blue-400 mr-1.5"></i><strong class="text-white">The Logic:</strong> <span class="text-gray-300">ECFS Predisposal cherry-picks the highest-conviction setups and concentrates risk ($1,000) — disciplined execution philosophy focused on quality over quantity.</span></p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- ╔══════════════════════════════════════════════════════╗ -->
+                    <!-- ║  SECTION 1: UNDERSTANDING THE EDGE (Discord)        ║ -->
+                    <!-- ╚══════════════════════════════════════════════════════╝ -->
 
                     <!-- 1A. How Is The Edge Calculated? (Discord) -->
                     <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-blue-400/25 rounded-2xl p-6 sm:p-8 mb-6">
@@ -604,46 +461,6 @@
                         </div>
                     </div>
 
-                    <!-- 1C. Returns Multiplier Potential (Discord) -->
-                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-blue-400/25 rounded-2xl p-6 sm:p-8 mb-8">
-                        <div class="flex items-center gap-3 mb-6">
-                            <div class="w-10 h-10 rounded-full bg-blue-400/15 flex items-center justify-center flex-shrink-0">
-                                <span class="text-blue-400 font-bold text-lg">3</span>
-                            </div>
-                            <div>
-                                <h3 class="text-xl font-bold text-white">Returns Multiplier — A Function of Risk</h3>
-                                <p class="text-gray-400 text-xs mt-0.5">Same edge, different returns — you choose the risk level</p>
-                            </div>
-                        </div>
-
-                        <!-- Returns Scaling Bars -->
-                        <div class="bg-[#0a1628]/60 border border-blue-400/15 rounded-xl p-5 mb-5">
-                            <div class="flex items-center gap-2 mb-3">
-                                <span class="inline-flex items-center gap-1.5 bg-blue-400/10 border border-blue-400/25 rounded-full px-3 py-1 text-[10px] font-bold text-blue-300"><i class="fas fa-wallet text-[9px]"></i>Per $10,000 starting capital</span>
-                            </div>
-                            <p class="text-gray-400 text-[10px] mb-4" id="dfc-scale-subtitle">Based on your validated edge, returns multiply with risk taken:</p>
-                            <div class="space-y-3" id="dfc-returns-bars"></div>
-                            <div class="mt-4 bg-blue-400/8 border border-blue-400/20 rounded-lg p-3">
-                                <p class="text-[11px] text-gray-300 text-center"><i class="fas fa-calculator text-blue-400 mr-1"></i><strong class="text-white">The Math:</strong> <span id="dfc-math-formula">Return = Edge × Risk Per Trade × # of Trades</span></p>
-                            </div>
-                        </div>
-
-                        <!-- What R Means -->
-                        <div class="bg-[#0a1628]/60 border border-blue-400/15 rounded-xl p-5">
-                            <h4 class="text-sm font-bold text-blue-400 mb-3"><i class="fas fa-info-circle mr-1.5"></i>What "<span id="dfc-annual-r-label">— R</span>" Means</h4>
-                            <div class="space-y-2 text-xs">
-                                <div class="flex items-start gap-2"><i class="fas fa-gem text-blue-400 mt-0.5 text-[10px]"></i><p class="text-gray-300"><strong class="text-white">R</strong> = the fixed dollar amount risked per trade</p></div>
-                                <div class="flex items-start gap-2"><i class="fas fa-gem text-blue-400 mt-0.5 text-[10px]"></i><p class="text-gray-300" id="dfc-r-example1">For 10% risk on $10K account, R = $1,000</p></div>
-                                <div class="flex items-start gap-2"><i class="fas fa-gem text-blue-400 mt-0.5 text-[10px]"></i><p class="text-gray-300" id="dfc-r-example2">— R × $1,000 = —/year at minimum risk</p></div>
-                            </div>
-                            <div class="mt-3 bg-blue-400/8 border border-blue-400/20 rounded-lg p-2.5">
-                                <p class="text-[10px] text-blue-400 text-center font-semibold" id="dfc-key-insight">Returns grow proportionally with risk taken if the edge is truly validated.</p>
-                            </div>
-                        </div>
-                        <!-- Hidden for JS compatibility -->
-                        <div class="hidden"><span id="dfc-risk-reward"></span><span id="dfc-edge-per-trade"></span><span id="dfc-trades-month"></span><span id="dfc-annual-r"></span></div>
-                    </div>
-
                     <!-- ===== THE PARADIGM: INDUSTRY VALIDATION (Discord) ===== -->
                     <div class="border-l-2 border-blue-400/30 pl-5 sm:pl-6 mb-8">
                         <p class="text-[9px] font-bold text-blue-400/50 tracking-[0.18em] uppercase mb-3">The same mechanism drives every market-beating fund</p>
@@ -689,6 +506,87 @@
                             </div>
                         </div>
                         <p class="text-gray-600 text-[10px] leading-relaxed">The metrics tracked here — EV per trade, edge per planned R, and trade frequency — are the same variables these institutions have refined over decades. Academic research by Cliff Asness (AQR Capital) further confirms that systematic edges in momentum and value persist across asset classes and market cycles. Scale comes later. The edge must be validated first.</p>
+                    </div>
+
+                    <!-- WHY 10% POSITION SIZE — Positioning Callout -->
+                    <div class="bg-gradient-to-r from-blue-900/20 to-[#0a1628] border border-blue-400/25 rounded-2xl p-6 sm:p-8 mb-6">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-blue-500/15 border border-blue-400/25 flex items-center justify-center flex-shrink-0">
+                                <span class="text-blue-400 font-bold text-xl">10%</span>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-bold text-white mb-2">Why 10% Position Size?</h3>
+                                <p class="text-gray-300 text-sm leading-relaxed mb-4">ECFS Predisposal risks <strong class="text-blue-400">$1,000 per trade (10%)</strong> on a $10,000 portfolio. Here's why:</p>
+
+                                <div class="grid sm:grid-cols-3 gap-3 mb-4">
+                                    <div class="bg-[#0a1628]/80 border border-blue-400/15 rounded-lg p-3">
+                                        <div class="flex items-center gap-2 mb-1.5">
+                                            <i class="fas fa-filter text-blue-400 text-xs"></i>
+                                            <p class="text-white text-xs font-bold">Selective Execution</p>
+                                        </div>
+                                        <p class="text-gray-400 text-[11px] leading-relaxed">Only the highest-conviction setups from Discord alerts are taken — not every signal, only the best.</p>
+                                    </div>
+                                    <div class="bg-[#0a1628]/80 border border-blue-400/15 rounded-lg p-3">
+                                        <div class="flex items-center gap-2 mb-1.5">
+                                            <i class="fas fa-hand-paper text-blue-400 text-xs"></i>
+                                            <p class="text-white text-xs font-bold">Manual Confirmation</p>
+                                        </div>
+                                        <p class="text-gray-400 text-[11px] leading-relaxed">Every trade is manually reviewed before entry — adding a human conviction filter that auto-copy doesn't have.</p>
+                                    </div>
+                                    <div class="bg-[#0a1628]/80 border border-blue-400/15 rounded-lg p-3">
+                                        <div class="flex items-center gap-2 mb-1.5">
+                                            <i class="fas fa-compress-arrows-alt text-blue-400 text-xs"></i>
+                                            <p class="text-white text-xs font-bold">Fewer, Bigger Trades</p>
+                                        </div>
+                                        <p class="text-gray-400 text-[11px] leading-relaxed">Lower trade frequency means each trade carries more conviction — warranting a larger position size per setup.</p>
+                                    </div>
+                                </div>
+
+                                <div class="bg-blue-500/8 border border-blue-400/20 rounded-lg p-3">
+                                    <p class="text-[11px] text-center"><i class="fas fa-balance-scale text-blue-400 mr-1.5"></i><strong class="text-white">The Logic:</strong> <span class="text-gray-300">ECFS Predisposal cherry-picks the highest-conviction setups and concentrates risk ($1,000) — disciplined execution philosophy focused on quality over quantity.</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 1C. Returns Multiplier Potential (Discord) -->
+                    <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-blue-400/25 rounded-2xl p-6 sm:p-8 mb-8">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-full bg-blue-400/15 flex items-center justify-center flex-shrink-0">
+                                <span class="text-blue-400 font-bold text-lg">3</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white">Returns Multiplier — A Function of Risk</h3>
+                                <p class="text-gray-400 text-xs mt-0.5">Same edge, different returns — you choose the risk level</p>
+                            </div>
+                        </div>
+
+                        <!-- Returns Scaling Bars -->
+                        <div class="bg-[#0a1628]/60 border border-blue-400/15 rounded-xl p-5 mb-5">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="inline-flex items-center gap-1.5 bg-blue-400/10 border border-blue-400/25 rounded-full px-3 py-1 text-[10px] font-bold text-blue-300"><i class="fas fa-wallet text-[9px]"></i>Per $10,000 starting capital</span>
+                            </div>
+                            <p class="text-gray-400 text-[10px] mb-4" id="dfc-scale-subtitle">Based on your validated edge, returns multiply with risk taken:</p>
+                            <div class="space-y-3" id="dfc-returns-bars"></div>
+                            <div class="mt-4 bg-blue-400/8 border border-blue-400/20 rounded-lg p-3">
+                                <p class="text-[11px] text-gray-300 text-center"><i class="fas fa-calculator text-blue-400 mr-1"></i><strong class="text-white">The Math:</strong> <span id="dfc-math-formula">Return = Edge × Risk Per Trade × # of Trades</span></p>
+                            </div>
+                        </div>
+
+                        <!-- What R Means -->
+                        <div class="bg-[#0a1628]/60 border border-blue-400/15 rounded-xl p-5">
+                            <h4 class="text-sm font-bold text-blue-400 mb-3"><i class="fas fa-info-circle mr-1.5"></i>What "<span id="dfc-annual-r-label">— R</span>" Means</h4>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex items-start gap-2"><i class="fas fa-gem text-blue-400 mt-0.5 text-[10px]"></i><p class="text-gray-300"><strong class="text-white">R</strong> = the fixed dollar amount risked per trade</p></div>
+                                <div class="flex items-start gap-2"><i class="fas fa-gem text-blue-400 mt-0.5 text-[10px]"></i><p class="text-gray-300" id="dfc-r-example1">For 10% risk on $10K account, R = $1,000</p></div>
+                                <div class="flex items-start gap-2"><i class="fas fa-gem text-blue-400 mt-0.5 text-[10px]"></i><p class="text-gray-300" id="dfc-r-example2">— R × $1,000 = —/year at minimum risk</p></div>
+                            </div>
+                            <div class="mt-3 bg-blue-400/8 border border-blue-400/20 rounded-lg p-2.5">
+                                <p class="text-[10px] text-blue-400 text-center font-semibold" id="dfc-key-insight">Returns grow proportionally with risk taken if the edge is truly validated.</p>
+                            </div>
+                        </div>
+                        <!-- Hidden for JS compatibility -->
+                        <div class="hidden"><span id="dfc-risk-reward"></span><span id="dfc-edge-per-trade"></span><span id="dfc-trades-month"></span><span id="dfc-annual-r"></span></div>
                     </div>
 
                     <!-- ╔══════════════════════════════════════════════════════╗ -->
@@ -887,6 +785,116 @@
                         <i class="fas fa-info-circle text-gray-500 text-xs flex-shrink-0"></i>
                         <p class="text-gray-500 text-[10px] leading-relaxed">Past performance is not indicative of future results. Selective execution from Discord alerts; individual results will vary. <a href="#compliance-footer" class="text-gray-400 underline hover:text-blue-400">Full disclosure</a></p>
                     </div>
+
+                    <!-- ===== TRADE DATA MANAGEMENT (Admin) ===== -->
+                    <div class="border-t border-gray-800/50 pt-8 mt-4">
+                        <p class="text-gray-600 text-[10px] uppercase tracking-widest text-center mb-5">
+                            <i class="fas fa-database mr-1.5"></i>Trade Data Management
+                        </p>
+                    </div>
+
+                    <!-- Upload Card — tabbed: Discord Parser | Excel Upload -->
+                    <div class="bg-gradient-to-br from-blue-900/10 to-[#0d1d35] border border-blue-400/20 rounded-xl p-5 mb-6">
+
+                        <!-- Tab headers -->
+                        <div class="flex gap-1.5 mb-4 border-b border-blue-400/15 pb-3">
+                            <button id="tab-discord-parser" onclick="switchUploadTab('parser')"
+                                class="px-4 py-2 text-sm font-semibold rounded-lg transition-all bg-blue-500/20 border border-blue-400/40 text-blue-300">
+                                <i class="fab fa-discord mr-2"></i>Discord Parser
+                            </button>
+                            <button id="tab-discord-excel" onclick="switchUploadTab('excel')"
+                                class="px-4 py-2 text-sm font-semibold rounded-lg transition-all text-gray-500 hover:text-gray-300">
+                                <i class="fas fa-file-excel mr-2"></i>Excel Upload
+                            </button>
+                        </div>
+
+                        <!-- ── Tab: Discord Parser ── -->
+                        <div id="tab-content-parser">
+                            <div class="grid md:grid-cols-2 gap-4">
+
+                                <!-- Left: inputs -->
+                                <div>
+                                    <!-- Date & Time -->
+                                    <div class="mb-3">
+                                        <label class="text-xs font-semibold text-gray-400 mb-1.5 block">Alert Date &amp; Time</label>
+                                        <div class="flex gap-2">
+                                            <input type="datetime-local" id="discord-parser-datetime" oninput="livePreviewDiscord()"
+                                                class="flex-1 bg-[#0a1628] border border-blue-400/25 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-400/60">
+                                            <button onclick="setDiscordParserNow()"
+                                                class="px-3 py-2 bg-blue-500/20 border border-blue-400/30 hover:bg-blue-500/30 text-blue-300 text-xs font-semibold rounded-lg transition-all whitespace-nowrap">
+                                                Now
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Paste area -->
+                                    <div class="mb-3">
+                                        <label class="text-xs font-semibold text-gray-400 mb-1.5 block">Paste Discord Alerts</label>
+                                        <textarea id="discord-parser-input" oninput="livePreviewDiscord()"
+                                            placeholder="F16: b 6939&#10;F16: sl6934&#10;F16: tp6944&#10;F16: + 5&#10;&#10;F17: b 6900.5&#10;F17: sl6897&#10;F17: exit&#10;F17: +3"
+                                            class="w-full bg-[#0a1628] border border-blue-400/25 rounded-lg px-3 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-blue-400/60 resize-none h-44 placeholder-gray-700"></textarea>
+                                    </div>
+
+                                    <!-- Actions -->
+                                    <div class="flex gap-2">
+                                        <button id="discord-parser-upload-btn" onclick="submitDiscordParser()" disabled
+                                            class="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm rounded-lg transition-all">
+                                            <i class="fas fa-upload mr-2"></i>Upload Trades
+                                        </button>
+                                        <button id="export-btn-discord" onclick="exportDiscordData()" class="hidden px-4 py-2.5 bg-emerald-600/80 hover:bg-emerald-500 text-white font-semibold text-sm rounded-lg transition-all inline-flex items-center" title="Export JSON">
+                                            <i class="fas fa-download mr-1.5"></i>Export
+                                        </button>
+                                        <button onclick="clearData('discord')" class="px-4 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all" title="Clear all trades">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        <button onclick="showGitHubSettings()" class="gh-sync-btn px-3 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all flex items-center gap-1.5" title="GitHub Sync">
+                                            <i class="fab fa-github"></i><span class="text-yellow-400 text-xs">⚙</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Right: live preview -->
+                                <div>
+                                    <label class="text-xs font-semibold text-gray-400 mb-1.5 block">Live Preview</label>
+                                    <div id="discord-parser-preview"
+                                        class="bg-[#0a1628] border border-blue-400/20 rounded-lg p-3 min-h-[14rem] max-h-72 overflow-y-auto">
+                                        <p class="text-gray-600 text-xs text-center mt-10">Paste Discord alerts on the left to preview parsed trades</p>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- ── Tab: Excel Upload ── -->
+                        <div id="tab-content-excel" class="hidden">
+                            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                                <div class="flex-1">
+                                    <h3 class="text-sm font-bold text-white mb-1"><i class="fas fa-file-excel mr-2 text-blue-400"></i>Upload Weekly Excel Report</h3>
+                                    <p class="text-xs text-gray-400">10-column format: Date, Trade#, B/S, Entry, Stop, Trail, Net Pts, Risk, Net$, Win/Lose</p>
+                                </div>
+                                <div class="flex gap-2 flex-wrap">
+                                    <label class="cursor-pointer px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold text-sm rounded-lg transition-all inline-flex items-center">
+                                        <i class="fas fa-upload mr-2"></i>Upload Excel
+                                        <input type="file" id="excel-upload-discord" accept=".xlsx,.xls" class="hidden" onchange="handleExcelUpload(event, 'discord')">
+                                    </label>
+                                    <button onclick="clearData('discord')" class="px-4 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    <button onclick="showGitHubSettings()" class="gh-sync-btn px-3 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all flex items-center gap-1.5" title="GitHub Sync: Not configured — click to set token">
+                                        <i class="fab fa-github"></i><span class="text-yellow-400 text-xs">⚙</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Shared status bars -->
+                        <div id="upload-status-discord" class="mt-3 hidden"></div>
+                        <div id="sync-status-discord" class="mt-1.5 hidden flex items-center gap-1.5 text-[10px] text-gray-600">
+                            <i class="fas fa-cloud text-[9px]"></i>
+                            <span id="sync-status-discord-text"></span>
+                        </div>
+                    </div>
+
                 </div>
 
                 <!-- ==================== COMPARE PANEL ==================== -->
