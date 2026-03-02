@@ -1380,178 +1380,214 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    // Compute weekly return rates from Annual R
-    // ECFS Predisposal at 5% daily risk: annualR * 0.05
-    const spyAnnual = 0.146; // 14.6% CAGR — S&P 500 total return (with dividends reinvested), 15-year average (2011–2025)
-    const compareRiskPct = 0.05; // ECFS Predisposal actual risk: 5% daily ($500/day on $10K)
-    const discordAnnual = discordAnnualR * compareRiskPct;
-
-    const spyWeekly = Math.pow(1 + spyAnnual, 1/52) - 1;
-    const discordWeekly = Math.pow(1 + Math.max(discordAnnual, -0.99), 1/52) - 1;
-
-    const weeks = 260; // 5 years × 52 weeks
-    const labels = [];
-    const spyData = [];
-    const discordData = [];
-
-    let spyVal = 100, discordVal = 100;
-    for (let w = 0; w <= weeks; w++) {
-        if (w % 4 === 0 || w === weeks) { // monthly data points for smoother chart
-            labels.push(w % 52 === 0 ? `Year ${Math.round(w/52)}` : '');
-            spyData.push(parseFloat(spyVal.toFixed(2)));
-            discordData.push(parseFloat(discordVal.toFixed(2)));
-        }
-        spyVal *= (1 + spyWeekly);
-        discordVal *= (1 + discordWeekly);
-    }
-
-    // Update summary boxes
-    const fmtGrowth = (v) => `$100 → $${v.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
     const setT = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
     const setH = (id, val) => { const e = document.getElementById(id); if (e) e.innerHTML = val; };
-    const spyFinal = spyData[spyData.length - 1];
-    const discordFinal = discordData[discordData.length - 1];
-    setT(`growth-spy-${suffix}`, fmtGrowth(spyFinal));
-    setT(`growth-discord-${suffix}`, fmtGrowth(discordFinal));
 
-    // Dynamic ratio vs S&P 500
-    const ratioVsSpy = spyFinal > 0 ? (discordFinal / spyFinal) : 0;
-    const ratioEl = document.getElementById(`growth-ratio-${suffix}`);
-    if (ratioEl) {
-        if (discordAnnualR > 0) {
-            ratioEl.textContent = `×${ratioVsSpy.toFixed(1)} vs S&P 500 over 5 yrs`;
-        } else {
-            ratioEl.textContent = 'Upload trade data to see ratio';
+    const trades = state.discord.allTrades;
+    const startBalance = DISCORD_STARTING_BALANCE; // $10,000
+
+    // ===== RETURN-TO-PAIN DYNAMIC UPDATE (uses annualR from edge) =====
+    const discordMC = monteCarloMaxDD('discord');
+    const representativeAnnualR = Math.round(discordAnnualR);
+    if (discordMC) {
+        const epigDDR = discordMC.ddR;
+        if (epigDDR > 0 && representativeAnnualR > 0) {
+            const rtpRatio = (representativeAnnualR / epigDDR).toFixed(1);
+            setH('rtp-annual-r', `~${representativeAnnualR}R <span class="text-emerald-400 text-lg">↑</span>`);
+            setH('rtp-mc-dd', `~${epigDDR.toFixed(1)}R <span class="text-red-400 text-lg">↓</span>`);
+            setH('rtp-ratio-highlight', `≈ ${rtpRatio}:1`);
+            setT('rtp-ratio-highlight-sub', `${rtpRatio} units gain per 1 unit pain`);
+            setH('rtp-insight-mc-note',
+                `Monte Carlo simulation (${discordMC.simulations.toLocaleString()} runs, ` +
+                `95th percentile, ${discordMC.sampleSize} trades). Updated weekly.`
+            );
         }
     }
 
-    // Update risk/drawdown context under strategy box — Monte Carlo simulated
-    const discordMC = monteCarloMaxDD('discord');
+    // ===== ACTUAL EQUITY CURVE =====
+    const chartKey = `growth-${suffix}`;
+    if (chartInstances[chartKey]) chartInstances[chartKey].dispose();
+    const chart = echarts.init(container);
+    chartInstances[chartKey] = chart;
+
+    if (!trades || trades.length === 0) {
+        chart.setOption({
+            backgroundColor: 'transparent',
+            graphic: [{ type: 'text', left: 'center', top: 'middle',
+                style: { text: 'Upload ECFS Predisposal data to see actual account performance', fill: '#6b7280', fontSize: 13 }
+            }]
+        });
+        return;
+    }
+
+    // Sort by exit time
+    const sorted = [...trades].sort((a, b) =>
+        new Date(a.exitTime || a.datetime) - new Date(b.exitTime || b.datetime)
+    );
+
+    // Build equity curve — one point per trade exit
+    const fmtDate = (dt) => {
+        const d = new Date(dt);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
+    };
+    const parseMs = (dt) => new Date(dt).getTime();
+
+    const firstMs = parseMs(sorted[0].exitTime || sorted[0].datetime);
+    const lastMs  = parseMs(sorted[sorted.length - 1].exitTime || sorted[sorted.length - 1].datetime);
+
+    // Starting point (day before first trade)
+    const equityLabels = ['Start'];
+    const equityValues = [startBalance];
+    const tradeLabels  = ['—'];  // tooltip detail per point
+
+    let balance = startBalance;
+    sorted.forEach(t => {
+        balance = parseFloat((balance + t.dollarPL).toFixed(2));
+        equityLabels.push(fmtDate(t.exitTime || t.datetime));
+        equityValues.push(balance);
+        const pl = t.dollarPL >= 0 ? `+$${t.dollarPL.toFixed(0)}` : `-$${Math.abs(t.dollarPL).toFixed(0)}`;
+        tradeLabels.push(`${t.direction || ''} ${pl}`);
+    });
+
+    // S&P 500 over the same date range (calendar-day interpolation)
+    const spyDailyRate = Math.pow(1.146, 1 / 365) - 1;
+    const spyValues = equityValues.map((_, i) => {
+        if (i === 0) return startBalance;
+        const tradeMs = parseMs(sorted[i - 1].exitTime || sorted[i - 1].datetime);
+        const elapsedDays = (tradeMs - firstMs) / 86400000;
+        return parseFloat((startBalance * Math.pow(1 + spyDailyRate, elapsedDays)).toFixed(2));
+    });
+
+    // Summary cards
+    const finalBalance = equityValues[equityValues.length - 1];
+    const finalSpy     = spyValues[spyValues.length - 1];
+    const returnPct    = ((finalBalance - startBalance) / startBalance * 100);
+    const spyReturnPct = ((finalSpy - startBalance) / startBalance * 100);
+    const fmtBal = (v) => `$${v.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+
+    setH(`growth-spy-${suffix}`,
+        `$10K → ${fmtBal(finalSpy)} <span style="color:#9ca3af;font-size:9px;">(+${spyReturnPct.toFixed(1)}%)</span>`);
+    setH(`growth-discord-${suffix}`,
+        `$10K → ${fmtBal(finalBalance)} <span style="${returnPct >= 0 ? 'color:#34d399' : 'color:#f87171'};font-size:9px;">(${returnPct >= 0 ? '+' : ''}${returnPct.toFixed(1)}%)</span>`);
+
+    const ratioEl = document.getElementById(`growth-ratio-${suffix}`);
+    if (ratioEl) {
+        if (finalSpy > 0 && finalBalance !== startBalance) {
+            const ratio = (finalBalance / finalSpy).toFixed(1);
+            ratioEl.textContent = finalBalance >= finalSpy
+                ? `×${ratio} vs S&P 500 same period`
+                : `tracking below S&P 500 so far`;
+        } else {
+            ratioEl.textContent = 'vs S&P 500 same period';
+        }
+    }
 
     if (discordMC) {
         setH(`growth-dd-discord-${suffix}`,
             `<i class="fas fa-dice mr-0.5"></i>Est. Max DD: <strong>${discordMC.ddPct.toFixed(1)}%</strong> ` +
-            `<span style="color:#6b7280;font-size:8px;">(Monte Carlo ${discordMC.percentile}th %ile · ${discordMC.simulations.toLocaleString()} sims · ${discordMC.sampleSize} trades)</span>`);
+            `<span style="color:#6b7280;font-size:8px;">(Monte Carlo 95th %ile · ${discordMC.simulations.toLocaleString()} sims · ${discordMC.sampleSize} trades)</span>`);
     }
 
-    // ===== RETURN-TO-PAIN DYNAMIC UPDATE =====
-    const representativeAnnualR = Math.round(discordAnnualR);
-
-    let epigDDR = null;
-    let epigMCSims = 0;
-    let epigMCSample = 0;
-    if (discordMC) {
-        epigDDR = discordMC.ddR;
-        epigMCSims = discordMC.simulations;
-        epigMCSample = discordMC.sampleSize;
-    }
-
-    if (epigDDR !== null && representativeAnnualR > 0) {
-        const rtpRatio = (representativeAnnualR / epigDDR).toFixed(1);
-        const ddRRounded = epigDDR.toFixed(1);
-
-        // Data comparison cards
-        setH('rtp-annual-r', `~${representativeAnnualR}R <span class="text-emerald-400 text-lg">↑</span>`);
-        setH('rtp-mc-dd', `~${ddRRounded}R <span class="text-red-400 text-lg">↓</span>`);
-        setH('rtp-ratio-highlight', `≈ ${rtpRatio}:1`);
-        setT('rtp-ratio-highlight-sub', `${rtpRatio} units gain per 1 unit pain`);
-
-        // Footnote
-        setH('rtp-insight-mc-note',
-            `Monte Carlo simulation (${epigMCSims.toLocaleString()} runs, ` +
-            `95th percentile, ${epigMCSample} trades). Updated weekly.`
-        );
-    }
-
-    // Update growth subtitle with data-as-of context
-    const discordDate = getLastTradeDate(state.discord.allTrades) || 'latest';
-    const discordCount = state.discord.allTrades ? state.discord.allTrades.length : 0;
+    // Subtitle
+    const firstDateStr = fmtDate(sorted[0].exitTime || sorted[0].datetime);
+    const lastDateStr  = fmtDate(sorted[sorted.length - 1].exitTime || sorted[sorted.length - 1].datetime);
     setH(`growth-subtitle-${suffix}`,
-        `Annual R extrapolated from <strong style="color:#60a5fa;">${discordCount} all-time trades</strong> ` +
-        `as of <strong style="color:#60a5fa;">${discordDate}</strong>. ` +
-        `ECFS Predisposal at 5% daily risk ($500/day on $10K portfolio). S&P 500 uses 14.6% CAGR (15-year avg total return with dividends, 2011\u20132025). ` +
-        `<span style="color:#60a5fa;">Updated weekly with new trade data.</span>`
+        `Actual realized P&L on <strong style="color:#60a5fa;">$10,000</strong> account · ` +
+        `<strong style="color:#60a5fa;">${trades.length} trades</strong> · ` +
+        `<strong style="color:#60a5fa;">${firstDateStr}</strong> to <strong style="color:#60a5fa;">${lastDateStr}</strong>. ` +
+        `S&P 500 shown as benchmark over the same period. No projections.`
     );
 
-    // ECharts option
-    const chartKey = `growth-${suffix}`;
-    if (chartInstances[chartKey]) {
-        chartInstances[chartKey].dispose();
-    }
-    const chart = echarts.init(container);
-    chartInstances[chartKey] = chart;
+    // Y-axis range: pad 5% above/below
+    const allVals = [...equityValues, ...spyValues];
+    const minVal = Math.min(...allVals);
+    const maxVal = Math.max(...allVals);
+    const pad = (maxVal - minVal) * 0.1 || startBalance * 0.05;
+    const yMin = Math.floor((minVal - pad) / 100) * 100;
+    const yMax = Math.ceil((maxVal + pad) / 100) * 100;
 
     const option = {
         backgroundColor: 'transparent',
         tooltip: {
             trigger: 'axis',
             backgroundColor: 'rgba(10, 22, 40, 0.95)',
-            borderColor: 'rgba(212, 175, 55, 0.3)',
+            borderColor: 'rgba(96, 165, 250, 0.3)',
             textStyle: { color: '#fff', fontSize: 11 },
             formatter: function(params) {
-                const weekIdx = params[0].dataIndex;
-                const approxWeek = weekIdx * 4;
-                const yr = (approxWeek / 52).toFixed(1);
-                let html = `<div style="font-weight:bold;margin-bottom:4px;">Year ${yr}</div>`;
+                const i = params[0].dataIndex;
+                const label = equityLabels[i];
+                const detail = tradeLabels[i];
+                let html = `<div style="font-weight:bold;margin-bottom:4px;">${label}${detail !== '—' ? ' · ' + detail : ''}</div>`;
                 params.forEach(p => {
+                    const diff = p.data - startBalance;
+                    const sign = diff >= 0 ? '+' : '';
                     html += `<div style="display:flex;justify-content:space-between;gap:16px;">`;
                     html += `<span>${p.marker} ${p.seriesName}</span>`;
-                    html += `<span style="font-weight:bold;">$${p.value.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</span>`;
+                    html += `<span style="font-weight:bold;">${fmtBal(p.data)} <span style="color:#9ca3af;font-size:9px;">${sign}$${Math.abs(diff).toFixed(0)}</span></span>`;
                     html += `</div>`;
                 });
                 return html;
             }
         },
         legend: {
-            data: ['S&P 500', 'ECFS Predisposal'],
+            data: ['S&P 500 (same period)', 'ECFS Predisposal (actual)'],
             top: 0,
             textStyle: { color: '#9ca3af', fontSize: 10 },
-            itemWidth: 12,
-            itemHeight: 8
+            itemWidth: 12, itemHeight: 8
         },
-        grid: { top: 35, right: 15, bottom: 25, left: 55 },
+        grid: { top: 35, right: 20, bottom: 40, left: 75 },
         xAxis: {
             type: 'category',
-            data: labels,
+            data: equityLabels,
             axisLine: { lineStyle: { color: '#374151' } },
-            axisLabel: { color: '#6b7280', fontSize: 10 },
-            axisTick: { show: false }
+            axisTick: { show: false },
+            axisLabel: {
+                color: '#6b7280', fontSize: 9,
+                interval: Math.max(0, Math.floor(equityLabels.length / 6) - 1),
+                rotate: equityLabels.length > 10 ? 30 : 0
+            }
         },
         yAxis: {
-            type: 'log',
-            min: 80,
+            type: 'value',
+            min: yMin, max: yMax,
             axisLine: { show: false },
-            splitLine: { lineStyle: { color: 'rgba(75, 85, 99, 0.2)' } },
+            axisTick: { show: false },
+            splitLine: { lineStyle: { color: '#1f2937', type: 'dashed' } },
             axisLabel: {
-                color: '#6b7280',
-                fontSize: 10,
-                formatter: (v) => `$${v >= 1000 ? (v/1000).toFixed(0) + 'K' : v}`
+                color: '#6b7280', fontSize: 9,
+                formatter: (v) => `$${v >= 1000 ? (v / 1000).toFixed(1) + 'K' : v}`
             }
         },
         series: [
             {
-                name: 'S&P 500',
+                name: 'S&P 500 (same period)',
                 type: 'line',
-                data: spyData,
+                data: spyValues,
                 smooth: true,
                 symbol: 'none',
-                lineStyle: { color: '#6b7280', width: 2, type: 'dashed' },
-                areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                    { offset: 0, color: 'rgba(107, 114, 128, 0.1)' },
-                    { offset: 1, color: 'rgba(107, 114, 128, 0)' }
-                ])}
+                lineStyle: { color: '#6b7280', width: 1.5, type: 'dashed' },
+                areaStyle: null
             },
             {
-                name: 'ECFS Predisposal',
+                name: 'ECFS Predisposal (actual)',
                 type: 'line',
-                data: discordData,
-                smooth: true,
-                symbol: 'none',
+                data: equityValues,
+                smooth: false,
+                symbol: 'circle',
+                symbolSize: 5,
                 lineStyle: { color: '#60a5fa', width: 2.5 },
+                itemStyle: { color: '#60a5fa' },
                 areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
                     { offset: 0, color: 'rgba(96, 165, 250, 0.15)' },
-                    { offset: 1, color: 'rgba(96, 165, 250, 0)' }
-                ])}
+                    { offset: 1, color: 'rgba(96, 165, 250, 0.01)' }
+                ])},
+                markLine: {
+                    silent: true,
+                    data: [{ yAxis: startBalance }],
+                    lineStyle: { color: '#374151', type: 'dashed', width: 1 },
+                    label: { formatter: '$10K', color: '#6b7280', fontSize: 9, position: 'start' },
+                    symbol: 'none'
+                }
             }
         ]
     };
