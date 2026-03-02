@@ -390,52 +390,12 @@ function updateGitHubSyncIndicators() {
 
 // ===== TAB SWITCHING =====
 function switchExecution(method) {
-    document.querySelectorAll('.execution-panel').forEach(p => p.classList.add('hidden'));
-    document.getElementById(`panel-${method}`).classList.remove('hidden');
-    document.querySelectorAll('.tab-button').forEach(t => {
-        t.classList.remove('active');
-        t.classList.add('bg-[#0d1d35]', 'text-gray-300', 'border-gray-600');
-    });
-    const tab = document.getElementById(`tab-${method}`);
-    tab.classList.add('active');
-    tab.classList.remove('bg-[#0d1d35]', 'text-gray-300', 'border-gray-600');
-
-    // Update header nav link highlighting
-    const navLinks = { active: 'nav-active', discord: 'nav-discord', compare: 'nav-compare' };
-    Object.entries(navLinks).forEach(([key, id]) => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        if (key === method) {
-            el.classList.remove('text-gray-300');
-            el.classList.add(key === 'discord' ? 'text-blue-400' : 'text-[#d4af37]', 'font-semibold');
-        } else {
-            el.classList.remove('text-[#d4af37]', 'text-blue-400', 'font-semibold');
-            el.classList.add('text-gray-300');
-        }
-    });
-
-    if (method === 'compare') renderCompare();
-
-    // Sync mobile bottom tab bar
-    ['active', 'discord', 'compare'].forEach(m => {
-        const btn = document.getElementById(`mobile-tab-${m}`);
-        if (!btn) return;
-        btn.classList.remove('mobile-tab-active', 'mobile-tab-active-blue');
-        if (m === method) {
-            btn.classList.add(m === 'discord' ? 'mobile-tab-active-blue' : 'mobile-tab-active');
-        }
-    });
-
-    // Resize charts after tab switch
+    // Only ECFS Predisposal (discord) exists — no-op for any other method
+    if (method !== 'discord') return;
+    // Resize charts after any call
     setTimeout(() => {
         Object.values(chartInstances).forEach(c => { if (c && c.resize) c.resize(); });
     }, 100);
-
-    // Scroll to panel area
-    const panelArea = document.getElementById(`panel-${method}`);
-    if (panelArea) {
-        panelArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
 }
 
 // ===== HIGH-LEVEL PERIOD CONTROLS =====
@@ -787,8 +747,7 @@ function refreshDashboard(method) {
 
     updateLastUpdated(allTrades);
 
-    if (method === 'active') renderActive(kpis, trades, allTimeKPIs, allTrades);
-    else if (method === 'discord') renderDiscord(kpis, trades, allTimeKPIs, allTrades);
+    if (method === 'discord') renderDiscord(kpis, trades, allTimeKPIs, allTrades);
 
     // Update edge section with its own independent timeframe filter
     updateEdgeSection(method);
@@ -887,7 +846,7 @@ function updateEdgeSection(method) {
     } else {
         const evBig = document.getElementById('discord-ev-hero-big');
         if (evBig) evBig.textContent = `${edgeK.evPlannedR >= 0 ? '+' : ''}${edgeK.evPlannedR.toFixed(1)}%R`;
-        setEl('discord-ev-hero-sub', `${fmtDollar(edgeK.evPerTrade)} per trade (planned $500 risk)`);
+        setEl('discord-ev-hero-sub', `${fmtDollar(edgeK.evPerTrade)} per trade (planned $1,000 risk)`);
         setColor('discord-edge-avgwin', fmtDollar(edgeK.avgWinDollar), 1);
         setEl('discord-edge-avgwin-pts', `+${edgeK.avgWinPts.toFixed(2)} pts`);
         setColor('discord-edge-avgloss', fmtDollar(edgeK.avgLossDollar), -1);
@@ -1082,8 +1041,8 @@ function renderDiscord(k, trades, allK, allTrades) {
 
     // Edge
     document.getElementById('discord-ev-hero-big').textContent = `${k.evPlannedR >= 0 ? '+' : ''}${k.evPlannedR.toFixed(1)}%R`;
-    document.getElementById('discord-ev-hero-sub').textContent = `${fmtDollar(k.evPerTrade)} per trade (planned $500 risk)`;
-    document.getElementById('discord-ev-actual-risk').innerHTML = `<strong>Risk budget:</strong> $500/trade`;
+    document.getElementById('discord-ev-hero-sub').textContent = `${fmtDollar(k.evPerTrade)} per trade (planned $1,000 risk)`;
+    document.getElementById('discord-ev-actual-risk').innerHTML = `<strong>Risk budget:</strong> $1,000/trade`;
 
     setColor('discord-edge-avgwin', fmtDollar(k.avgWinDollar), 1);
     document.getElementById('discord-edge-avgwin-pts').textContent = `+${k.avgWinPts.toFixed(2)} pts`;
@@ -1190,8 +1149,8 @@ function renderFoodChain(method, k, allK, allTrades) {
     setEl(`${prefix}-annual-r`, `≈${annualR.toFixed(0)} R`);
 
     // Summary callout: explicit math so the user knows exactly how Annual R was derived
-    const strategyLabel = method === 'active' ? 'ECFS Active (MES)' : 'ECFS Selective (ES)';
-    const riskLabel = method === 'active' ? '$100' : '$500';
+    const strategyLabel = 'ECFS Predisposal (ES)';
+    const riskLabel = method === 'active' ? '$100' : '$1,000';
     const dataAsOf = `<span style="color:#9ca3af;font-weight:normal;"><i class="fas fa-sync-alt" style="font-size:9px;margin-right:3px;"></i>Extrapolated from <strong>${allK.totalTrades} all-time trades</strong> as of ${lastTradeDate} · updated weekly with new data</span>`;
     setHTML(`${prefix}-summary-text`,
         `<strong style="color:${accentColor}">${strategyLabel}</strong> · All-Time: ` +
@@ -1412,49 +1371,37 @@ function monteCarloMaxDD(method, { simulations = 5000, percentile = 95 } = {}) {
 
 // Wrapper: always computes both strategies from all-time data
 function renderGrowthComparisonFromState(containerId, suffix) {
-    const ecfsAnnualR = computeAnnualRFromAllTrades('active');
     const discordAnnualR = computeAnnualRFromAllTrades('discord');
-    renderGrowthComparison(containerId, ecfsAnnualR, discordAnnualR, suffix);
+    renderGrowthComparison(containerId, discordAnnualR, suffix);
 }
 
 // ===== $100 GROWTH COMPARISON CHART =====
-function renderGrowthComparison(containerId, ecfsAnnualR, discordAnnualR, suffix) {
+function renderGrowthComparison(containerId, discordAnnualR, suffix) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
     // Compute weekly return rates from Annual R
-    // Annual R at 2% risk = annualR * 0.02 (return as fraction of account per year)
-    // Weekly compounding: (1 + weeklyRate)^52 = 1 + annualRate
+    // ECFS Predisposal at 10% risk: annualR * 0.10
     const spyAnnual = 0.146; // 14.6% CAGR — S&P 500 total return (with dividends reinvested), 15-year average (2011–2025)
-    // IMPORTANT: Both strategies use 2% risk for apples-to-apples edge comparison.
-    // This isolates edge quality (EV × frequency) from position-sizing differences.
-    // ECFS Selective's actual risk is 10% ($500 on $5K), but comparing at the SAME risk level
-    // shows which edge is more powerful per unit of risk.
-    const compareRiskPct = 0.02; // 2% risk — equal basis for comparison (ECFS Active actual risk)
-    const ecfsAnnual = ecfsAnnualR * compareRiskPct;
+    const compareRiskPct = 0.10; // ECFS Predisposal actual risk: 10% ($1,000 on $10K)
     const discordAnnual = discordAnnualR * compareRiskPct;
 
     const spyWeekly = Math.pow(1 + spyAnnual, 1/52) - 1;
-    const ecfsWeekly = Math.pow(1 + Math.max(ecfsAnnual, -0.99), 1/52) - 1;
     const discordWeekly = Math.pow(1 + Math.max(discordAnnual, -0.99), 1/52) - 1;
 
     const weeks = 260; // 5 years × 52 weeks
     const labels = [];
     const spyData = [];
-    const ecfsData = [];
     const discordData = [];
 
-    let spyVal = 100, ecfsVal = 100, discordVal = 100;
+    let spyVal = 100, discordVal = 100;
     for (let w = 0; w <= weeks; w++) {
         if (w % 4 === 0 || w === weeks) { // monthly data points for smoother chart
-            const yr = (w / 52).toFixed(1);
             labels.push(w % 52 === 0 ? `Year ${Math.round(w/52)}` : '');
             spyData.push(parseFloat(spyVal.toFixed(2)));
-            ecfsData.push(parseFloat(ecfsVal.toFixed(2)));
             discordData.push(parseFloat(discordVal.toFixed(2)));
         }
         spyVal *= (1 + spyWeekly);
-        ecfsVal *= (1 + ecfsWeekly);
         discordVal *= (1 + discordWeekly);
     }
 
@@ -1463,18 +1410,11 @@ function renderGrowthComparison(containerId, ecfsAnnualR, discordAnnualR, suffix
     const setT = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
     const setH = (id, val) => { const e = document.getElementById(id); if (e) e.innerHTML = val; };
     setT(`growth-spy-${suffix}`, fmtGrowth(spyData[spyData.length - 1]));
-    setT(`growth-ecfs-${suffix}`, fmtGrowth(ecfsData[ecfsData.length - 1]));
     setT(`growth-discord-${suffix}`, fmtGrowth(discordData[discordData.length - 1]));
 
-    // Update risk/drawdown context under each strategy box — Monte Carlo simulated
-    const ecfsMC = monteCarloMaxDD('active');
+    // Update risk/drawdown context under strategy box — Monte Carlo simulated
     const discordMC = monteCarloMaxDD('discord');
 
-    if (ecfsMC) {
-        setH(`growth-dd-ecfs-${suffix}`,
-            `<i class="fas fa-dice mr-0.5"></i>Est. Max DD: <strong>${ecfsMC.ddPct.toFixed(1)}%</strong> ` +
-            `<span style="color:#6b7280;font-size:8px;">(Monte Carlo ${ecfsMC.percentile}th %ile · ${ecfsMC.simulations.toLocaleString()} sims · ${ecfsMC.sampleSize} trades)</span>`);
-    }
     if (discordMC) {
         setH(`growth-dd-discord-${suffix}`,
             `<i class="fas fa-dice mr-0.5"></i>Est. Max DD: <strong>${discordMC.ddPct.toFixed(1)}%</strong> ` +
@@ -1482,24 +1422,12 @@ function renderGrowthComparison(containerId, ecfsAnnualR, discordAnnualR, suffix
     }
 
     // ===== RETURN-TO-PAIN DYNAMIC UPDATE =====
-    // Use the better-performing strategy's annual R (not summed — investor runs one or both,
-    // but R is per-strategy, not additive on the same capital)
-    const representativeAnnualR = Math.round(Math.max(ecfsAnnualR, discordAnnualR));
-    
-    // For EPIG drawdown, use the worse of the two MC 95th-percentile drawdowns (in R)
-    // Conservative: shows the larger single-strategy drawdown, not summed
+    const representativeAnnualR = Math.round(discordAnnualR);
+
     let epigDDR = null;
     let epigMCSims = 0;
     let epigMCSample = 0;
-    if (ecfsMC && discordMC) {
-        epigDDR = Math.max(ecfsMC.ddR, discordMC.ddR); // worst single-strategy DD
-        epigMCSims = Math.max(ecfsMC.simulations, discordMC.simulations);
-        epigMCSample = ecfsMC.sampleSize + discordMC.sampleSize;
-    } else if (ecfsMC) {
-        epigDDR = ecfsMC.ddR;
-        epigMCSims = ecfsMC.simulations;
-        epigMCSample = ecfsMC.sampleSize;
-    } else if (discordMC) {
+    if (discordMC) {
         epigDDR = discordMC.ddR;
         epigMCSims = discordMC.simulations;
         epigMCSample = discordMC.sampleSize;
@@ -1523,15 +1451,12 @@ function renderGrowthComparison(containerId, ecfsAnnualR, discordAnnualR, suffix
     }
 
     // Update growth subtitle with data-as-of context
-    const activeDate = getLastTradeDate(state.active.allTrades) || 'latest';
     const discordDate = getLastTradeDate(state.discord.allTrades) || 'latest';
-    const activeCount = state.active.allTrades ? state.active.allTrades.length : 0;
     const discordCount = state.discord.allTrades ? state.discord.allTrades.length : 0;
-    const latestDate = activeDate !== 'latest' ? activeDate : discordDate;
     setH(`growth-subtitle-${suffix}`,
-        `Annual R extrapolated from <strong style="color:#60a5fa;">${activeCount + discordCount} all-time trades</strong> ` +
-        `(ECFS Active: ${activeCount}, ECFS Selective: ${discordCount}) as of <strong style="color:#60a5fa;">${latestDate}</strong>. ` +
-        `Compounded weekly — all strategies compared at equal 2% risk per trade to isolate edge quality. ECFS Selective actually trades at 10% risk ($500/trade on $5K) for higher absolute returns. S&P 500 uses 14.6% CAGR (15-year avg total return with dividends, 2011\u20132025).` +
+        `Annual R extrapolated from <strong style="color:#60a5fa;">${discordCount} all-time trades</strong> ` +
+        `as of <strong style="color:#60a5fa;">${discordDate}</strong>. ` +
+        `ECFS Predisposal at 10% risk ($1,000/trade on $10K portfolio). S&P 500 uses 14.6% CAGR (15-year avg total return with dividends, 2011\u20132025). ` +
         `<span style="color:#60a5fa;">Updated weekly with new trade data.</span>`
     );
 
@@ -1565,7 +1490,7 @@ function renderGrowthComparison(containerId, ecfsAnnualR, discordAnnualR, suffix
             }
         },
         legend: {
-            data: ['S&P 500', 'ECFS Active', 'ECFS Selective'],
+            data: ['S&P 500', 'ECFS Predisposal'],
             top: 0,
             textStyle: { color: '#9ca3af', fontSize: 10 },
             itemWidth: 12,
@@ -1604,19 +1529,7 @@ function renderGrowthComparison(containerId, ecfsAnnualR, discordAnnualR, suffix
                 ])}
             },
             {
-                name: 'ECFS Active',
-                type: 'line',
-                data: ecfsData,
-                smooth: true,
-                symbol: 'none',
-                lineStyle: { color: '#d4af37', width: 2.5 },
-                areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                    { offset: 0, color: 'rgba(212, 175, 55, 0.15)' },
-                    { offset: 1, color: 'rgba(212, 175, 55, 0)' }
-                ])}
-            },
-            {
-                name: 'ECFS Selective',
+                name: 'ECFS Predisposal',
                 type: 'line',
                 data: discordData,
                 smooth: true,
@@ -1640,8 +1553,8 @@ function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, pe
     if (!tbody) return;
 
     const edgeSign = edgeR >= 0 ? '+' : '';
-    const strategyName = method === 'active' ? 'ECFS Active' : 'ECFS Selective';
-    const icon = method === 'active' ? 'fa-bolt' : 'fa-comments';
+    const strategyName = 'ECFS Predisposal';
+    const icon = 'fa-comments';
     const lastDate = getLastTradeDate(state[method].allTrades) || 'latest';
     const totalTrades = state[method].allTrades ? state[method].allTrades.length : 0;
 
@@ -2810,149 +2723,10 @@ function setColor(elId, text, value) {
 
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', async function () {
-    switchExecution('active');
     updateGitHubSyncIndicators();
-    updateSyncStatus('active');
     updateSyncStatus('discord');
-    showSkeletonKPIs('active');
     showSkeletonKPIs('discord');
 
-    let ecfsLoaded = false;
-
-    // Try loading from localStorage first (faster), then DB, then sample CSV
-    const savedECFS = localStorage.getItem('ecfs-trades');
-    const savedECFSName = localStorage.getItem('ecfs-filename');
-    if (savedECFS) {
-        try {
-            state.active.allTrades = JSON.parse(savedECFS);
-            const weeks = getWeeksList(state.active.allTrades);
-            state.active.selectedWeek = weeks[0];
-            populateWeekSelector('active', weeks);
-            refreshDashboard('active');
-            ecfsLoaded = true;
-            if (savedECFSName) {
-                showUploadSuccess('active', `${savedECFSName} — ${state.active.allTrades.length} trades (cached)`);
-            }
-            showExportButton('active');
-        } catch (e) { console.error('Error loading ECFS data:', e); }
-    }
-
-    // Background DB sync: bidirectional — push local-only trades to DB, and pull
-    // DB-only trades into localStorage. This ensures a failed localStorage save
-    // on a previous upload doesn't leave the user stuck with stale data.
-    if (ecfsLoaded && state.active.allTrades.length > 0 && !state.active.isSampleData) {
-        (async () => {
-            try {
-                const lsTrades = state.active.allTrades.filter(t => !t._isSample);
-                const dbRows = await DB.loadTrades('ecfs_trades');
-                const norm = v => Math.round(parseFloat(v) * 10000) / 10000;
-
-                // Push: local trades missing from DB
-                const dbKeys = new Set(dbRows.map(r =>
-                    `${r.entry_time}|${r.exit_time}|${r.direction}|${norm(r.dollar_pl)}`
-                ));
-                const missingInDb = lsTrades.filter(t =>
-                    !dbKeys.has(`${t.entryTime}|${t.exitTime}|${t.direction}|${norm(t.dollarPL)}`)
-                );
-                if (missingInDb.length > 0) {
-                    console.log(`[DB sync] Pushing ${missingInDb.length} missing ECFS trades to DB`);
-                    await DB.saveTrades('ecfs_trades', missingInDb, `ecfs-sync-${Date.now()}`);
-                    recordSyncTime('active');
-                }
-
-                // Pull: DB trades missing from localStorage (e.g. from a failed localStorage save)
-                const lsKeys = new Set(lsTrades.map(t =>
-                    `${t.entryTime}|${t.exitTime}|${t.direction}|${norm(t.dollarPL)}`
-                ));
-                const missingInLs = dbRows.filter(r =>
-                    !lsKeys.has(`${r.entry_time}|${r.exit_time}|${r.direction}|${norm(r.dollar_pl)}`)
-                );
-                if (missingInLs.length > 0) {
-                    console.log(`[DB sync] Pulling ${missingInLs.length} newer ECFS trades from DB`);
-                    const merged = [...lsTrades, ...missingInLs.map(dbRowToECFSTrade)]
-                        .sort((a, b) => new Date(a.entryTime || a.date) - new Date(b.entryTime || b.date));
-                    state.active.allTrades = merged;
-                    // Recover upload timestamp from DB batch IDs
-                    const maxBatchTime = Math.max(...dbRows.map(r => {
-                        const ts = parseInt((r.upload_batch || '').split('-').pop() || '0');
-                        return isNaN(ts) ? 0 : ts;
-                    }));
-                    if (maxBatchTime > 0) {
-                        try { localStorage.setItem('ecfs-upload-time', maxBatchTime.toString()); } catch (e) {}
-                    }
-                    try { localStorage.setItem('ecfs-trades', JSON.stringify(merged)); } catch (e) {
-                        try {
-                            localStorage.removeItem('ecfs-raw-csv');
-                            localStorage.removeItem('discord-raw-csv');
-                            localStorage.setItem('ecfs-trades', JSON.stringify(merged));
-                        } catch (e2) {}
-                    }
-                    const weeks = getWeeksList(merged);
-                    state.active.selectedWeek = weeks[0];
-                    populateWeekSelector('active', weeks);
-                    refreshDashboard('active');
-                    showUploadSuccess('active', `${merged.length} trades (${missingInLs.length} recovered from database)`);
-                }
-            } catch (e) { console.warn('[DB sync] ECFS background sync failed:', e); }
-        })();
-    }
-
-    if (!ecfsLoaded) {
-        // Try loading from DB
-        try {
-            const dbTrades = await DB.loadTrades('ecfs_trades');
-            if (dbTrades.length > 0) {
-                // Deduplicate by key in case the same trade was saved multiple times
-                const seenKeys = new Set();
-                const uniqueDbTrades = dbTrades.filter(row => {
-                    const key = `${row.entry_time}|${row.exit_time}|${row.direction}|${row.dollar_pl}`;
-                    if (seenKeys.has(key)) return false;
-                    seenKeys.add(key);
-                    return true;
-                });
-                state.active.allTrades = uniqueDbTrades.map(dbRowToECFSTrade);
-                // Recover upload time from upload_batch field (format: "ecfs-<timestamp>")
-                const maxBatchTime = Math.max(...dbTrades.map(r => {
-                    const ts = parseInt((r.upload_batch || '').split('-').pop() || '0');
-                    return isNaN(ts) ? 0 : ts;
-                }));
-                if (maxBatchTime > 0) {
-                    localStorage.setItem('ecfs-upload-time', maxBatchTime.toString());
-                }
-                const weeks = getWeeksList(state.active.allTrades);
-                state.active.selectedWeek = weeks[0];
-                populateWeekSelector('active', weeks);
-                refreshDashboard('active');
-                ecfsLoaded = true;
-                showUploadSuccess('active', `${state.active.allTrades.length} trades loaded from database`);
-                showExportButton('active');
-            }
-        } catch (e) { console.error('Error loading ECFS from DB:', e); }
-    }
-
-    if (!ecfsLoaded) {
-        // Auto-load sample data so cold visitors see a fully populated dashboard
-        try {
-            const resp = await fetch('orders_sample.csv');
-            if (resp.ok) {
-                const csvText = await resp.text();
-                const trades = parseTradovateCSV(csvText);
-
-                if (trades.length > 0) {
-                    trades.forEach(t => t._isSample = true);
-                    state.active.allTrades = trades;
-                    state.active.isSampleData = true;
-                    const weeks = getWeeksList(trades);
-                    state.active.selectedWeek = weeks[0];
-                    populateWeekSelector('active', weeks);
-                    refreshDashboard('active');
-                    ecfsLoaded = true;
-                    showSampleDataBanner('active', trades.length);
-
-                }
-            }
-        } catch (e) { console.error('Error loading sample CSV:', e); }
-    }
 
     // Load Discord data
     let discordLoaded = false;
