@@ -846,7 +846,7 @@ function updateEdgeSection(method) {
     } else {
         const evBig = document.getElementById('discord-ev-hero-big');
         if (evBig) evBig.textContent = `${edgeK.evPlannedR >= 0 ? '+' : ''}${edgeK.evPlannedR.toFixed(1)}%R`;
-        setEl('discord-ev-hero-sub', `${fmtDollar(edgeK.evPerTrade)} per trade (planned $1,000 risk)`);
+        setEl('discord-ev-hero-sub', `${fmtDollar(edgeK.evPerTrade)} per trade (5% daily risk)`);
         setColor('discord-edge-avgwin', fmtDollar(edgeK.avgWinDollar), 1);
         setEl('discord-edge-avgwin-pts', `+${edgeK.avgWinPts.toFixed(2)} pts`);
         setColor('discord-edge-avgloss', fmtDollar(edgeK.avgLossDollar), -1);
@@ -1041,8 +1041,8 @@ function renderDiscord(k, trades, allK, allTrades) {
 
     // Edge
     document.getElementById('discord-ev-hero-big').textContent = `${k.evPlannedR >= 0 ? '+' : ''}${k.evPlannedR.toFixed(1)}%R`;
-    document.getElementById('discord-ev-hero-sub').textContent = `${fmtDollar(k.evPerTrade)} per trade (planned $1,000 risk)`;
-    document.getElementById('discord-ev-actual-risk').innerHTML = `<strong>Risk budget:</strong> $1,000/trade`;
+    document.getElementById('discord-ev-hero-sub').textContent = `${fmtDollar(k.evPerTrade)} per trade (5% daily risk)`;
+    document.getElementById('discord-ev-actual-risk').innerHTML = `<strong>Risk budget:</strong> $500/day (5%)`;
 
     setColor('discord-edge-avgwin', fmtDollar(k.avgWinDollar), 1);
     document.getElementById('discord-edge-avgwin-pts').textContent = `+${k.avgWinPts.toFixed(2)} pts`;
@@ -1150,7 +1150,7 @@ function renderFoodChain(method, k, allK, allTrades) {
 
     // Summary callout: explicit math so the user knows exactly how Annual R was derived
     const strategyLabel = 'ECFS Predisposal (ES)';
-    const riskLabel = method === 'active' ? '$100' : '$1,000';
+    const riskLabel = method === 'active' ? '$100' : '$500';
     const dataAsOf = `<span style="color:#9ca3af;font-weight:normal;"><i class="fas fa-sync-alt" style="font-size:9px;margin-right:3px;"></i>Extrapolated from <strong>${allK.totalTrades} all-time trades</strong> as of ${lastTradeDate} · updated weekly with new data</span>`;
     setHTML(`${prefix}-summary-text`,
         `<strong style="color:${accentColor}">${strategyLabel}</strong> · All-Time: ` +
@@ -1381,9 +1381,9 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
     if (!container) return;
 
     // Compute weekly return rates from Annual R
-    // ECFS Predisposal at 10% risk: annualR * 0.10
+    // ECFS Predisposal at 5% daily risk: annualR * 0.05
     const spyAnnual = 0.146; // 14.6% CAGR — S&P 500 total return (with dividends reinvested), 15-year average (2011–2025)
-    const compareRiskPct = 0.10; // ECFS Predisposal actual risk: 10% ($1,000 on $10K)
+    const compareRiskPct = 0.05; // ECFS Predisposal actual risk: 5% daily ($500/day on $10K)
     const discordAnnual = discordAnnualR * compareRiskPct;
 
     const spyWeekly = Math.pow(1 + spyAnnual, 1/52) - 1;
@@ -1409,8 +1409,21 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
     const fmtGrowth = (v) => `$100 → $${v.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
     const setT = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
     const setH = (id, val) => { const e = document.getElementById(id); if (e) e.innerHTML = val; };
-    setT(`growth-spy-${suffix}`, fmtGrowth(spyData[spyData.length - 1]));
-    setT(`growth-discord-${suffix}`, fmtGrowth(discordData[discordData.length - 1]));
+    const spyFinal = spyData[spyData.length - 1];
+    const discordFinal = discordData[discordData.length - 1];
+    setT(`growth-spy-${suffix}`, fmtGrowth(spyFinal));
+    setT(`growth-discord-${suffix}`, fmtGrowth(discordFinal));
+
+    // Dynamic ratio vs S&P 500
+    const ratioVsSpy = spyFinal > 0 ? (discordFinal / spyFinal) : 0;
+    const ratioEl = document.getElementById(`growth-ratio-${suffix}`);
+    if (ratioEl) {
+        if (discordAnnualR > 0) {
+            ratioEl.textContent = `×${ratioVsSpy.toFixed(1)} vs S&P 500 over 5 yrs`;
+        } else {
+            ratioEl.textContent = 'Upload trade data to see ratio';
+        }
+    }
 
     // Update risk/drawdown context under strategy box — Monte Carlo simulated
     const discordMC = monteCarloMaxDD('discord');
@@ -1456,7 +1469,7 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
     setH(`growth-subtitle-${suffix}`,
         `Annual R extrapolated from <strong style="color:#60a5fa;">${discordCount} all-time trades</strong> ` +
         `as of <strong style="color:#60a5fa;">${discordDate}</strong>. ` +
-        `ECFS Predisposal at 10% risk ($1,000/trade on $10K portfolio). S&P 500 uses 14.6% CAGR (15-year avg total return with dividends, 2011\u20132025). ` +
+        `ECFS Predisposal at 5% daily risk ($500/day on $10K portfolio). S&P 500 uses 14.6% CAGR (15-year avg total return with dividends, 2011\u20132025). ` +
         `<span style="color:#60a5fa;">Updated weekly with new trade data.</span>`
     );
 
@@ -1988,7 +2001,7 @@ function renderCompareInsights(ak, dk) {
         icon: 'fa-shield-alt',
         color: '#d4af37',
         title: 'Different Risk, Same Edge Framework',
-        text: `ECFS Active risks $${ECFS_RISK}/trade (2% of $5K) while ECFS Selective risks $${DISCORD_RISK}/trade (10% of $5K). Dollar amounts differ, but R-normalized metrics tell the real story.`
+        text: `ECFS Active risks $${ECFS_RISK}/trade (2% of $5K) while ECFS Predisposal risks $${DISCORD_RISK}/day (5% of $10K). Dollar amounts differ, but R-normalized metrics tell the real story.`
     });
 
     // 2. EV comparison in R
