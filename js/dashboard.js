@@ -1140,10 +1140,10 @@ function renderFoodChain(method, k, allK, allTrades) {
     // --- Your Strategy Row ---
     const edgeSign = edgeR >= 0 ? '+' : '';
 
-    // Build sorted food chain table (ECFS Active has table, ECFS Selective has stat boxes)
+    // Build sorted food chain table (ECFS Active has table, ECFS Predisposal has stat boxes)
     renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, periodLabel, accentColor, winRate, rr);
 
-    // Also set standalone stat elements (used by ECFS Selective simplified layout)
+    // Also set standalone stat elements (used by ECFS Predisposal simplified layout)
     setEl(`${prefix}-edge-per-trade`, `${edgeSign}${edgeR.toFixed(1)}%R`);
     setEl(`${prefix}-trades-month`, `≈${Math.round(tradesPerMonth)}`);
     setEl(`${prefix}-annual-r`, `≈${annualR.toFixed(0)} R`);
@@ -1693,7 +1693,7 @@ function renderFoodChainChart(containerId, k, method) {
         { name: 'Stat-Arb', edge: 1.25, color: '#6b7280' },
         { name: 'Trend-Following CTAs', edge: 0.75, color: '#6b7280' },
         { name: 'Casino Roulette', edge: 5.26, color: '#9ca3af' },
-        { name: method === 'active' ? 'ECFS Active' : 'ECFS Selective', edge: edgeR, color: accentColor }
+        { name: method === 'active' ? 'ECFS Active' : 'ECFS Predisposal', edge: edgeR, color: accentColor }
     ];
 
     // Sort by edge
@@ -1992,7 +1992,7 @@ function renderCompareRTable(ak, dk) {
             <tr>
                 <th class="text-left text-gray-400 font-bold px-3 py-2 border-b-2 border-[#d4af37]/20" style="background: rgba(212,175,55,0.05)">Metric</th>
                 <th class="text-right text-[#d4af37] font-bold px-3 py-2 border-b-2 border-[#d4af37]/20" style="background: rgba(212,175,55,0.05)"><i class="fas fa-bolt mr-1"></i>ECFS Active</th>
-                <th class="text-right text-blue-400 font-bold px-3 py-2 border-b-2 border-[#d4af37]/20" style="background: rgba(212,175,55,0.05)"><i class="fas fa-comments mr-1"></i>ECFS Selective</th>
+                <th class="text-right text-blue-400 font-bold px-3 py-2 border-b-2 border-[#d4af37]/20" style="background: rgba(212,175,55,0.05)"><i class="fas fa-comments mr-1"></i>ECFS Predisposal</th>
             </tr>
         </thead><tbody>`;
 
@@ -2012,7 +2012,7 @@ function renderCompareRTable(ak, dk) {
     html += `<div class="mt-3 flex items-center gap-3 text-[10px] text-gray-500 justify-center">
         <span><strong style="color:#d4af37">ECFS:</strong> 1R = $${ECFS_RISK}</span>
         <span>|</span>
-        <span><strong style="color:#60a5fa">ECFS Selective:</strong> 1R = $${DISCORD_RISK}</span>
+        <span><strong style="color:#60a5fa">ECFS Predisposal:</strong> 1R = $${DISCORD_RISK}</span>
         <span>|</span>
         <span><i class="fas fa-trophy text-[#d4af37]"></i> = winner for that metric</span>
     </div>`;
@@ -2042,7 +2042,7 @@ function renderCompareInsights(ak, dk) {
 
     // 2. EV comparison in R
     if (ak.evPlannedR !== dk.evPlannedR) {
-        const better = ak.evPlannedR > dk.evPlannedR ? 'ECFS Active' : 'ECFS Selective';
+        const better = ak.evPlannedR > dk.evPlannedR ? 'ECFS Active' : 'ECFS Predisposal';
         const bEV = Math.max(ak.evPlannedR, dk.evPlannedR);
         const wEV = Math.min(ak.evPlannedR, dk.evPlannedR);
         insights.push({
@@ -2055,7 +2055,7 @@ function renderCompareInsights(ak, dk) {
 
     // 3. Win rate
     if (Math.abs(ak.winRate - dk.winRate) >= 1) {
-        const better = ak.winRate > dk.winRate ? 'ECFS Active' : 'ECFS Selective';
+        const better = ak.winRate > dk.winRate ? 'ECFS Active' : 'ECFS Predisposal';
         insights.push({
             icon: 'fa-trophy',
             color: '#4ade80',
@@ -2068,7 +2068,7 @@ function renderCompareInsights(ak, dk) {
     const akDDR = ak.maxDD / ECFS_RISK;
     const dkDDR = dk.maxDD / DISCORD_RISK;
     if (Math.abs(akDDR - dkDDR) > 0.5) {
-        const betterDD = akDDR < dkDDR ? 'ECFS Active' : 'ECFS Selective';
+        const betterDD = akDDR < dkDDR ? 'ECFS Active' : 'ECFS Predisposal';
         insights.push({
             icon: 'fa-arrow-trend-down',
             color: '#f87171',
@@ -2078,7 +2078,7 @@ function renderCompareInsights(ak, dk) {
     }
 
     // 5. Data confidence
-    const moreData = ak.totalTrades > dk.totalTrades ? 'ECFS Active' : 'ECFS Selective';
+    const moreData = ak.totalTrades > dk.totalTrades ? 'ECFS Active' : 'ECFS Predisposal';
     if (ak.totalTrades !== dk.totalTrades) {
         insights.push({
             icon: 'fa-database',
@@ -2558,7 +2558,7 @@ function renderRadarChart(ak, dk) {
     }
     if (dk) {
         series.push({
-            name: 'ECFS Selective',
+            name: 'ECFS Predisposal',
             type: 'radar',
             data: [{
                 value: [
@@ -2569,7 +2569,7 @@ function renderRadarChart(ak, dk) {
                     dkWinR,
                     dk.tradingDays.length > 0 ? dk.profitableDays / dk.tradingDays.length * 100 : 0
                 ],
-                name: 'ECFS Selective',
+                name: 'ECFS Predisposal',
                 lineStyle: { color: '#60a5fa', width: 2 },
                 areaStyle: { color: 'rgba(96, 165, 250, 0.15)' },
                 itemStyle: { color: '#60a5fa' }
@@ -2581,7 +2581,7 @@ function renderRadarChart(ak, dk) {
         backgroundColor: 'transparent',
         tooltip: { trigger: 'item' },
         legend: {
-            data: ['ECFS Active', 'ECFS Selective'].filter((_, i) => (i === 0 && ak) || (i === 1 && dk)),
+            data: ['ECFS Active', 'ECFS Predisposal'].filter((_, i) => (i === 0 && ak) || (i === 1 && dk)),
             textStyle: { color: '#888', fontSize: 10 },
             bottom: 0
         },
@@ -2971,11 +2971,11 @@ function exportECFSData() {
     showExportToast('ECFS JSON exported — for best results, use the raw Tradovate CSV');
 }
 
-// Export ECFS Selective data as JSON (the canonical format for GitHub)
+// Export ECFS Predisposal data as JSON (the canonical format for GitHub)
 function exportDiscordData() {
     const trades = state.discord.allTrades;
     if (!trades || trades.length === 0) {
-        alert('No ECFS Selective data to export. Upload an Excel file first.');
+        alert('No ECFS Predisposal data to export. Upload an Excel file first.');
         return;
     }
 
