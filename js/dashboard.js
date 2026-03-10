@@ -594,7 +594,7 @@ function animateValue(el, end, prefix = '', suffix = '', decimals = 2) {
     requestAnimationFrame(update);
 }
 
-// ===== RENDER ECFS ACTIVE =====
+// ===== RENDER ECFS CONSERVATIVE =====
 function renderActive(k, trades, allK, allTrades) {
     // Live Update Banner
     const activeTradeCountEl = document.getElementById('active-live-trade-count');
