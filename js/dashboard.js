@@ -846,7 +846,7 @@ function updateEdgeSection(method) {
     } else {
         const evBig = document.getElementById('discord-ev-hero-big');
         if (evBig) evBig.textContent = `${edgeK.evPlannedR >= 0 ? '+' : ''}${edgeK.evPlannedR.toFixed(1)}%R`;
-        setEl('discord-ev-hero-sub', `${fmtDollar(edgeK.evPerTrade)} per trade (5% daily risk)`);
+        setEl('discord-ev-hero-sub', `${fmtDollar(edgeK.evPerTrade)} per trade (2.5% daily risk)`);
         setColor('discord-edge-avgwin', fmtDollar(edgeK.avgWinDollar), 1);
         setEl('discord-edge-avgwin-pts', `+${edgeK.avgWinPts.toFixed(2)} pts`);
         setColor('discord-edge-avgloss', fmtDollar(edgeK.avgLossDollar), -1);
@@ -1041,8 +1041,8 @@ function renderDiscord(k, trades, allK, allTrades) {
 
     // Edge
     document.getElementById('discord-ev-hero-big').textContent = `${k.evPlannedR >= 0 ? '+' : ''}${k.evPlannedR.toFixed(1)}%R`;
-    document.getElementById('discord-ev-hero-sub').textContent = `${fmtDollar(k.evPerTrade)} per trade (5% daily risk)`;
-    document.getElementById('discord-ev-actual-risk').innerHTML = `<strong>Risk budget:</strong> $500/day (5%)`;
+    document.getElementById('discord-ev-hero-sub').textContent = `${fmtDollar(k.evPerTrade)} per trade (2.5% daily risk)`;
+    document.getElementById('discord-ev-actual-risk').innerHTML = `<strong>Risk budget:</strong> $500/day (2.5%)`;
 
     setColor('discord-edge-avgwin', fmtDollar(k.avgWinDollar), 1);
     document.getElementById('discord-edge-avgwin-pts').textContent = `+${k.avgWinPts.toFixed(2)} pts`;
@@ -1384,7 +1384,7 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
     const setH = (id, val) => { const e = document.getElementById(id); if (e) e.innerHTML = val; };
 
     const trades = state.discord.allTrades;
-    const startBalance = DISCORD_STARTING_BALANCE; // $10,000
+    const startBalance = DISCORD_STARTING_BALANCE; // $20,000
 
     // ===== RETURN-TO-PAIN DYNAMIC UPDATE (uses annualR from edge) =====
     const discordMC = monteCarloMaxDD('discord');
@@ -1466,9 +1466,9 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
     const fmtBal = (v) => `$${v.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
 
     setH(`growth-spy-${suffix}`,
-        `$10K → ${fmtBal(finalSpy)} <span style="color:#9ca3af;font-size:9px;">(+${spyReturnPct.toFixed(1)}%)</span>`);
+        `$20K → ${fmtBal(finalSpy)} <span style="color:#9ca3af;font-size:9px;">(+${spyReturnPct.toFixed(1)}%)</span>`);
     setH(`growth-discord-${suffix}`,
-        `$10K → ${fmtBal(finalBalance)} <span style="${returnPct >= 0 ? 'color:#34d399' : 'color:#f87171'};font-size:9px;">(${returnPct >= 0 ? '+' : ''}${returnPct.toFixed(1)}%)</span>`);
+        `$20K → ${fmtBal(finalBalance)} <span style="${returnPct >= 0 ? 'color:#34d399' : 'color:#f87171'};font-size:9px;">(${returnPct >= 0 ? '+' : ''}${returnPct.toFixed(1)}%)</span>`);
 
     const ratioEl = document.getElementById(`growth-ratio-${suffix}`);
     if (ratioEl) {
@@ -1492,7 +1492,7 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
     const firstDateStr = fmtDate(sorted[0].exitTime || sorted[0].datetime);
     const lastDateStr  = fmtDate(sorted[sorted.length - 1].exitTime || sorted[sorted.length - 1].datetime);
     setH(`growth-subtitle-${suffix}`,
-        `Actual realized P&L on <strong style="color:#60a5fa;">$10,000</strong> account · ` +
+        `Actual realized P&L on <strong style="color:#60a5fa;">$20,000</strong> account · ` +
         `<strong style="color:#60a5fa;">${trades.length} trades</strong> · ` +
         `<strong style="color:#60a5fa;">${firstDateStr}</strong> to <strong style="color:#60a5fa;">${lastDateStr}</strong>. ` +
         `S&P 500 shown as benchmark over the same period. No projections.`
@@ -1585,7 +1585,7 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
                     silent: true,
                     data: [{ yAxis: startBalance }],
                     lineStyle: { color: '#374151', type: 'dashed', width: 1 },
-                    label: { formatter: '$10K', color: '#6b7280', fontSize: 9, position: 'start' },
+                    label: { formatter: '$20K', color: '#6b7280', fontSize: 9, position: 'start' },
                     symbol: 'none'
                 }
             }
@@ -2037,7 +2037,7 @@ function renderCompareInsights(ak, dk) {
         icon: 'fa-shield-alt',
         color: '#d4af37',
         title: 'Different Risk, Same Edge Framework',
-        text: `ECFS Active risks $${ECFS_RISK}/trade (2% of $5K) while ECFS Predisposal risks $${DISCORD_RISK}/day (5% of $10K). Dollar amounts differ, but R-normalized metrics tell the real story.`
+        text: `ECFS Active risks $${ECFS_RISK}/trade (2% of $5K) while ECFS Predisposal risks $${DISCORD_RISK}/day (2.5% of $20K). Dollar amounts differ, but R-normalized metrics tell the real story.`
     });
 
     // 2. EV comparison in R

@@ -5,10 +5,10 @@
 
 const ECFS_RISK = 100;       // $100 per trade (2% of $5k)
 const ECFS_PPT = 5;          // $5 per point (MES)
-const DISCORD_RISK = 500;    // $500/day (5% daily risk on $10k)
+const DISCORD_RISK = 500;    // $500/day (2.5% daily risk on $20k)
 const DISCORD_PPT = 50;      // $50 per point (ES)
 const STARTING_BALANCE = 5000;  // $5,000 portfolio for ECFS Active (2% risk per trade)
-const DISCORD_STARTING_BALANCE = 10000; // $10,000 portfolio for ECFS Predisposal (5% daily risk)
+const DISCORD_STARTING_BALANCE = 20000; // $20,000 portfolio for ECFS Predisposal (2.5% daily risk)
 
 // ===== DATABASE API — GitHub-backed persistence =====
 // Reads: raw.githubusercontent.com (public CDN, no auth, cache-busted)
