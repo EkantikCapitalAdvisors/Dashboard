@@ -8,13 +8,13 @@
     <meta name="keywords" content="structural trading edge, structural edge, edge verification, structural market edge, trading dashboard, ECFS, quantitative trading, asymmetric returns">
     <meta name="robots" content="index, follow">
     <meta property="og:title" content="Real-Time Proof of Structural Edge — Live Fills, Verified.">
-    <meta property="og:description" content="Validate in real-time the structural edge that powers top-tier quantitative funds. 30+ KPIs, real Tradovate fills, updated weekly. The same mechanism behind Renaissance & D.E. Shaw.">
+    <meta property="og:description" content="Validate a structural trading edge in real-time — 30+ KPIs, real Tradovate fills, updated weekly. Every trade logged, every metric transparent.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://dashboard.ekantikcapital.com/">
     <meta property="og:site_name" content="Ekantik Capital Advisors">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Real-Time Proof of Structural Edge — Live Fills, Verified.">
-    <meta name="twitter:description" content="Validate in real-time the structural edge powering top-tier quant funds. 30+ KPIs, real Tradovate fills, updated weekly. Past performance ≠ future results.">
+    <meta name="twitter:description" content="Validate a structural trading edge in real-time — 30+ KPIs, real Tradovate fills, updated weekly. Every trade logged, every metric transparent.">
     <meta property="og:image" content="https://cashflow.ekantikcapital.com/images/og-dashboard.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -170,7 +170,7 @@
                     Live <span class="text-[#d4af37]">Edge</span> Dashboard
                 </h1>
                 <p class="text-lg text-gray-300 mb-6 max-w-3xl mx-auto leading-relaxed">
-                    Real results. Full transparency. Both wins and losses. Updated every Monday morning.
+                    Real results. Full transparency. Every trade — wins and losses alike.
                 </p>
                 <div class="flex flex-col sm:flex-row items-center justify-center gap-3 mb-1">
                     <div class="bg-blue-900/20 border border-blue-400/40 rounded-lg px-6 py-3">
@@ -180,14 +180,7 @@
                     </div>
                 </div>
 
-                <!-- Inline Share Row -->
-                <div class="flex items-center justify-center gap-2 mt-4">
-                    <span class="text-gray-500 text-xs">Share:</span>
-                    <button onclick="shareToTwitter()" class="w-7 h-7 rounded-md bg-white/5 hover:bg-[#1DA1F2]/20 flex items-center justify-center transition-all" title="X / Twitter"><i class="fab fa-x-twitter text-gray-400 hover:text-[#1DA1F2] text-xs"></i></button>
-                    <button onclick="shareToLinkedIn()" class="w-7 h-7 rounded-md bg-white/5 hover:bg-[#0A66C2]/20 flex items-center justify-center transition-all" title="LinkedIn"><i class="fab fa-linkedin-in text-gray-400 hover:text-[#0A66C2] text-xs"></i></button>
-                    <button onclick="shareToWhatsApp()" class="w-7 h-7 rounded-md bg-white/5 hover:bg-[#25D366]/20 flex items-center justify-center transition-all" title="WhatsApp"><i class="fab fa-whatsapp text-gray-400 hover:text-[#25D366] text-xs"></i></button>
-                    <button onclick="copyShareLink()" class="w-7 h-7 rounded-md bg-white/5 hover:bg-[#d4af37]/20 flex items-center justify-center transition-all" title="Copy link"><i class="fas fa-link text-gray-400 hover:text-[#d4af37] text-xs"></i></button>
-                </div>
+                <!-- Share via sidebar (desktop) + FAB (mobile) -->
             </div>
         </div>
     </section>
@@ -223,12 +216,12 @@
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div class="mb-3 md:mb-0">
                                 <h2 class="font-playfair text-2xl sm:text-3xl font-bold text-white mb-1">ECFS Predisposal Execution</h2>
-                                <p class="text-gray-400 text-sm">Fewer trades, higher conviction — manually selected from Discord alerts</p>
+                                <p class="text-gray-400 text-sm">Selective, high-conviction futures trades filtered before market open</p>
                                 <p class="text-blue-400 text-xs mt-1"><i class="fas fa-chart-bar mr-1"></i>E-mini S&P 500 (ES) Futures | $50/point | 1 Contract | Starting: $20,000</p>
                             </div>
                             <div class="bg-blue-500/10 border border-blue-400/30 rounded-lg px-4 py-2 text-center">
                                 <p class="text-blue-400 font-semibold text-xs"><i class="fas fa-shield-alt mr-1"></i>Risk: $500/day (2.5%)</p>
-                                <p class="text-gray-500 text-[9px] mt-0.5">2.5% daily risk limit on $20,000 portfolio</p>
+                                <p class="text-gray-500 text-[9px] mt-0.5">daily risk limit</p>
                             </div>
                         </div>
                     </div>
@@ -242,7 +235,7 @@
                             </div>
                             <div>
                                 <p class="text-white text-sm font-semibold">Live Edge — Updated Weekly</p>
-                                <p class="text-gray-400 text-[11px]">Every number below is calculated from <strong class="text-blue-400" id="discord-live-trade-count">—</strong> real trades. New data loaded every Monday — watch the edge evolve over time.</p>
+                                <p class="text-gray-400 text-[11px]">Every number below is calculated from <strong class="text-blue-400" id="discord-live-trade-count">—</strong> real trades. Watch the edge evolve over time.</p>
                             </div>
                         </div>
                         <div class="bg-[#0a1628] border border-gray-700/40 rounded-lg px-3 py-1.5 flex-shrink-0">
@@ -274,16 +267,16 @@
                                 <span id="edge-period-label-discord" class="text-gray-400">All-Time</span>
                             </span>
                             <div class="flex gap-1.5">
-                                <button onclick="setEdgePeriod('discord','alltime')" id="edge-period-discord-alltime"
-                                    class="edge-period-btn active-edge-period-blue px-2.5 py-1 rounded text-[10px] font-bold transition-all">All-Time</button>
                                 <button onclick="setEdgePeriod('discord','1week')" id="edge-period-discord-1week"
                                     class="edge-period-btn px-2.5 py-1 bg-[#0d1d35] text-gray-400 rounded text-[10px] font-bold border border-gray-700 hover:border-blue-400/50 transition-all">1 Week</button>
-                                <button onclick="setEdgePeriod('discord','3months')" id="edge-period-discord-3months"
-                                    class="edge-period-btn px-2.5 py-1 bg-[#0d1d35] text-gray-400 rounded text-[10px] font-bold border border-gray-700 hover:border-blue-400/50 transition-all">3 Months</button>
-                                <button onclick="setEdgePeriod('discord','1month')" id="edge-period-discord-1month"
-                                    class="edge-period-btn px-2.5 py-1 bg-[#0d1d35] text-gray-400 rounded text-[10px] font-bold border border-gray-700 hover:border-blue-400/50 transition-all">1 Month</button>
                                 <button onclick="setEdgePeriod('discord','2weeks')" id="edge-period-discord-2weeks"
                                     class="edge-period-btn px-2.5 py-1 bg-[#0d1d35] text-gray-400 rounded text-[10px] font-bold border border-gray-700 hover:border-blue-400/50 transition-all">2 Weeks</button>
+                                <button onclick="setEdgePeriod('discord','1month')" id="edge-period-discord-1month"
+                                    class="edge-period-btn px-2.5 py-1 bg-[#0d1d35] text-gray-400 rounded text-[10px] font-bold border border-gray-700 hover:border-blue-400/50 transition-all">1 Month</button>
+                                <button onclick="setEdgePeriod('discord','3months')" id="edge-period-discord-3months"
+                                    class="edge-period-btn px-2.5 py-1 bg-[#0d1d35] text-gray-400 rounded text-[10px] font-bold border border-gray-700 hover:border-blue-400/50 transition-all">3 Months</button>
+                                <button onclick="setEdgePeriod('discord','alltime')" id="edge-period-discord-alltime"
+                                    class="edge-period-btn active-edge-period-blue px-2.5 py-1 rounded text-[10px] font-bold transition-all">All-Time</button>
                             </div>
                         </div>
 
@@ -335,7 +328,7 @@
                             </div>
                             <div class="bg-blue-400/8 border border-blue-400/20 rounded-lg p-3 text-center">
                                 <p class="text-[10px] text-blue-400 font-bold">RISK BUDGET</p>
-                                <p class="text-lg font-bold text-white">$500 <span class="text-xs text-gray-500">(2.5%/day)</span></p>
+                                <p class="text-lg font-bold text-white">$500 <span class="text-xs text-gray-500">/day</span></p>
                             </div>
                             <div class="bg-gray-800/40 border border-gray-700/30 rounded-lg p-3 text-center">
                                 <p class="text-[10px] text-gray-400 font-bold">W/L RATIO</p>
@@ -381,30 +374,44 @@
                             </div>
                         </div>
 
-                        <!-- Structural Edge Simulation -->
+                        <!-- Structural Edge Convergence Simulation -->
                         <div class="bg-[#061020]/80 border border-[#d4af37]/20 rounded-xl p-4 sm:p-5 mb-6">
                             <div class="flex items-start gap-3 mb-4">
                                 <div class="w-9 h-9 rounded-lg bg-[#d4af37]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                    <i class="fas fa-dice text-[#d4af37] text-base"></i>
+                                    <i class="fas fa-chart-line text-[#d4af37] text-base"></i>
                                 </div>
                                 <div>
-                                    <h4 class="text-sm font-bold text-white">The Structural Edge Principle — How Casinos Make Money</h4>
-                                    <p class="text-gray-400 text-[11px] mt-1 leading-relaxed">A structural edge doesn't require winning every hand. It requires a built-in mathematical advantage applied consistently at volume. Every hand is a coin-flip — the <em>structure</em> is what guarantees the outcome over time. Run the simulation below.</p>
+                                    <h4 class="text-sm font-bold text-white">The Structural Edge Principle — Convergence Over Volume</h4>
+                                    <p class="text-gray-400 text-[11px] mt-1 leading-relaxed">A structural edge doesn't require winning every trade. It requires a built-in mathematical advantage applied consistently at volume. Individual outcomes vary — the <em>structure</em> is what drives results over time. Click "Run Simulation" to see how a small per-trade edge converges.</p>
                                 </div>
                             </div>
-                            <div class="rounded-lg overflow-hidden border border-[#d4af37]/10 bg-[#0a1628]" style="height: 580px;">
-                                <iframe
-                                    src="https://blackjacksimulation.abacusai.app/"
-                                    width="100%"
-                                    height="100%"
-                                    style="border: none; display: block;"
-                                    title="Structural Edge Simulation — How Casinos Make Money"
-                                    loading="lazy"
-                                ></iframe>
+                            <div class="rounded-lg border border-[#d4af37]/10 bg-[#0a1628] p-4">
+                                <div class="flex flex-wrap items-center gap-3 mb-4">
+                                    <div class="flex items-center gap-2">
+                                        <label class="text-[10px] text-gray-400 font-bold">Edge/Trade:</label>
+                                        <select id="sim-edge" class="bg-[#0d1d35] border border-gray-700 rounded px-2 py-1 text-xs text-white">
+                                            <option value="1.5">1.5% (casino-level)</option>
+                                            <option value="5">5.0% (stat-arb)</option>
+                                            <option value="15" selected>15%+ (ECFS-level)</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <label class="text-[10px] text-gray-400 font-bold">Trades:</label>
+                                        <select id="sim-trades" class="bg-[#0d1d35] border border-gray-700 rounded px-2 py-1 text-xs text-white">
+                                            <option value="50">50</option>
+                                            <option value="200" selected>200</option>
+                                            <option value="500">500</option>
+                                        </select>
+                                    </div>
+                                    <button onclick="runEdgeSim()" class="px-4 py-1.5 bg-[#d4af37] text-[#0a1628] font-bold text-xs rounded-lg hover:shadow-lg hover:shadow-[#d4af37]/30 transition-all">
+                                        <i class="fas fa-play mr-1"></i>Run Simulation
+                                    </button>
+                                </div>
+                                <div id="chart-edge-sim" style="height: 320px; width: 100%;"></div>
                             </div>
                             <p class="text-[10px] text-gray-500 mt-3 text-center leading-relaxed">
                                 <i class="fas fa-arrow-right text-[#d4af37] mr-1.5"></i>
-                                The ECFS structural edge operates on the same principle — with a per-trade advantage orders of magnitude larger than any casino house edge, applied to a market that never closes.
+                                With a validated structural edge, individual trade randomness washes out over volume — the cumulative result converges toward the expected value.
                             </p>
                         </div>
 
@@ -463,49 +470,28 @@
 
                     <!-- ===== THE PARADIGM: INDUSTRY VALIDATION (Discord) ===== -->
                     <div class="border-l-2 border-blue-400/30 pl-5 sm:pl-6 mb-8">
-                        <p class="text-[9px] font-bold text-blue-400/50 tracking-[0.18em] uppercase mb-3">The same mechanism drives every market-beating fund</p>
+                        <p class="text-[9px] font-bold text-blue-400/50 tracking-[0.18em] uppercase mb-3">The principle is well-documented across institutional finance</p>
                         <p class="text-gray-300 text-[12px] sm:text-[13px] leading-relaxed mb-5">
-                            Every fund that has outperformed the market over a sustained period does so through the same three-part mechanism: a <span class="text-white font-semibold">repeatable structural edge</span>, applied with <span class="text-white font-semibold">systematic discipline</span>, sized through <span class="text-white font-semibold">defined risk per trade</span>. The edge per trade does not need to be large — what matters is that it is real, consistently applied, and scaled appropriately. The mathematics of compounding do the rest.
+                            The academic literature identifies a common three-part mechanism behind sustained outperformance: a <span class="text-white font-semibold">repeatable structural edge</span>, applied with <span class="text-white font-semibold">systematic discipline</span>, sized through <span class="text-white font-semibold">defined risk per trade</span>. The edge per trade does not need to be large — what matters is that it is real, consistently applied, and scaled appropriately. The mathematics of compounding do the rest.
                         </p>
                         <div class="grid sm:grid-cols-3 gap-3 mb-4">
                             <div class="bg-[#0a1628]/70 rounded-xl p-4 border border-blue-400/10">
-                                <div class="flex items-start justify-between mb-1.5">
-                                    <div>
-                                        <p class="text-white text-[11px] font-bold leading-tight">Renaissance Technologies</p>
-                                        <p class="text-gray-500 text-[10px]">Medallion Fund</p>
-                                    </div>
-                                    <span class="text-blue-400 text-sm font-bold ml-2 flex-shrink-0">~66%</span>
-                                </div>
-                                <p class="text-blue-400/70 text-[10px] font-semibold mb-1.5">gross annualized · 1988–2018</p>
-                                <p class="text-gray-500 text-[10px] leading-relaxed">Thousands of small statistical edges, applied algorithmically with precise position sizing. The most documented 30-year outperformance record in investment history.</p>
+                                <p class="text-white text-[11px] font-bold leading-tight mb-1.5">Structural Edge + Volume</p>
+                                <p class="text-gray-500 text-[10px] leading-relaxed">Thousands of small statistical edges, applied algorithmically with precise position sizing. The power comes from repetition, not from any single trade.</p>
                                 <p class="text-gray-700 text-[9px] mt-2 italic">Zuckerman, <em>The Man Who Solved the Market</em>, Penguin 2019</p>
                             </div>
                             <div class="bg-[#0a1628]/70 rounded-xl p-4 border border-blue-400/10">
-                                <div class="flex items-start justify-between mb-1.5">
-                                    <div>
-                                        <p class="text-white text-[11px] font-bold leading-tight">Princeton-Newport Partners</p>
-                                        <p class="text-gray-500 text-[10px]">Ed Thorp</p>
-                                    </div>
-                                    <span class="text-blue-400 text-sm font-bold ml-2 flex-shrink-0">15.1%</span>
-                                </div>
-                                <p class="text-blue-400/70 text-[10px] font-semibold mb-1.5">net annualized · 1969–1988</p>
-                                <p class="text-gray-500 text-[10px] leading-relaxed">Statistical arbitrage with near-zero market correlation. Proved that a mathematical edge, sized via Kelly Criterion, produces asymmetric returns regardless of market direction.</p>
+                                <p class="text-white text-[11px] font-bold leading-tight mb-1.5">Kelly Criterion Sizing</p>
+                                <p class="text-gray-500 text-[10px] leading-relaxed">A mathematical edge, sized via the Kelly Criterion, produces asymmetric returns regardless of market direction. The concept has been validated across decades of academic research.</p>
                                 <p class="text-gray-700 text-[9px] mt-2 italic">Thorp, <em>A Man for All Markets</em>, Random House 2017</p>
                             </div>
                             <div class="bg-[#0a1628]/70 rounded-xl p-4 border border-blue-400/10">
-                                <div class="flex items-start justify-between mb-1.5">
-                                    <div>
-                                        <p class="text-white text-[11px] font-bold leading-tight">D.E. Shaw Group</p>
-                                        <p class="text-gray-500 text-[10px]">David E. Shaw</p>
-                                    </div>
-                                    <span class="text-blue-400 text-sm font-bold ml-2 flex-shrink-0">$60B+</span>
-                                </div>
-                                <p class="text-blue-400/70 text-[10px] font-semibold mb-1.5">AUM · systematic quant since 1988</p>
-                                <p class="text-gray-500 text-[10px] leading-relaxed">A founder of algorithmic trading. Model-driven strategies across equity, fixed income, and macro — sustained alpha over three decades by exploiting repeatable statistical mispricings at scale.</p>
+                                <p class="text-white text-[11px] font-bold leading-tight mb-1.5">Systematic Discipline</p>
+                                <p class="text-gray-500 text-[10px] leading-relaxed">Model-driven strategies that exploit repeatable statistical mispricings. Sustained alpha comes from process consistency, not market prediction.</p>
                                 <p class="text-gray-700 text-[9px] mt-2 italic">Patterson, <em>The Quants</em>, Random House 2010</p>
                             </div>
                         </div>
-                        <p class="text-gray-600 text-[10px] leading-relaxed">The metrics tracked here — EV per trade, edge per planned R, and trade frequency — are the same variables these institutions have refined over decades. Academic research by Cliff Asness (AQR Capital) further confirms that systematic edges in momentum and value persist across asset classes and market cycles. Scale comes later. The edge must be validated first.</p>
+                        <p class="text-gray-600 text-[10px] leading-relaxed">The metrics tracked here — EV per trade, edge per planned R, and trade frequency — are the same variables documented across institutional finance. Academic research by Cliff Asness (AQR Capital) further confirms that systematic edges in momentum and value persist across asset classes and market cycles. Scale comes later. The edge must be validated first.</p>
                     </div>
 
                     <!-- 1C. Returns Multiplier Potential (Discord) -->
@@ -523,7 +509,7 @@
                         <!-- Returns Scaling Bars -->
                         <div class="bg-[#0a1628]/60 border border-blue-400/15 rounded-xl p-5 mb-5">
                             <div class="flex items-center gap-2 mb-3">
-                                <span class="inline-flex items-center gap-1.5 bg-blue-400/10 border border-blue-400/25 rounded-full px-3 py-1 text-[10px] font-bold text-blue-300"><i class="fas fa-wallet text-[9px]"></i>Per $20,000 starting capital</span>
+                                <span class="inline-flex items-center gap-1.5 bg-blue-400/10 border border-blue-400/25 rounded-full px-3 py-1 text-[10px] font-bold text-blue-300"><i class="fas fa-wallet text-[9px]"></i>At current risk parameters</span>
                             </div>
                             <p class="text-gray-400 text-[10px] mb-4" id="dfc-scale-subtitle">Based on your validated edge, returns multiply with risk taken:</p>
                             <div class="space-y-3" id="dfc-returns-bars"></div>
@@ -559,10 +545,10 @@
                             </div>
                             <div>
                                 <h3 class="text-xl font-bold text-white">Actual Account Performance</h3>
-                                <p class="text-gray-400 text-xs mt-0.5">Real realized P&L on $20,000 portfolio — trade by trade vs S&P 500</p>
+                                <p class="text-gray-400 text-xs mt-0.5">Real realized P&L — trade by trade vs S&P 500</p>
                             </div>
                         </div>
-                        <p class="text-gray-500 text-[10px] mb-5 ml-13" id="growth-subtitle-discord">Actual realized P&L on $20,000 account. S&P 500 shown as benchmark over same period. No projections.</p>
+                        <p class="text-gray-500 text-[10px] mb-5 ml-13" id="growth-subtitle-discord">Actual realized P&L. S&P 500 shown as benchmark over same period. No projections.</p>
 
                         <div id="chart-growth-comparison-discord" style="height: 400px; width: 100%;"></div>
 
@@ -576,13 +562,13 @@
                             <div class="bg-blue-500/8 border border-blue-400/30 rounded-lg p-3 text-center">
                                 <p class="text-[10px] text-blue-400 font-bold">ECFS PREDISPOSAL</p>
                                 <p class="text-sm font-bold text-blue-400" id="growth-discord-discord">$20K → —</p>
-                                <p class="text-[10px] text-gray-500">at 2.5% daily risk ($500/day)</p>
+                                <p class="text-[10px] text-gray-500">at current risk parameters</p>
                                 <p class="text-[9px] text-blue-400/60" id="growth-ratio-discord">vs S&P 500: calculating…</p>
                                 <p class="text-[9px] text-emerald-400/70 mt-0.5" id="growth-dd-discord-discord"><i class="fas fa-dice mr-0.5"></i>Est. Max DD: calculating…</p>
                             </div>
                         </div>
 
-                        <p class="text-gray-600 text-[10px] mt-4 text-center">Projections are mathematical extrapolations based on current edge, not guarantees. Past performance is not indicative of future results. <a href="#compliance-footer" class="underline hover:text-gray-400">Full disclosure</a></p>
+                        <p class="text-gray-600 text-[10px] mt-4 text-center">Projections are mathematical extrapolations based on current edge, not guarantees. <a href="#compliance-footer" class="underline hover:text-gray-400">Full disclosure</a></p>
                     </div>
 
 
@@ -650,7 +636,7 @@
                             <p class="text-[10px] text-gray-500 mt-0.5" id="discord-hero-dd-sub"></p>
                         </div>
                     </div>
-                    <p class="text-gray-600 text-[10px] -mt-6 mb-6 text-center">Results reflect selective manual execution from Discord alerts. Individual results will vary. Past performance is not indicative of future results. <a href="#compliance-footer" class="underline hover:text-gray-400">Full disclosure</a></p>
+                    <p class="text-gray-600 text-[10px] -mt-6 mb-6 text-center">Individual results will vary. <a href="#compliance-footer" class="underline hover:text-gray-400">Full disclosure</a></p>
 
                     <!-- Charts -->
                     <div class="grid md:grid-cols-2 gap-6 mb-8">
@@ -736,11 +722,11 @@
                     <!-- Disclaimer -->
                     <div class="border border-gray-700/30 rounded-lg px-4 py-3 flex items-center gap-2">
                         <i class="fas fa-info-circle text-gray-500 text-xs flex-shrink-0"></i>
-                        <p class="text-gray-500 text-[10px] leading-relaxed">Past performance is not indicative of future results. Selective execution from Discord alerts; individual results will vary. <a href="#compliance-footer" class="text-gray-400 underline hover:text-blue-400">Full disclosure</a></p>
+                        <p class="text-gray-500 text-[10px] leading-relaxed">Individual results will vary. <a href="#compliance-footer" class="text-gray-400 underline hover:text-blue-400">Full disclosure</a></p>
                     </div>
 
-                    <!-- ===== TRADE DATA MANAGEMENT (Admin) ===== -->
-                    <div class="border-t border-gray-800/50 pt-8 mt-4">
+                    <!-- ===== TRADE DATA MANAGEMENT (Admin — hidden unless ?admin in URL) ===== -->
+                    <div class="border-t border-gray-800/50 pt-8 mt-4 admin-only" style="display:none;">
                         <p class="text-gray-600 text-[10px] uppercase tracking-widest text-center mb-5">
                             <i class="fas fa-database mr-1.5"></i>Trade Data Management
                         </p>
@@ -856,10 +842,19 @@
         </div>
     </section>
 
+    <!-- Deep Dive Toggle -->
+    <div class="text-center py-8 bg-[#0a1628]">
+        <button onclick="const s=document.getElementById('deep-dive-math');s.style.display=s.style.display==='none'?'':'none';this.querySelector('.fa-chevron-down,.fa-chevron-up').classList.toggle('fa-chevron-down');this.querySelector('.fa-chevron-down,.fa-chevron-up').classList.toggle('fa-chevron-up');"
+            class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-[#d4af37]/20 to-[#d4af37]/5 border-2 border-[#d4af37]/40 text-white font-bold text-sm rounded-xl hover:border-[#d4af37]/80 hover:shadow-lg hover:shadow-[#d4af37]/20 transition-all">
+            <i class="fas fa-atom mr-2 text-[#d4af37]"></i>Deep Dive: The Mathematics of Compounding
+            <i class="fas fa-chevron-down ml-3 text-[#d4af37] text-xs"></i>
+        </button>
+    </div>
+
     <!-- ╔══════════════════════════════════════════════════════════════╗ -->
-    <!-- ║  THE COMPOUNDING CERTAINTY THESIS                           ║ -->
+    <!-- ║  DEEP DIVE: THE MATHEMATICS OF COMPOUNDING                  ║ -->
     <!-- ╚══════════════════════════════════════════════════════════════╝ -->
-    <section class="py-20 relative overflow-hidden">
+    <section id="deep-dive-math" class="py-20 relative overflow-hidden" style="display:none;">
         <div class="absolute inset-0 bg-gradient-to-b from-[#0a1628] via-[#0d1d35]/60 to-[#0a1628]"></div>
         <div class="absolute inset-0 opacity-10">
             <div class="absolute top-1/3 left-1/4 w-96 h-96 bg-[#d4af37]/20 rounded-full blur-3xl"></div>
@@ -875,7 +870,7 @@
                         <span class="text-[#d4af37] font-semibold text-sm tracking-wider"><i class="fas fa-atom mr-2"></i>THE FOUNDING INSIGHT</span>
                     </div>
                     <h2 class="font-playfair text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-5 leading-tight">
-                        When the Edge Is Certain,<br><span class="text-[#d4af37]">Size Becomes Your Only Variable</span>
+                        When the Edge Converges,<br><span class="text-[#d4af37]">Size Becomes Your Only Variable</span>
                     </h2>
                     <p class="text-gray-400 max-w-2xl mx-auto text-sm leading-relaxed">
                         This is the thought experiment the entire strategy was built on. It starts with one formula — and ends with a conclusion that most traders never reach.
@@ -914,12 +909,12 @@
                             <div class="bg-[#0a1628]/70 border border-[#d4af37]/20 rounded-xl p-6 mb-4">
                                 <p class="text-[#d4af37] text-xs font-bold uppercase tracking-widest mb-3">The Question</p>
                                 <p class="text-white text-sm leading-relaxed mb-3">
-                                    What happens when EV &gt; 0 is not just <em>likely</em> across N trades — but <strong class="text-[#d4af37]">mathematically certain</strong>?
+                                    What happens when EV &gt; 0 is not just <em>likely</em> across N trades — but <strong class="text-[#d4af37]">statistically convergent</strong>?
                                 </p>
-                                <p class="text-gray-400 text-xs leading-relaxed">At sufficient N, the Law of Large Numbers compresses variance until a positive aggregate outcome approaches certainty. At that moment, something profound unlocks.</p>
+                                <p class="text-gray-400 text-xs leading-relaxed">At sufficient N, the Law of Large Numbers compresses variance until a positive aggregate outcome becomes statistically reliable. At that point, something profound unlocks.</p>
                             </div>
                             <div class="bg-[#d4af37]/8 border border-[#d4af37]/20 rounded-xl p-4 text-center">
-                                <p class="text-[#d4af37] font-mono font-bold text-lg mb-1">N → certainty</p>
+                                <p class="text-[#d4af37] font-mono font-bold text-lg mb-1">N → convergence</p>
                                 <p class="text-gray-500 text-[10px] leading-relaxed">as sample grows, outcome variance collapses toward the expected value</p>
                             </div>
                         </div>
@@ -948,8 +943,8 @@
                         <div class="w-9 h-9 rounded-full bg-[#d4af37]/15 border border-[#d4af37]/30 flex items-center justify-center mb-4">
                             <span class="text-[#d4af37] font-bold">2</span>
                         </div>
-                        <h4 class="text-white font-bold text-sm mb-2">Certainty Across N Trades</h4>
-                        <p class="text-gray-400 text-xs leading-relaxed mb-4">Volume compresses variance. The positive edge is no longer probabilistic — it becomes a near-mathematical certainty across the full sample.</p>
+                        <h4 class="text-white font-bold text-sm mb-2">Convergence Across N Trades</h4>
+                        <p class="text-gray-400 text-xs leading-relaxed mb-4">Volume compresses variance. The positive edge becomes statistically reliable — converging toward the expected value as the sample grows.</p>
                         <div class="bg-[#d4af37]/8 border border-[#d4af37]/20 rounded-lg p-3 text-center">
                             <p class="text-[#d4af37] font-mono font-bold text-sm">σ → 0</p>
                             <p class="text-gray-600 text-[10px] mt-0.5">variance collapses with N</p>
@@ -963,7 +958,7 @@
                             <span class="text-purple-400 font-bold">3</span>
                         </div>
                         <h4 class="text-white font-bold text-sm mb-2">Compounding = Sizing Up</h4>
-                        <p class="text-gray-400 text-xs leading-relaxed mb-4">If the outcome is certain, <em>how much you bet</em> is the only variable. Bigger position = bigger absolute gain. Compounding is not reinvesting — it's <strong class="text-white">increasing risk proportionally</strong>.</p>
+                        <p class="text-gray-400 text-xs leading-relaxed mb-4">When the outcome distribution is well-understood, <em>how much you risk</em> becomes the primary variable. Bigger position = bigger absolute gain. Compounding is not reinvesting — it's <strong class="text-white">increasing risk proportionally</strong>.</p>
                         <div class="bg-purple-950/40 border border-purple-500/20 rounded-lg p-3 text-center">
                             <p class="text-purple-400 font-mono font-bold text-sm">Risk = Return</p>
                             <p class="text-gray-600 text-[10px] mt-0.5">proportionally, deterministically</p>
@@ -1064,7 +1059,7 @@
 
                                 <!-- Legend -->
                                 <rect x="62" y="278" width="14" height="2.5" fill="#d4af37" rx="1"/>
-                                <text x="80" y="282" fill="#d4af37" font-size="7" font-family="monospace">size up with certainty</text>
+                                <text x="80" y="282" fill="#d4af37" font-size="7" font-family="monospace">size up with confidence</text>
                                 <rect x="185" y="278" width="14" height="2.5" fill="#374151" rx="1"/>
                                 <text x="203" y="282" fill="#4b5563" font-size="7" font-family="monospace">fixed position</text>
 
@@ -1114,13 +1109,13 @@
                                 <text x="228" y="180" fill="#d4af37" font-size="9" text-anchor="start">* current</text>
 
                                 <!-- Caption -->
-                                <text x="124" y="220" fill="#6b7280" font-size="7.5" font-family="monospace" text-anchor="middle">Ultra Safe Growth Architecture</text>
+                                <text x="124" y="220" fill="#6b7280" font-size="7.5" font-family="monospace" text-anchor="middle">Risk-Managed Growth Architecture</text>
                             </svg>
                         </div>
 
                         <!-- Explanation -->
                         <div class="flex-1 order-1 lg:order-2">
-                            <p class="text-[#d4af37] text-xs font-bold uppercase tracking-widest mb-3"><i class="fas fa-shield-alt mr-2"></i>Ultra Safe Growth Design</p>
+                            <p class="text-[#d4af37] text-xs font-bold uppercase tracking-widest mb-3"><i class="fas fa-shield-alt mr-2"></i>Risk-Managed Growth Design</p>
                             <h3 class="text-2xl font-bold text-white mb-4">The Three-Buffer Architecture</h3>
                             <p class="text-gray-400 text-sm leading-relaxed mb-6">
                                 If compounding means sizing up, safety means sizing up <em>conservatively</em>. We maintain three stacked layers of buffer above the minimum positive expectancy — so even in adverse conditions, the edge remains intact and the risk is covered.
@@ -1449,8 +1444,7 @@
     </section>
     </template>
 
-    <!-- CTA Section — Strategy Chooser (HIDDEN — performance-only page) -->
-    <template id="cta-strategy-chooser-disabled">
+    <!-- CTA Section — Strategy Chooser -->
     <section class="py-16 bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border-t border-b border-[#d4af37]/20 relative overflow-hidden">
         <div class="absolute inset-0 opacity-10">
             <div class="absolute top-10 left-1/4 w-64 h-64 bg-[#d4af37]/20 rounded-full blur-3xl"></div>
@@ -1577,41 +1571,13 @@
             </div>
         </div>
     </section>
-    </template>
 
     <!-- Footer -->
     <footer id="compliance-footer" class="py-10 bg-[#0d1d35]/80 border-t border-[#d4af37]/20">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
             <div class="max-w-5xl mx-auto">
 
-                <!-- Share Bar -->
-                <div class="flex flex-col sm:flex-row items-center justify-between mb-8 pb-6 border-b border-gray-700/30">
-                    <p class="text-gray-400 text-sm mb-3 sm:mb-0"><i class="fas fa-share-alt mr-2 text-[#d4af37]"></i>Share this dashboard</p>
-                    <div class="flex items-center gap-2">
-                        <button onclick="shareToTwitter()" class="w-9 h-9 rounded-lg bg-[#1DA1F2]/15 border border-[#1DA1F2]/30 flex items-center justify-center hover:bg-[#1DA1F2]/25 transition-all" title="X / Twitter">
-                            <i class="fab fa-x-twitter text-[#1DA1F2] text-sm"></i>
-                        </button>
-                        <button onclick="shareToLinkedIn()" class="w-9 h-9 rounded-lg bg-[#0A66C2]/15 border border-[#0A66C2]/30 flex items-center justify-center hover:bg-[#0A66C2]/25 transition-all" title="LinkedIn">
-                            <i class="fab fa-linkedin-in text-[#0A66C2] text-sm"></i>
-                        </button>
-                        <button onclick="shareToFacebook()" class="w-9 h-9 rounded-lg bg-[#1877F2]/15 border border-[#1877F2]/30 flex items-center justify-center hover:bg-[#1877F2]/25 transition-all" title="Facebook">
-                            <i class="fab fa-facebook-f text-[#1877F2] text-sm"></i>
-                        </button>
-                        <button onclick="shareToWhatsApp()" class="w-9 h-9 rounded-lg bg-[#25D366]/15 border border-[#25D366]/30 flex items-center justify-center hover:bg-[#25D366]/25 transition-all" title="WhatsApp">
-                            <i class="fab fa-whatsapp text-[#25D366] text-sm"></i>
-                        </button>
-                        <button onclick="shareToTelegram()" class="w-9 h-9 rounded-lg bg-[#229ED9]/15 border border-[#229ED9]/30 flex items-center justify-center hover:bg-[#229ED9]/25 transition-all" title="Telegram">
-                            <i class="fab fa-telegram-plane text-[#229ED9] text-sm"></i>
-                        </button>
-                        <button onclick="shareViaEmail()" class="w-9 h-9 rounded-lg bg-gray-600/15 border border-gray-600/30 flex items-center justify-center hover:bg-gray-500/25 transition-all" title="Email">
-                            <i class="fas fa-envelope text-gray-400 text-sm"></i>
-                        </button>
-                        <div class="w-px h-6 bg-gray-700/50 mx-1"></div>
-                        <button onclick="copyShareLink()" class="w-9 h-9 rounded-lg bg-[#d4af37]/10 border border-[#d4af37]/30 flex items-center justify-center hover:bg-[#d4af37]/20 transition-all" title="Copy link" id="copy-link-btn">
-                            <i class="fas fa-link text-[#d4af37] text-sm"></i>
-                        </button>
-                    </div>
-                </div>
+                <!-- Share via sidebar (desktop) + FAB (mobile) -->
 
                 <!-- Company Info -->
                 <div class="text-center mb-6">
@@ -1689,6 +1655,61 @@
 
     <script src="js/parser.js"></script>
     <script src="js/dashboard.js"></script>
+
+    <!-- Edge Convergence Simulation -->
+    <script>
+    function runEdgeSim() {
+        const edgePct = parseFloat(document.getElementById('sim-edge').value) / 100;
+        const nTrades = parseInt(document.getElementById('sim-trades').value);
+        const nPaths = 5;
+        const winRate = 0.5 + edgePct / 2; // simplified: edge maps to win rate above 50%
+
+        const series = [];
+        const xData = Array.from({length: nTrades + 1}, (_, i) => i);
+
+        for (let p = 0; p < nPaths; p++) {
+            let cumPL = 0;
+            const data = [0];
+            for (let i = 0; i < nTrades; i++) {
+                cumPL += Math.random() < winRate ? 1 : -1;
+                data.push(cumPL);
+            }
+            series.push({
+                name: `Path ${p + 1}`,
+                type: 'line',
+                data: data,
+                smooth: true,
+                lineStyle: { width: 1.2, opacity: 0.4 },
+                symbol: 'none',
+                color: '#60a5fa'
+            });
+        }
+
+        // Expected value line
+        const evLine = xData.map(i => (2 * winRate - 1) * i);
+        series.push({
+            name: 'Expected Value',
+            type: 'line',
+            data: evLine,
+            lineStyle: { width: 2.5, type: 'dashed', color: '#d4af37' },
+            symbol: 'none',
+            color: '#d4af37'
+        });
+
+        const chart = echarts.init(document.getElementById('chart-edge-sim'));
+        chart.setOption({
+            backgroundColor: 'transparent',
+            grid: { top: 30, right: 20, bottom: 40, left: 50 },
+            tooltip: { trigger: 'axis' },
+            xAxis: { type: 'category', data: xData, name: 'Trades', nameLocation: 'center', nameGap: 25, axisLabel: { color: '#6b7280', fontSize: 10 }, axisLine: { lineStyle: { color: '#1e3a5f' } } },
+            yAxis: { type: 'value', name: 'Cumulative P&L (units)', nameLocation: 'center', nameGap: 35, axisLabel: { color: '#6b7280', fontSize: 10 }, splitLine: { lineStyle: { color: '#1a2f50' } }, axisLine: { lineStyle: { color: '#1e3a5f' } } },
+            series: series
+        }, true);
+        window.addEventListener('resize', () => chart.resize());
+    }
+    // Auto-run on load
+    document.addEventListener('DOMContentLoaded', () => { setTimeout(runEdgeSim, 500); });
+    </script>
 
     <!-- Sharing & Disclaimer Functions -->
     <script>
@@ -1817,6 +1838,10 @@
         // Init sidebar opacity
         const sidebar = document.getElementById('share-sidebar');
         if (sidebar) { sidebar.style.opacity = '0'; sidebar.style.pointerEvents = 'none'; sidebar.style.transition = 'opacity 0.3s ease'; }
+        // Show admin tools only when ?admin is in the URL
+        if (new URLSearchParams(window.location.search).has('admin')) {
+            document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+        }
     });
     </script>
 </body>
