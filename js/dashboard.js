@@ -231,12 +231,8 @@ async function handleExcelUpload(event, method) {
             showUploadProgress('discord', 'Syncing to database...');
             try {
                 const batchId = `discord-${Date.now()}`;
-                const currentDbRows = await DB.loadTrades('discord_trades');
-                const dbNums = new Set(currentDbRows.map(r => r.trade_num));
-                const missingFromDb = trades.filter(t => !dbNums.has(t.tradeNum));
-                if (missingFromDb.length > 0) {
-                    await DB.saveTrades('discord_trades', missingFromDb, batchId);
-                }
+                // Pass ALL merged trades for upsert so corrected data overwrites stale DB rows
+                await DB.saveTrades('discord_trades', trades, batchId);
                 await DB.saveAllWeeklySnapshots('discord', snapshots);
                 const overwritten = existingTrades.length - notOverwritten.length;
                 const newCount = newTrades.length - overwritten;
@@ -2704,10 +2700,25 @@ function renderTradeLog(tbodyId, trades, risk) {
 function renderDiscordTradeLog(tbodyId, trades) {
     const tbody = document.getElementById(tbodyId);
     if (!tbody) return;
+    const isAdmin = new URLSearchParams(window.location.search).has('admin');
+    // Inject admin Actions column header if not already present
+    if (isAdmin) {
+        const headerRow = tbody.closest('table')?.querySelector('thead tr');
+        if (headerRow && !headerRow.querySelector('.admin-actions-th')) {
+            const th = document.createElement('th');
+            th.className = 'text-gray-400 text-[10px] admin-actions-th';
+            th.textContent = 'Actions';
+            headerRow.appendChild(th);
+        }
+    }
     tbody.innerHTML = trades.map(t => {
         const dirColor = t.direction.toLowerCase().includes('sell') ? 'text-red-400' : 'text-blue-400';
         const plColor = t.dollarPL > 0 ? 'text-green-400' : t.dollarPL < 0 ? 'text-red-400' : 'text-gray-400';
         const badge = t.isWin ? '<span class="bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded text-[10px] font-bold">W</span>' : '<span class="bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded text-[10px] font-bold">L</span>';
+        const adminBtns = isAdmin ? `<td class="text-[11px] whitespace-nowrap">
+            <button onclick="editTrade('discord','${t.tradeNum}')" class="text-blue-400 hover:text-blue-300 mr-1" title="Edit"><i class="fas fa-pen text-[9px]"></i></button>
+            <button onclick="deleteTrade('discord','${t.tradeNum}')" class="text-red-400 hover:text-red-300" title="Delete"><i class="fas fa-trash text-[9px]"></i></button>
+        </td>` : '';
         return `<tr class="hover:bg-blue-500/5 transition-colors">
             <td class="text-gray-300 text-[11px]">${t.datetime}</td>
             <td class="text-blue-400 text-[11px] font-semibold">${t.tradeNum}</td>
@@ -2719,8 +2730,99 @@ function renderDiscordTradeLog(tbodyId, trades) {
             <td class="text-gray-400 text-[11px]">${t.riskPoints}</td>
             <td class="${plColor} text-[11px] font-semibold">${t.dollarPL >= 0 ? '+' : ''}$${t.dollarPL.toFixed(2)}</td>
             <td>${badge}</td>
+            ${adminBtns}
         </tr>`;
     }).join('');
+}
+
+// ===== ADMIN: EDIT / DELETE TRADES =====
+function deleteTrade(method, tradeNum) {
+    if (!confirm(`Delete trade ${tradeNum}? This cannot be undone.`)) return;
+    const trades = state[method].allTrades.filter(t => t.tradeNum !== tradeNum);
+    state[method].allTrades = trades;
+    try { localStorage.setItem(`${method}-trades`, JSON.stringify(trades)); } catch (e) {}
+    // Regenerate snapshots and refresh
+    const snapshots = generateWeeklySnapshots(trades, method,
+        method === 'discord' ? DISCORD_RISK : ECFS_RISK,
+        method === 'discord' ? DISCORD_PPT : ECFS_PPT,
+        method === 'discord' ? DISCORD_STARTING_BALANCE : ECFS_STARTING_BALANCE);
+    state[method].snapshots = snapshots;
+    try { localStorage.setItem(`${method}-snapshots`, JSON.stringify(snapshots)); } catch (e) {}
+    refreshDashboard(method);
+    // Async DB sync
+    (async () => {
+        try {
+            await DB.saveTrades(`${method}_trades`, trades, `${method}-delete-${Date.now()}`);
+            await DB.saveAllWeeklySnapshots(method, snapshots);
+        } catch (e) { console.warn('DB sync after delete failed:', e); }
+    })();
+}
+
+function editTrade(method, tradeNum) {
+    const trade = state[method].allTrades.find(t => t.tradeNum === tradeNum);
+    if (!trade) return;
+    const fields = [
+        { key: 'pointsPL', label: 'Net Points', val: trade.pointsPL },
+        { key: 'dollarPL', label: 'Net $ (Dollar P&L)', val: trade.dollarPL },
+        { key: 'entryPrice', label: 'Entry Price', val: trade.entryPrice },
+        { key: 'stopPrice', label: 'Stop Price', val: trade.stopPrice || '' },
+        { key: 'riskPoints', label: 'Risk (Points)', val: trade.riskPoints },
+        { key: 'direction', label: 'Direction (Buy/Sell)', val: trade.direction }
+    ];
+    // Build a simple modal
+    const overlay = document.createElement('div');
+    overlay.className = 'fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm';
+    overlay.id = 'edit-trade-modal';
+    overlay.innerHTML = `
+        <div class="bg-[#0d1d35] border border-blue-400/30 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+            <h3 class="text-white font-bold text-sm mb-4"><i class="fas fa-pen mr-2 text-blue-400"></i>Edit Trade ${tradeNum}</h3>
+            <div class="space-y-3">
+                ${fields.map(f => `
+                    <div>
+                        <label class="text-[10px] text-gray-400 font-bold block mb-1">${f.label}</label>
+                        <input id="edit-${f.key}" value="${f.val}" class="w-full bg-[#0a1628] border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-400/60">
+                    </div>
+                `).join('')}
+            </div>
+            <div class="flex gap-2 mt-5">
+                <button onclick="saveTradeEdit('${method}','${tradeNum}')" class="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold text-sm rounded-lg transition-all">Save</button>
+                <button onclick="document.getElementById('edit-trade-modal').remove()" class="px-4 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all">Cancel</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+function saveTradeEdit(method, tradeNum) {
+    const trade = state[method].allTrades.find(t => t.tradeNum === tradeNum);
+    if (!trade) return;
+    trade.pointsPL = parseFloat(document.getElementById('edit-pointsPL').value) || 0;
+    trade.dollarPL = parseFloat(document.getElementById('edit-dollarPL').value) || 0;
+    trade.entryPrice = parseFloat(document.getElementById('edit-entryPrice').value) || 0;
+    trade.stopPrice = parseFloat(document.getElementById('edit-stopPrice').value) || 0;
+    trade.riskPoints = parseFloat(document.getElementById('edit-riskPoints').value) || 0;
+    trade.direction = document.getElementById('edit-direction').value || trade.direction;
+    trade.riskDollars = trade.riskPoints * (method === 'discord' ? DISCORD_PPT : ECFS_PPT);
+    trade.isWin = trade.dollarPL > 0;
+    trade.outcome = trade.isWin ? 'Win' : 'Loss';
+    // Persist
+    try { localStorage.setItem(`${method}-trades`, JSON.stringify(state[method].allTrades)); } catch (e) {}
+    const snapshots = generateWeeklySnapshots(state[method].allTrades, method,
+        method === 'discord' ? DISCORD_RISK : ECFS_RISK,
+        method === 'discord' ? DISCORD_PPT : ECFS_PPT,
+        method === 'discord' ? DISCORD_STARTING_BALANCE : ECFS_STARTING_BALANCE);
+    state[method].snapshots = snapshots;
+    try { localStorage.setItem(`${method}-snapshots`, JSON.stringify(snapshots)); } catch (e) {}
+    refreshDashboard(method);
+    document.getElementById('edit-trade-modal').remove();
+    // Async DB sync
+    (async () => {
+        try {
+            await DB.saveTrades(`${method}_trades`, state[method].allTrades, `${method}-edit-${Date.now()}`);
+            await DB.saveAllWeeklySnapshots(method, snapshots);
+        } catch (e) { console.warn('DB sync after edit failed:', e); }
+    })();
 }
 
 // ===== EDGE EXPLANATION BUILDER =====
@@ -2853,9 +2955,14 @@ document.addEventListener('DOMContentLoaded', async function () {
         try {
             const resp = await fetch('discord_trades.json');
             if (resp.ok) {
-                const trades = await resp.json();
-                if (trades.length > 0) {
-                    trades.forEach(t => t._isSample = true);
+                const rawTrades = await resp.json();
+                if (rawTrades.length > 0) {
+                    // JSON file uses snake_case keys — map to camelCase like DB rows
+                    const trades = rawTrades.map(t => {
+                        const mapped = (t.trade_num !== undefined) ? dbRowToDiscordTrade(t) : t;
+                        mapped._isSample = true;
+                        return mapped;
+                    });
                     state.discord.allTrades = trades;
                     state.discord.isSampleData = true;
                     const weeks = getWeeksList(trades);
