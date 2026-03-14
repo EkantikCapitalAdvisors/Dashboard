@@ -1697,6 +1697,13 @@
         // Show admin tools only when ?admin is in the URL
         if (new URLSearchParams(window.location.search).has('admin')) {
             document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+            // Auto-expand detailed dashboard so trade log (with edit/delete) is visible
+            setTimeout(() => {
+                const panel = document.getElementById('detailed-dashboard-discord');
+                if (panel && panel.classList.contains('hidden')) {
+                    toggleDetailedDashboard('discord');
+                }
+            }, 500);
         }
     });
     </script>
