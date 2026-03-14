@@ -2914,7 +2914,10 @@ document.addEventListener('DOMContentLoaded', async function () {
                     showUploadSuccess('discord', `${lsTrades.length} trades · ${missing.length} synced to database`);
                     recordSyncTime('discord');
                 }
-            } catch (e) { console.warn('[DB sync] Discord background sync failed:', e); }
+            } catch (e) {
+                console.warn('[DB sync] Discord background sync failed:', e);
+                showUploadWarning('discord', 'Background sync failed — trades saved locally only.');
+            }
         })();
     }
 
