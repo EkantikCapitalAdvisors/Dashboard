@@ -486,6 +486,10 @@ function parseDiscordExcel(data) {
         // Skip rows that carry no trade data at all (spacer / summary rows)
         if (netDollar === 0 && netPoints === 0 && !row[2]) continue;
 
+        // Skip rows without a valid direction (Buy/Sell) — these are summary/total rows
+        const dirNorm = String(direction).toLowerCase().trim();
+        if (!dirNorm.startsWith('buy') && !dirNorm.startsWith('sell') && !dirNorm.startsWith('b') && !dirNorm.startsWith('s')) continue;
+
         // Derive outcome from dollar P&L if the outcome column is absent or shorthand (W/L)
         const outcomeRaw = String(row[9] || '').toLowerCase().trim();
         const isWin = outcomeRaw.includes('win') || outcomeRaw === 'w' || outcomeRaw === 'yes'
