@@ -457,5 +457,22 @@
     "outcome": "Loss",
     "trade_date": "3/12/2026",
     "upload_batch": "discord-1773589774228"
+  },
+  {
+    "week_key": "03/09/2026",
+    "datetime": "3/13/2026 08:18",
+    "trade_num": "F27",
+    "direction": "Sell",
+    "entry_price": 6711,
+    "stop_price": 6713.5,
+    "trailing_profit": "—",
+    "points_pl": -2.5,
+    "risk_points": 2.5,
+    "dollar_pl": -125,
+    "risk_dollars": 125,
+    "is_win": false,
+    "outcome": "Loss",
+    "trade_date": "3/13/2026",
+    "upload_batch": "discord-sync-1773589842867"
   }
 ]
