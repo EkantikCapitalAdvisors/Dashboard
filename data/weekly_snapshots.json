@@ -164,19 +164,19 @@
   {
     "method": "discord",
     "week_key": "03/09/2026",
-    "net_pl": 1175,
-    "net_points": 23.5,
-    "return_pct": 5.875,
-    "total_trades": 4,
+    "net_pl": 875,
+    "net_points": 17.5,
+    "return_pct": 4.375,
+    "total_trades": 5,
     "win_count": 4,
-    "loss_count": 0,
-    "win_rate": 100,
-    "profit_factor": 999,
-    "ev_planned_r": 58.75,
-    "ev_actual_r": 70.1492537313433,
-    "max_dd": 0,
-    "cumulative_pl": 2900,
-    "cumulative_balance": 22900,
-    "cumulative_return": 14.499999999999998
+    "loss_count": 1,
+    "win_rate": 80,
+    "profit_factor": 3.9166666666666665,
+    "ev_planned_r": 35,
+    "ev_actual_r": 41.7910447761194,
+    "max_dd": 300,
+    "cumulative_pl": 2600,
+    "cumulative_balance": 22600,
+    "cumulative_return": 13
   }
 ]
