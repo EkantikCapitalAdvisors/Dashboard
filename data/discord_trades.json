@@ -440,5 +440,22 @@
     "outcome": "Win",
     "trade_date": "3/10/2026",
     "upload_batch": "discord-1773166078245"
+  },
+  {
+    "week_key": "03/09/2026",
+    "datetime": "3/12/2026 08:42",
+    "trade_num": "F26",
+    "direction": "Buy",
+    "entry_price": 6722,
+    "stop_price": 0,
+    "trailing_profit": "—",
+    "points_pl": -6,
+    "risk_points": 0,
+    "dollar_pl": -300,
+    "risk_dollars": 0,
+    "is_win": false,
+    "outcome": "Loss",
+    "trade_date": "3/12/2026",
+    "upload_batch": "discord-1773589774228"
   }
 ]
