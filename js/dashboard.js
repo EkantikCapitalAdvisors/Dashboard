@@ -668,6 +668,29 @@ function toggleDetailedDashboard(method) {
     }
 }
 
+function toggleEdgeSection() {
+    const panel = document.getElementById('edge-theory-section');
+    const icon = document.getElementById('icon-edge-theory');
+    if (!panel) return;
+
+    const isHidden = panel.classList.contains('hidden');
+    panel.classList.toggle('hidden');
+
+    if (icon) {
+        icon.classList.toggle('fa-chevron-down', !isHidden);
+        icon.classList.toggle('fa-chevron-up', isHidden);
+    }
+
+    if (isHidden) {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(() => {
+            Object.keys(chartInstances).forEach(key => {
+                try { chartInstances[key].resize(); } catch(e) {}
+            });
+        }, 300);
+    }
+}
+
 // ===== MAIN REFRESH =====
 function refreshDashboard(method) {
     const allTrades = state[method].allTrades;
@@ -1021,6 +1044,24 @@ function renderDiscord(k, trades, allK, allTrades) {
         } else {
             discordLastUpdEl.textContent = getLastTradeDate(allTrades) || '—';
         }
+    }
+
+    // Hero Badges (always-visible, all-time data)
+    const badgeReturn = document.getElementById('hero-badge-return');
+    const badgeDD = document.getElementById('hero-badge-dd');
+    const badgeMonths = document.getElementById('hero-badge-months');
+    if (badgeReturn) {
+        const retPct = allK.returnPct;
+        badgeReturn.textContent = `${retPct >= 0 ? '+' : ''}${retPct.toFixed(1)}%`;
+        badgeReturn.className = `text-2xl font-bold ${retPct >= 0 ? 'text-green-400' : 'text-red-400'}`;
+    }
+    if (badgeDD) {
+        badgeDD.textContent = `-${allK.maxDDPct.toFixed(1)}%`;
+    }
+    if (badgeMonths) {
+        const monthSet = new Set();
+        allTrades.forEach(t => { if (t.date) monthSet.add(t.date.getFullYear() + '-' + t.date.getMonth()); });
+        badgeMonths.textContent = monthSet.size;
     }
 
     setColor('discord-hero-pnl', fmtDollar(k.netPL), k.netPL);
