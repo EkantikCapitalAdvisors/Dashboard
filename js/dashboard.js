@@ -2796,12 +2796,22 @@ function deleteTrade(method, tradeNum) {
     state[method].snapshots = snapshots;
     try { localStorage.setItem(`${method}-snapshots`, JSON.stringify(snapshots)); } catch (e) {}
     refreshDashboard(method);
-    // Async DB sync
+  // Async DB sync
     (async () => {
+        const token = DB._token();
+        if (!token) {
+            showUploadWarning(method, `Trade ${tradeNum} deleted locally only — set a GitHub token (⚙ GitHub Sync) to persist to database.`);
+            return;
+        }
         try {
+            showUploadProgress(method, `Syncing deletion of ${tradeNum} to database…`);
             await DB.saveTrades(`${method}_trades`, trades, `${method}-delete-${Date.now()}`);
             await DB.saveAllWeeklySnapshots(method, snapshots);
-        } catch (e) { console.warn('DB sync after delete failed:', e); }
+            showUploadSuccess(method, `Trade ${tradeNum} deleted from database ✓`);
+        } catch (e) {
+            console.warn('DB sync after delete failed:', e);
+            showUploadWarning(method, `Trade ${tradeNum} deleted locally — database sync failed: ${e.message}`);
+        }
     })();
 }
 
@@ -2844,33 +2854,50 @@ function editTrade(method, tradeNum) {
 function saveTradeEdit(method, tradeNum) {
     const trade = state[method].allTrades.find(t => t.tradeNum === tradeNum);
     if (!trade) return;
-    trade.pointsPL = parseFloat(document.getElementById('edit-pointsPL').value) || 0;
-    trade.dollarPL = parseFloat(document.getElementById('edit-dollarPL').value) || 0;
-    trade.entryPrice = parseFloat(document.getElementById('edit-entryPrice').value) || 0;
-    trade.stopPrice = parseFloat(document.getElementById('edit-stopPrice').value) || 0;
-    trade.riskPoints = parseFloat(document.getElementById('edit-riskPoints').value) || 0;
-    trade.direction = document.getElementById('edit-direction').value || trade.direction;
-    trade.riskDollars = trade.riskPoints * (method === 'discord' ? DISCORD_PPT : ECFS_PPT);
-    trade.isWin = trade.dollarPL > 0;
-    trade.outcome = trade.isWin ? 'Win' : 'Loss';
-    // Persist
-    try { localStorage.setItem(`${method}-trades`, JSON.stringify(state[method].allTrades)); } catch (e) {}
-    const snapshots = generateWeeklySnapshots(state[method].allTrades, method,
-        method === 'discord' ? DISCORD_RISK : ECFS_RISK,
-        method === 'discord' ? DISCORD_PPT : ECFS_PPT,
-        method === 'discord' ? DISCORD_STARTING_BALANCE : ECFS_STARTING_BALANCE);
-    state[method].snapshots = snapshots;
-    try { localStorage.setItem(`${method}-snapshots`, JSON.stringify(snapshots)); } catch (e) {}
-    refreshDashboard(method);
-    document.getElementById('edit-trade-modal').remove();
+    try {
+        trade.pointsPL = parseFloat(document.getElementById('edit-pointsPL').value) || 0;
+        trade.dollarPL = parseFloat(document.getElementById('edit-dollarPL').value) || 0;
+        trade.entryPrice = parseFloat(document.getElementById('edit-entryPrice').value) || 0;
+        trade.stopPrice = parseFloat(document.getElementById('edit-stopPrice').value) || 0;
+        trade.riskPoints = parseFloat(document.getElementById('edit-riskPoints').value) || 0;
+        trade.direction = document.getElementById('edit-direction').value || trade.direction;
+        trade.riskDollars = trade.riskPoints * (method === 'discord' ? DISCORD_PPT : ECFS_PPT);
+        trade.isWin = trade.dollarPL > 0;
+        trade.outcome = trade.isWin ? 'Win' : 'Loss';
+        // Persist to localStorage
+        try { localStorage.setItem(`${method}-trades`, JSON.stringify(state[method].allTrades)); } catch (e) {}
+        const snapshots = generateWeeklySnapshots(state[method].allTrades, method,
+            method === 'discord' ? DISCORD_RISK : ECFS_RISK,
+            method === 'discord' ? DISCORD_PPT : ECFS_PPT,
+            method === 'discord' ? DISCORD_STARTING_BALANCE : ECFS_STARTING_BALANCE);
+        state[method].snapshots = snapshots;
+        try { localStorage.setItem(`${method}-snapshots`, JSON.stringify(snapshots)); } catch (e) {}
+        refreshDashboard(method);
+        document.getElementById('edit-trade-modal').remove();
+    } catch (err) {
+        console.error('saveTradeEdit local update failed:', err);
+        showUploadError(method, `Edit failed: ${err.message}`);
+        return;
+    }
     // Async DB sync
     (async () => {
+        const token = DB._token();
+        if (!token) {
+            showUploadWarning(method, `Trade ${tradeNum} edited locally only — set a GitHub token (⚙ GitHub Sync) to persist edits to database.`);
+            return;
+        }
         try {
+            showUploadProgress(method, `Saving edit for ${tradeNum} to database…`);
             await DB.saveTrades(`${method}_trades`, state[method].allTrades, `${method}-edit-${Date.now()}`);
             await DB.saveAllWeeklySnapshots(method, snapshots);
-        } catch (e) { console.warn('DB sync after edit failed:', e); }
+            showUploadSuccess(method, `Trade ${tradeNum} saved to database ✓`);
+        } catch (e) {
+            console.warn('DB sync after edit failed:', e);
+            showUploadWarning(method, `Trade ${tradeNum} edited locally — database sync failed: ${e.message}`);
+        }
     })();
 }
+
 
 // ===== EDGE EXPLANATION BUILDER =====
 function buildEdgeExplanation(k) {
