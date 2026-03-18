@@ -178,5 +178,23 @@
     "cumulative_pl": 2475,
     "cumulative_balance": 22475,
     "cumulative_return": 12.375
+  },
+  {
+    "method": "discord",
+    "week_key": "03/16/2026",
+    "net_pl": 350,
+    "net_points": 7,
+    "return_pct": 1.7500000000000002,
+    "total_trades": 1,
+    "win_count": 1,
+    "loss_count": 0,
+    "win_rate": 100,
+    "profit_factor": 999,
+    "ev_planned_r": 70,
+    "ev_actual_r": 70,
+    "max_dd": 0,
+    "cumulative_pl": 2825,
+    "cumulative_balance": 22825,
+    "cumulative_return": 14.124999999999998
   }
 ]
