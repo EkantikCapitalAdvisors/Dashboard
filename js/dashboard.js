@@ -1069,7 +1069,6 @@ function renderDiscord(k, trades, allK, allTrades) {
         }
     } catch(e) { console.warn('Hero badge error:', e); }
 
-
     setColor('discord-hero-pnl', fmtDollar(k.netPL), k.netPL);
     document.getElementById('discord-hero-pnl-sub').textContent = `${k.totalTrades} trade${k.totalTrades !== 1 ? 's' : ''}`;
     setColor('discord-hero-return', fmtPct(k.returnPct), k.returnPct);
