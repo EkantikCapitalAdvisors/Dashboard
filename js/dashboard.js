@@ -1047,22 +1047,28 @@ function renderDiscord(k, trades, allK, allTrades) {
     }
 
     // Hero Badges (always-visible, all-time data)
-    const badgeReturn = document.getElementById('hero-badge-return');
-    const badgeDD = document.getElementById('hero-badge-dd');
-    const badgeMonths = document.getElementById('hero-badge-months');
-    if (badgeReturn) {
-        const retPct = allK.returnPct;
-        badgeReturn.textContent = `${retPct >= 0 ? '+' : ''}${retPct.toFixed(1)}%`;
-        badgeReturn.className = `text-2xl font-bold ${retPct >= 0 ? 'text-green-400' : 'text-red-400'}`;
-    }
-    if (badgeDD) {
-        badgeDD.textContent = `-${allK.maxDDPct.toFixed(1)}%`;
-    }
-    if (badgeMonths) {
-        const monthSet = new Set();
-        allTrades.forEach(t => { if (t.date) monthSet.add(t.date.getFullYear() + '-' + t.date.getMonth()); });
-        badgeMonths.textContent = monthSet.size;
-    }
+    try {
+        const badgeReturn = document.getElementById('hero-badge-return');
+        const badgeDD = document.getElementById('hero-badge-dd');
+        const badgeMonths = document.getElementById('hero-badge-months');
+        if (badgeReturn) {
+            const retPct = allK.returnPct || 0;
+            badgeReturn.textContent = `${retPct >= 0 ? '+' : ''}${retPct.toFixed(1)}%`;
+            badgeReturn.className = `text-2xl font-bold ${retPct >= 0 ? 'text-green-400' : 'text-red-400'}`;
+        }
+        if (badgeDD) {
+            badgeDD.textContent = `-${(allK.maxDDPct || 0).toFixed(1)}%`;
+        }
+        if (badgeMonths) {
+            const monthSet = new Set();
+            allTrades.forEach(t => {
+                const d = t.date ? new Date(t.date) : null;
+                if (d && !isNaN(d)) monthSet.add(d.getFullYear() + '-' + d.getMonth());
+            });
+            badgeMonths.textContent = monthSet.size || '—';
+        }
+    } catch(e) { console.warn('Hero badge error:', e); }
+
 
     setColor('discord-hero-pnl', fmtDollar(k.netPL), k.netPL);
     document.getElementById('discord-hero-pnl-sub').textContent = `${k.totalTrades} trade${k.totalTrades !== 1 ? 's' : ''}`;
