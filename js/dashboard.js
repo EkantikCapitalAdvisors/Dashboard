@@ -2878,7 +2878,7 @@ function saveTradeEdit(method, tradeNum) {
         showUploadError(method, `Edit failed: ${err.message}`);
         return;
     }
-    // Async DB sync
+    // Async DB sync — persist to GitHub so edits survive across sessions/devices
     (async () => {
         const token = DB._token();
         if (!token) {
