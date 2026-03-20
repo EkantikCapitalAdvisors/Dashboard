@@ -1069,7 +1069,6 @@ function renderDiscord(k, trades, allK, allTrades) {
         }
     } catch(e) { console.warn('Hero badge error:', e); }
 
-
     setColor('discord-hero-pnl', fmtDollar(k.netPL), k.netPL);
     document.getElementById('discord-hero-pnl-sub').textContent = `${k.totalTrades} trade${k.totalTrades !== 1 ? 's' : ''}`;
     setColor('discord-hero-return', fmtPct(k.returnPct), k.returnPct);
@@ -2854,6 +2853,7 @@ function editTrade(method, tradeNum) {
 function saveTradeEdit(method, tradeNum) {
     const trade = state[method].allTrades.find(t => t.tradeNum === tradeNum);
     if (!trade) return;
+    let snapshots;
     try {
         trade.pointsPL = parseFloat(document.getElementById('edit-pointsPL').value) || 0;
         trade.dollarPL = parseFloat(document.getElementById('edit-dollarPL').value) || 0;
@@ -2866,7 +2866,7 @@ function saveTradeEdit(method, tradeNum) {
         trade.outcome = trade.isWin ? 'Win' : 'Loss';
         // Persist to localStorage
         try { localStorage.setItem(`${method}-trades`, JSON.stringify(state[method].allTrades)); } catch (e) {}
-        const snapshots = generateWeeklySnapshots(state[method].allTrades, method,
+        snapshots = generateWeeklySnapshots(state[method].allTrades, method,
             method === 'discord' ? DISCORD_RISK : ECFS_RISK,
             method === 'discord' ? DISCORD_PPT : ECFS_PPT,
             method === 'discord' ? DISCORD_STARTING_BALANCE : ECFS_STARTING_BALANCE);
@@ -2879,7 +2879,7 @@ function saveTradeEdit(method, tradeNum) {
         showUploadError(method, `Edit failed: ${err.message}`);
         return;
     }
-    // Async DB sync
+    // Async DB sync — persist to GitHub so edits survive across sessions/devices
     (async () => {
         const token = DB._token();
         if (!token) {
@@ -2891,6 +2891,7 @@ function saveTradeEdit(method, tradeNum) {
             await DB.saveTrades(`${method}_trades`, state[method].allTrades, `${method}-edit-${Date.now()}`);
             await DB.saveAllWeeklySnapshots(method, snapshots);
             showUploadSuccess(method, `Trade ${tradeNum} saved to database ✓`);
+            recordSyncTime(method);
         } catch (e) {
             console.warn('DB sync after edit failed:', e);
             showUploadWarning(method, `Trade ${tradeNum} edited locally — database sync failed: ${e.message}`);
@@ -2972,20 +2973,31 @@ document.addEventListener('DOMContentLoaded', async function () {
         } catch (e) { console.error('Error loading Discord data:', e); }
     }
 
-    // Background DB sync for Discord trades
+    // Background DB sync for Discord trades — push missing AND edited trades
     if (discordLoaded && state.discord.allTrades.length > 0 && !state.discord.isSampleData) {
         (async () => {
             try {
                 const lsTrades = state.discord.allTrades.filter(t => !t._isSample);
                 if (lsTrades.length === 0) return;
                 const dbRows = await DB.loadTrades('discord_trades');
-                const dbNums = new Set(dbRows.map(r => r.trade_num));
-                const missing = lsTrades.filter(t => !dbNums.has(t.tradeNum));
-                if (missing.length > 0) {
-                    console.log(`[DB sync] Pushing ${missing.length} missing Discord trades to DB`);
-                    showUploadProgress('discord', `Syncing ${missing.length} missing trades to database…`);
-                    await DB.saveTrades('discord_trades', missing, `discord-sync-${Date.now()}`);
-                    showUploadSuccess('discord', `${lsTrades.length} trades · ${missing.length} synced to database`);
+                const dbByNum = new Map(dbRows.map(r => [r.trade_num, r]));
+                // Find trades missing from DB or with edited values
+                const needsSync = lsTrades.filter(t => {
+                    const db = dbByNum.get(t.tradeNum);
+                    if (!db) return true; // missing from DB
+                    // Check if key fields were edited
+                    return db.points_pl !== t.pointsPL ||
+                           db.dollar_pl !== t.dollarPL ||
+                           db.entry_price !== t.entryPrice ||
+                           db.stop_price !== (t.stopPrice || 0) ||
+                           db.risk_points !== t.riskPoints ||
+                           db.direction !== t.direction;
+                });
+                if (needsSync.length > 0) {
+                    console.log(`[DB sync] Syncing ${needsSync.length} Discord trades to DB (missing or edited)`);
+                    showUploadProgress('discord', `Syncing ${needsSync.length} trades to database…`);
+                    await DB.saveTrades('discord_trades', needsSync, `discord-sync-${Date.now()}`);
+                    showUploadSuccess('discord', `${lsTrades.length} trades · ${needsSync.length} synced to database`);
                     recordSyncTime('discord');
                 }
             } catch (e) {
