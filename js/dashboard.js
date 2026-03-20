@@ -11,6 +11,56 @@ const state = {
 
 const chartInstances = {};
 
+// Real SPY daily close prices (loaded from data/spy_daily.json)
+let spyDailyData = null;
+
+async function loadSpyDailyData() {
+    try {
+        const url = `data/spy_daily.json?cb=${Date.now()}`;
+        const resp = await fetch(url);
+        if (resp.ok) {
+            spyDailyData = await resp.json();
+            console.log(`[SPY] Loaded ${spyDailyData.length} daily prices`);
+        }
+    } catch (e) {
+        console.warn('[SPY] Could not load spy_daily.json:', e);
+    }
+}
+
+// Interpolate SPY price for a given date using real daily data
+function getSpyPrice(dateStr) {
+    if (!spyDailyData || spyDailyData.length === 0) return null;
+    const targetMs = new Date(dateStr).getTime();
+    // Find surrounding data points
+    let before = null, after = null;
+    for (const d of spyDailyData) {
+        const ms = new Date(d.date).getTime();
+        if (ms <= targetMs) before = d;
+        if (ms >= targetMs && !after) after = d;
+    }
+    if (!before && !after) return null;
+    if (!before) return after.close;
+    if (!after) return before.close;
+    if (before.date === after.date) return before.close;
+    // Linear interpolation
+    const beforeMs = new Date(before.date).getTime();
+    const afterMs = new Date(after.date).getTime();
+    const ratio = (targetMs - beforeMs) / (afterMs - beforeMs);
+    return before.close + (after.close - before.close) * ratio;
+}
+
+// Calculate max drawdown from peak for an array of values
+function calcMaxDrawdownPct(values) {
+    let peak = values[0];
+    let maxDD = 0;
+    for (const v of values) {
+        if (v > peak) peak = v;
+        const dd = (v - peak) / peak;
+        if (dd < maxDD) maxDD = dd;
+    }
+    return maxDD * 100; // as percentage (negative)
+}
+
 // ===== FILE UPLOAD HANDLERS =====
 async function handleCSVUpload(event, method) {
     const file = event.target.files[0];
@@ -1491,14 +1541,32 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
         tradeLabels.push(`${t.direction || ''} ${pl}`);
     });
 
-    // S&P 500 over the same date range (calendar-day interpolation)
-    const spyDailyRate = Math.pow(1.146, 1 / 365) - 1;
-    const spyValues = equityValues.map((_, i) => {
-        if (i === 0) return startBalance;
-        const tradeMs = parseMs(sorted[i - 1].exitTime || sorted[i - 1].datetime);
-        const elapsedDays = (tradeMs - firstMs) / 86400000;
-        return parseFloat((startBalance * Math.pow(1 + spyDailyRate, elapsedDays)).toFixed(2));
-    });
+    // S&P 500 over the same date range — use real daily prices if available
+    const firstDateStr = sorted[0].exitTime || sorted[0].datetime;
+    const firstSpyPrice = spyDailyData ? getSpyPrice(firstDateStr) : null;
+    let spyValues;
+    if (firstSpyPrice && spyDailyData) {
+        // Real SPY data: scale to starting balance
+        spyValues = equityValues.map((_, i) => {
+            if (i === 0) {
+                const preFirstPrice = getSpyPrice(firstDateStr);
+                return preFirstPrice ? startBalance : startBalance;
+            }
+            const tradeDateStr = sorted[i - 1].exitTime || sorted[i - 1].datetime;
+            const spyPrice = getSpyPrice(tradeDateStr);
+            if (!spyPrice || !firstSpyPrice) return startBalance;
+            return parseFloat((startBalance * (spyPrice / firstSpyPrice)).toFixed(2));
+        });
+    } else {
+        // Fallback: smooth exponential model (14.6% annualized)
+        const spyDailyRate = Math.pow(1.146, 1 / 365) - 1;
+        spyValues = equityValues.map((_, i) => {
+            if (i === 0) return startBalance;
+            const tradeMs = parseMs(sorted[i - 1].exitTime || sorted[i - 1].datetime);
+            const elapsedDays = (tradeMs - firstMs) / 86400000;
+            return parseFloat((startBalance * Math.pow(1 + spyDailyRate, elapsedDays)).toFixed(2));
+        });
+    }
 
     // Summary cards
     const finalBalance = equityValues[equityValues.length - 1];
@@ -1507,8 +1575,21 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
     const spyReturnPct = ((finalSpy - startBalance) / startBalance * 100);
     const fmtBal = (v) => `$${v.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
 
+    const spyRetSign = spyReturnPct >= 0 ? '+' : '';
+    const spyRetColor = spyReturnPct >= 0 ? '#9ca3af' : '#f87171';
     setH(`growth-spy-${suffix}`,
-        `$20K → ${fmtBal(finalSpy)} <span style="color:#9ca3af;font-size:9px;">(+${spyReturnPct.toFixed(1)}%)</span>`);
+        `$20K → ${fmtBal(finalSpy)} <span style="color:${spyRetColor};font-size:9px;">(${spyRetSign}${spyReturnPct.toFixed(1)}%)</span>`);
+
+    // Dynamic S&P 500 drawdown from real data
+    const spyMaxDD = calcMaxDrawdownPct(spyValues);
+    const spyDDEl = document.getElementById(`growth-spy-dd-${suffix}`);
+    if (spyDDEl) {
+        if (spyMaxDD < -0.1) {
+            spyDDEl.innerHTML = `<i class="fas fa-exclamation-triangle mr-0.5"></i>Max drawdown: ${spyMaxDD.toFixed(1)}%`;
+        } else {
+            spyDDEl.innerHTML = `<i class="fas fa-check-circle mr-0.5"></i>No significant drawdown`;
+        }
+    }
     setH(`growth-discord-${suffix}`,
         `$20K → ${fmtBal(finalBalance)} <span style="${returnPct >= 0 ? 'color:#34d399' : 'color:#f87171'};font-size:9px;">(${returnPct >= 0 ? '+' : ''}${returnPct.toFixed(1)}%)</span>`);
 
@@ -1531,12 +1612,12 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
     }
 
     // Subtitle
-    const firstDateStr = fmtDate(sorted[0].exitTime || sorted[0].datetime);
+    const firstDateFmt = fmtDate(sorted[0].exitTime || sorted[0].datetime);
     const lastDateStr  = fmtDate(sorted[sorted.length - 1].exitTime || sorted[sorted.length - 1].datetime);
     setH(`growth-subtitle-${suffix}`,
         `Actual realized P&L on <strong style="color:#60a5fa;">$20,000</strong> account · ` +
         `<strong style="color:#60a5fa;">${trades.length} trades</strong> · ` +
-        `<strong style="color:#60a5fa;">${firstDateStr}</strong> to <strong style="color:#60a5fa;">${lastDateStr}</strong>. ` +
+        `<strong style="color:#60a5fa;">${firstDateFmt}</strong> to <strong style="color:#60a5fa;">${lastDateStr}</strong>. ` +
         `S&P 500 shown as benchmark over the same period. No projections.`
     );
 
@@ -2949,6 +3030,9 @@ function setColor(elId, text, value) {
 
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', async function () {
+    // Load real SPY daily prices early (non-blocking)
+    await loadSpyDailyData();
+
     updateGitHubSyncIndicators();
     updateSyncStatus('discord');
     showSkeletonKPIs('discord');
