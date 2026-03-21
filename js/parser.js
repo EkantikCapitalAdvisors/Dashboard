@@ -7,6 +7,7 @@ const ECFS_RISK = 100;       // $100 per trade (2% of $5k)
 const ECFS_PPT = 5;          // $5 per point (MES)
 const DISCORD_RISK = 500;    // $500/day (2.5% daily risk on $20k)
 const DISCORD_PPT = 50;      // $50 per point (ES)
+const DEFAULT_STOP_POINTS = 10; // Default stop distance when no stop is specified
 const STARTING_BALANCE = 5000;  // $5,000 portfolio for ECFS Active (2% risk per trade)
 const DISCORD_STARTING_BALANCE = 20000; // $20,000 portfolio for ECFS Predisposal (2.5% daily risk)
 
@@ -222,6 +223,9 @@ function dbRowToECFSTrade(row) {
 }
 
 function dbRowToDiscordTrade(row) {
+    const riskPts = row.risk_points || 0;
+    const riskDlr = row.risk_dollars || 0;
+    const needsDefault = riskDlr === 0 || riskPts === 0;
     return {
         datetime: row.datetime,
         tradeNum: row.trade_num,
@@ -230,9 +234,9 @@ function dbRowToDiscordTrade(row) {
         stopPrice: row.stop_price,
         trailingProfit: row.trailing_profit,
         pointsPL: row.points_pl,
-        riskPoints: row.risk_points,
+        riskPoints: needsDefault ? DEFAULT_STOP_POINTS : riskPts,
         dollarPL: row.dollar_pl,
-        riskDollars: row.risk_dollars,
+        riskDollars: needsDefault ? DEFAULT_STOP_POINTS * DISCORD_PPT : riskDlr,
         isWin: row.is_win,
         outcome: row.outcome,
         date: row.trade_date,
@@ -437,7 +441,8 @@ function parseDiscordAlerts(text, datetimeLocal) {
         // Skip incomplete records (must have entry price and a result)
         if (t.entryPrice === undefined || t.pointsPL === undefined) continue;
 
-        const riskPoints = t.stopPrice != null ? Math.abs(t.entryPrice - t.stopPrice) : 0;
+        let riskPoints = t.stopPrice != null && t.stopPrice !== 0 ? Math.abs(t.entryPrice - t.stopPrice) : 0;
+        if (riskPoints === 0) riskPoints = DEFAULT_STOP_POINTS;
         const dollarPL   = t.pointsPL * DISCORD_PPT;
         const isWin      = t.pointsPL > 0;
 
@@ -480,7 +485,7 @@ function parseDiscordExcel(data) {
         // Col H (row[7]) is risk points (may be blank for Buy rows).
         const direction = row[2] || '';
         const netPoints = parseFloat(row[6]) || 0;
-        const riskPoints = parseFloat(row[7]) || 0;
+        const riskPoints = parseFloat(row[7]) || DEFAULT_STOP_POINTS;
         const netDollar = parseFloat(row[8]) || 0;
 
         // Skip rows that carry no trade data at all (spacer / summary rows)
@@ -572,7 +577,15 @@ function extractDate(datetime) {
 // ===== KPI CALCULATOR =====
 function calculateKPIs(trades, riskBudget, pointMultiplier, startingBalance = STARTING_BALANCE) {
     if (!trades || trades.length === 0) return null;
-    
+
+    // Apply default 10-point stop for trades without risk data
+    trades.forEach(t => {
+        if (!t.riskDollars || t.riskDollars === 0) {
+            t.riskPoints = DEFAULT_STOP_POINTS;
+            t.riskDollars = DEFAULT_STOP_POINTS * pointMultiplier;
+        }
+    });
+
     const totalTrades = trades.length;
     const wins = trades.filter(t => t.isWin);
     const losses = trades.filter(t => !t.isWin);
@@ -618,21 +631,21 @@ function calculateKPIs(trades, riskBudget, pointMultiplier, startingBalance = ST
     const avgLossCut = lossesWithRisk.length > 0 ? lossesWithRisk.reduce((s, t) => s + (Math.abs(t.dollarPL) / t.riskDollars), 0) / lossesWithRisk.length : 0;
     
     // Drawdown
-    let cumPL = 0, peak = 0, maxDD = 0, currentDD = 0;
+    let cumPL = 0, peak = 0, maxDD = 0, currentDD = 0, peakAtMaxDD = 0;
     const equityCurve = [];
     const drawdownCurve = [];
-    
+
     trades.forEach(t => {
         cumPL += t.dollarPL;
         if (cumPL > peak) peak = cumPL;
         const dd = peak - cumPL;
-        if (dd > maxDD) maxDD = dd;
+        if (dd > maxDD) { maxDD = dd; peakAtMaxDD = peak; }
         equityCurve.push({ time: t.exitTime || t.datetime, cumPL, balance: startingBalance + cumPL });
         drawdownCurve.push({ time: t.exitTime || t.datetime, dd: -(peak - cumPL) });
     });
     currentDD = peak - cumPL;
-    
-    const maxDDPct = peak > 0 ? (maxDD / (startingBalance + peak) * 100) : (maxDD / startingBalance * 100);
+
+    const maxDDPct = peakAtMaxDD > 0 ? (maxDD / (startingBalance + peakAtMaxDD) * 100) : (maxDD / startingBalance * 100);
     const recoveryFactor = maxDD > 0 ? netPL / maxDD : Infinity;
     
     // Streaks
@@ -657,7 +670,7 @@ function calculateKPIs(trades, riskBudget, pointMultiplier, startingBalance = ST
         dailyPL[d].trades++;
         if (t.isWin) dailyPL[d].wins++;
     });
-    const tradingDays = Object.keys(dailyPL).sort();
+    const tradingDays = Object.keys(dailyPL).sort((a, b) => new Date(a) - new Date(b));
     const profitableDays = tradingDays.filter(d => dailyPL[d].pl > 0).length;
     
     // Weekly P&L
