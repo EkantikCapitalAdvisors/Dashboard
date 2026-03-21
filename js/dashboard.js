@@ -1753,16 +1753,19 @@ function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, pe
     const totalTrades = state[method].allTrades ? state[method].allTrades.length : 0;
 
     // Kelly Criterion: K% = W - (1-W)/R  where W = win rate, R = avg win / avg loss
-    // For user's strategy, compute from actual data; for benchmarks, use known industry estimates
+    // Half-Kelly is the industry-standard recommendation for smoother equity curves
+    const accountSize = method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
     const userKelly = (rr > 0 && winRate > 0) ? ((winRate / 100) - ((1 - winRate / 100) / rr)) * 100 : 0;
-    const userKellyLabel = userKelly > 0 ? `${userKelly.toFixed(1)}%` : 'N/A';
+    const halfKelly = userKelly / 2;
+    const halfKellyDollar = Math.round(accountSize * halfKelly / 100);
+    const userKellyLabel = halfKelly > 0 ? `${halfKelly.toFixed(1)}%` : 'N/A';
 
-    // Benchmark data with sortable Annual R values and Kelly %
+    // Benchmark data with sortable Annual R values and ½ Kelly
     const benchmarks = [
-        { name: 'Casino – American Roulette', edge: '+5.26%', trades: '≥2,400', annualR: 1500, annualRLabel: '≈1,500 R', kelly: '2.7%', kellyNote: 'W=47.4%, R=1:1', isYou: false },
-        { name: 'High-Frequency Market-Making', edge: '+0.017%', trades: '≈100,000+', annualR: 26, annualRLabel: '≈26 R', kelly: '~0.01%', kellyNote: 'tiny edge, massive volume', isYou: false },
-        { name: 'Stat-Arb Pairs / Baskets', edge: '+0.5–2%', trades: '200–500', annualR: 42, annualRLabel: '≈42 R', kelly: '3–8%', kellyNote: 'W≈55%, R≈1.2', isYou: false },
-        { name: 'Trend-Following CTAs', edge: '+0.5–1%', trades: '10–30', annualR: 56, annualRLabel: '≈56 R', kelly: '5–15%', kellyNote: 'W≈35%, R≈2.5', isYou: false },
+        { name: 'Casino – American Roulette', edge: '+5.26%', trades: '≥2,400', annualR: 1500, annualRLabel: '≈1,500 R', kelly: '1.4%', kellyNote: 'full K=2.7%', isYou: false },
+        { name: 'High-Frequency Market-Making', edge: '+0.017%', trades: '≈100,000+', annualR: 26, annualRLabel: '≈26 R', kelly: '~0.005%', kellyNote: 'full K≈0.01%', isYou: false },
+        { name: 'Stat-Arb Pairs / Baskets', edge: '+0.5–2%', trades: '200–500', annualR: 42, annualRLabel: '≈42 R', kelly: '1.5–4%', kellyNote: 'full K=3–8%', isYou: false },
+        { name: 'Trend-Following CTAs', edge: '+0.5–1%', trades: '10–30', annualR: 56, annualRLabel: '≈56 R', kelly: '2.5–7.5%', kellyNote: 'full K=5–15%', isYou: false },
         { name: 'Retail Day-Trader (median)', edge: 'negative', trades: '500+', annualR: -30, annualRLabel: '−30 R', kelly: '0%', kellyNote: 'negative edge', isYou: false },
         {
             name: strategyName,
@@ -1771,7 +1774,7 @@ function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, pe
             annualR: annualR,
             annualRLabel: `≈${annualR.toFixed(0)} R`,
             kelly: userKellyLabel,
-            kellyNote: `W=${winRate.toFixed(0)}%, R=${rr.toFixed(1)}`,
+            kellyNote: `$${halfKellyDollar.toLocaleString()}/trade`,
             isYou: true,
             periodLabel: periodLabel
         }
@@ -1807,7 +1810,7 @@ function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, pe
     // Footnote row — data-as-of and extrapolation note
     html += `<tr>
         <td colspan="5" class="px-3 py-2 text-center" style="border-top: 1px solid rgba(107,114,128,0.2);">
-            <span style="color: #6b7280; font-size: 10px;">Annual R is extrapolated from ${totalTrades} trades as of ${lastDate}. Kelly % = W − (1−W)/R — optimal fraction of capital per trade assuming full reinvestment. Updated weekly.</span>
+            <span style="color: #6b7280; font-size: 10px;">Annual R extrapolated from ${totalTrades} trades as of ${lastDate}. ½ Kelly = half of full Kelly (W − (1−W)/R) — recommended for smoother equity curves with ~75% of full Kelly growth. Updated weekly.</span>
         </td>
     </tr>`;
 
