@@ -1132,9 +1132,9 @@ function renderDiscord(k, trades, allK, allTrades) {
     document.getElementById('discord-hero-dd-sub').textContent = `-${k.maxDDPct.toFixed(2)}%`;
 
     // Edge
-    document.getElementById('discord-ev-hero-big').textContent = `${k.evPlannedR >= 0 ? '+' : ''}${k.evPlannedR.toFixed(1)}%R`;
-    document.getElementById('discord-ev-hero-sub').textContent = `${fmtDollar(k.evPerTrade)} per trade (2.5% daily risk)`;
-    document.getElementById('discord-ev-actual-risk').innerHTML = `<strong>Risk budget:</strong> $500/day (2.5%)`;
+    document.getElementById('discord-ev-hero-big').textContent = `${k.evActualR >= 0 ? '+' : ''}${k.evActualR.toFixed(1)}%R`;
+    document.getElementById('discord-ev-hero-sub').textContent = `${fmtDollar(k.evPerTrade)} per trade (avg risk: ${fmtDollar(k.avgRiskDollars)})`;
+    document.getElementById('discord-ev-actual-risk').innerHTML = `<strong>Avg realized risk:</strong> ${fmtDollar(k.avgRiskDollars)}/trade (${(k.avgRiskDollars / DISCORD_STARTING_BALANCE * 100).toFixed(1)}%)`;
 
     setColor('discord-edge-avgwin', fmtDollar(k.avgWinDollar), 1);
     document.getElementById('discord-edge-avgwin-pts').textContent = `+${k.avgWinPts.toFixed(2)} pts`;
@@ -1190,27 +1190,35 @@ function renderFoodChain(method, k, allK, allTrades) {
     container.classList.remove('hidden');
 
     // Constants
-    const riskBudget = method === 'active' ? ECFS_RISK : DISCORD_RISK;
+    const plannedRisk = method === 'active' ? ECFS_RISK : DISCORD_RISK;
     const ppt = method === 'active' ? ECFS_PPT : DISCORD_PPT;
     const instrument = method === 'active' ? 'MES' : 'ES';
     const accentColor = method === 'active' ? '#d4af37' : '#60a5fa';
+
+    // Use dynamic average realized risk instead of static budget
+    const riskBudget = allK.avgRiskDollars > 0 ? allK.avgRiskDollars : plannedRisk;
 
     // Current period label
     const period = state[method].currentPeriod;
     const periodLabel = period === 'weekly' ? 'This Week' : period === 'monthly' ? 'This Month' : 'All-Time';
 
     // --- Core metrics — always use ALL-TIME data for extrapolation regardless of selected period ---
-    const edgeR = allK.evPlannedR;
+    const edgeR = allK.evActualR;
     const edgePct = edgeR;
     const winRate = allK.winRate;
     const avgWin = allK.avgWinDollar;
     const avgLoss = Math.abs(allK.avgLossDollar);
     const rr = avgLoss > 0 ? avgWin / avgLoss : 0;
 
-    // Trades per month — derived from all-time trade frequency
-    const tradingDays = allK.tradingDays.length || 1;
-    const tradesPerDay = allK.totalTrades / tradingDays;
-    const tradesPerMonth = tradesPerDay * 21; // ~21 trading days per month
+    // Trades per month — derived from calendar span (not just active trading days)
+    const calendarDays = (() => {
+        const days = allK.tradingDays;
+        if (days.length < 2) return 30; // default to 1 month if insufficient data
+        const first = new Date(days[0]);
+        const last = new Date(days[days.length - 1]);
+        return Math.max(1, (last - first) / 86400000);
+    })();
+    const tradesPerMonth = allK.totalTrades / calendarDays * 30; // ~30 calendar days per month
     const tradesPerYear = tradesPerMonth * 12;
 
     // Annual R (EV in R per trade × trades per year)
@@ -1242,8 +1250,8 @@ function renderFoodChain(method, k, allK, allTrades) {
 
     // Summary callout: explicit math so the user knows exactly how Annual R was derived
     const strategyLabel = 'ECFS Predisposal (ES)';
-    const riskLabel = method === 'active' ? '$100' : '$500';
-    const dataAsOf = `<span style="color:#9ca3af;font-weight:normal;"><i class="fas fa-sync-alt" style="font-size:9px;margin-right:3px;"></i>Extrapolated from <strong>${allK.totalTrades} all-time trades</strong> as of ${lastTradeDate} · updated weekly with new data</span>`;
+    const riskLabel = `$${Math.round(riskBudget)}`;
+    const dataAsOf = `<span style="color:#9ca3af;font-weight:normal;"><i class="fas fa-sync-alt" style="font-size:9px;margin-right:3px;"></i>Extrapolated from <strong>${allK.totalTrades} all-time trades</strong> as of ${lastTradeDate} · avg realized risk: ${riskLabel} · updated weekly</span>`;
     setHTML(`${prefix}-summary-text`,
         `<strong style="color:${accentColor}">${strategyLabel}</strong> · All-Time: ` +
         `<strong>${edgeSign}${edgeR.toFixed(1)}%R</strong> edge/trade × ` +
@@ -1348,8 +1356,8 @@ function renderFoodChain(method, k, allK, allTrades) {
 
     // --- What R Means ---
     setEl(`${prefix}-annual-r-label`, `${annualR.toFixed(0)} R`);
-    setEl(`${prefix}-r-example1`, `For ${(riskBudget / accountSize * 100).toFixed(1)}% risk on $${(accountSize / 1000).toFixed(0)}K account, R = $${riskBudget}`);
-    setEl(`${prefix}-r-example2`, `${annualR.toFixed(0)} R × $${riskBudget} = $${Math.abs(annualR * riskBudget).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}/year at ${(riskBudget / accountSize * 100).toFixed(1)}% risk (extrapolated from all-time data as of ${lastTradeDate})`);
+    setEl(`${prefix}-r-example1`, `Avg realized risk on $${(accountSize / 1000).toFixed(0)}K account, 1R = $${Math.round(riskBudget)} (${(riskBudget / accountSize * 100).toFixed(1)}%)`);
+    setEl(`${prefix}-r-example2`, `${annualR.toFixed(0)} R × $${Math.round(riskBudget)} = $${Math.abs(annualR * riskBudget).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}/year at ${(riskBudget / accountSize * 100).toFixed(1)}% risk (extrapolated from all-time data as of ${lastTradeDate})`);
 
     // Key insight
     const edgeVsCasino = 5.26 > 0 ? (edgeR / 5.26).toFixed(1) : '—';
@@ -1385,9 +1393,12 @@ function computeAnnualRFromAllTrades(method) {
     const kpis = calculateKPIs(trades, risk, ppt, startBal);
     if (!kpis || kpis.totalTrades < 1) return 0;
     const evR = kpis.evPlannedR / 100;
-    const tradingDays = kpis.tradingDays.length || 1;
-    const tradesPerDay = kpis.totalTrades / tradingDays;
-    return evR * tradesPerDay * 21 * 12;
+    const days = kpis.tradingDays;
+    const calDays = days.length >= 2
+        ? Math.max(1, (new Date(days[days.length - 1]) - new Date(days[0])) / 86400000)
+        : 30;
+    const tradesPerMonth = kpis.totalTrades / calDays * 30;
+    return evR * tradesPerMonth * 12;
 }
 
 // ===== MONTE CARLO MAX DRAWDOWN SIMULATION =====
@@ -1397,18 +1408,23 @@ function monteCarloMaxDD(method, { simulations = 5000, percentile = 95 } = {}) {
     const trades = state[method].allTrades;
     if (!trades || trades.length < 5) return null; // need minimum sample
 
-    const riskBudget = method === 'active' ? ECFS_RISK : DISCORD_RISK;
+    const plannedRiskMC = method === 'active' ? ECFS_RISK : DISCORD_RISK;
     const startBal = method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
-    const kpis = calculateKPIs(trades, riskBudget, method === 'active' ? ECFS_PPT : DISCORD_PPT, startBal);
+    const kpis = calculateKPIs(trades, plannedRiskMC, method === 'active' ? ECFS_PPT : DISCORD_PPT, startBal);
     if (!kpis || kpis.totalTrades < 5) return null;
 
-    // Build outcome array in R-multiples (dollarPL / riskBudget)
+    // Use dynamic avg realized risk for R-multiples
+    const riskBudget = kpis.avgRiskDollars > 0 ? kpis.avgRiskDollars : plannedRiskMC;
+
+    // Build outcome array in R-multiples (dollarPL / avgRealizedRisk)
     const outcomesR = trades.map(t => t.dollarPL / riskBudget);
 
-    // Estimate trades per year from data
-    const tradingDays = kpis.tradingDays.length || 1;
-    const tradesPerDay = kpis.totalTrades / tradingDays;
-    const tradesPerYear = Math.round(tradesPerDay * 252);
+    // Estimate trades per year from calendar span
+    const mcDays = kpis.tradingDays;
+    const mcCalDays = mcDays.length >= 2
+        ? Math.max(1, (new Date(mcDays[mcDays.length - 1]) - new Date(mcDays[0])) / 86400000)
+        : 30;
+    const tradesPerYear = Math.round(kpis.totalTrades / mcCalDays * 365);
 
     // Seeded random for reproducibility (simple LCG)
     let seed = 42;
@@ -1982,9 +1998,10 @@ function renderCompare() {
         if (!k) { container.innerHTML = '<p class="text-gray-500 text-sm text-center py-8">Upload data first</p>'; return; }
 
         const color = method === 'active' ? '#d4af37' : '#60a5fa';
-        const riskBudget = method === 'active' ? ECFS_RISK : DISCORD_RISK;
+        const plannedRiskCmp = method === 'active' ? ECFS_RISK : DISCORD_RISK;
+        const riskBudget = k.avgRiskDollars > 0 ? k.avgRiskDollars : plannedRiskCmp;
 
-        // All values in R-multiples
+        // All values in R-multiples (using avg realized risk)
         const netR = riskBudget > 0 ? (k.netPL / riskBudget) : 0;
         const avgWinR = riskBudget > 0 ? (k.avgWinDollar / riskBudget) : 0;
         const avgLossR = riskBudget > 0 ? (Math.abs(k.avgLossDollar) / riskBudget) : 0;
@@ -2002,7 +2019,7 @@ function renderCompare() {
         container.innerHTML = `
             <div class="space-y-2.5">
                 <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">Net P&L</span><span class="text-lg font-bold" style="color: ${netR >= 0 ? '#4ade80' : '#f87171'}">${fmtR(netR)}</span></div>
-                <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">EV / Trade</span><span class="text-sm font-semibold" style="color:${color}">${k.evPlannedR >= 0 ? '+' : ''}${k.evPlannedR.toFixed(1)}%R</span></div>
+                <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">EV / Trade</span><span class="text-sm font-semibold" style="color:${color}">${k.evActualR >= 0 ? '+' : ''}${k.evActualR.toFixed(1)}%R</span></div>
                 <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">Win Rate</span><span class="text-sm font-semibold text-white">${k.winRate.toFixed(1)}% <span class="text-xs text-gray-500">(${k.winCount}W / ${k.lossCount}L)</span></span></div>
                 <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">Profit Factor</span><span class="text-sm font-semibold text-white">${k.profitFactor === Infinity ? '∞' : k.profitFactor.toFixed(2)}</span></div>
                 <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">Avg Win</span><span class="text-sm font-semibold" style="color:#4ade80">${fmtR(avgWinR)}</span></div>
@@ -2012,7 +2029,7 @@ function renderCompare() {
                 <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">Worst Trade</span><span class="text-sm font-semibold" style="color:#f87171">-${worstR.toFixed(2)}R</span></div>
                 <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">Total Trades</span><span class="text-sm font-semibold text-white">${k.totalTrades}</span></div>
                 <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">Winning Days</span><span class="text-sm font-semibold text-white">${k.profitableDays}/${k.tradingDays.length}</span></div>
-                <div class="mt-3 pt-3 border-t border-gray-700/30 flex justify-between items-center"><span class="text-gray-500 text-[10px]">1R = $${riskBudget}</span><span class="text-gray-500 text-[10px]">${fmtR(netR)} = ${k.netPL >= 0 ? '+' : ''}$${Math.abs(k.netPL).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</span></div>
+                <div class="mt-3 pt-3 border-t border-gray-700/30 flex justify-between items-center"><span class="text-gray-500 text-[10px]">1R = $${Math.round(riskBudget)} (avg realized)</span><span class="text-gray-500 text-[10px]">${fmtR(netR)} = ${k.netPL >= 0 ? '+' : ''}$${Math.abs(k.netPL).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</span></div>
             </div>
         `;
     });
@@ -2037,13 +2054,15 @@ function renderCompareRTable(ak, dk) {
     const fPct = (v) => v === null || v === undefined ? '—' : `${v.toFixed(1)}%`;
     const fPF = (v) => !v ? '—' : v === Infinity ? '∞' : v.toFixed(2);
 
-    // Build comparison rows
+    // Build comparison rows — use avg realized risk for R normalization
+    const akRisk = ak && ak.avgRiskDollars > 0 ? ak.avgRiskDollars : ECFS_RISK;
+    const dkRisk = dk && dk.avgRiskDollars > 0 ? dk.avgRiskDollars : DISCORD_RISK;
     const rows = [
         {
             metric: 'EV per Trade',
-            ecfs: ak ? `${ak.evPlannedR >= 0 ? '+' : ''}${ak.evPlannedR.toFixed(1)}%R` : '—',
-            discord: dk ? `${dk.evPlannedR >= 0 ? '+' : ''}${dk.evPlannedR.toFixed(1)}%R` : '—',
-            winner: ak && dk ? (ak.evPlannedR > dk.evPlannedR ? 'ecfs' : dk.evPlannedR > ak.evPlannedR ? 'discord' : 'tie') : null,
+            ecfs: ak ? `${ak.evActualR >= 0 ? '+' : ''}${ak.evActualR.toFixed(1)}%R` : '—',
+            discord: dk ? `${dk.evActualR >= 0 ? '+' : ''}${dk.evActualR.toFixed(1)}%R` : '—',
+            winner: ak && dk ? (ak.evActualR > dk.evActualR ? 'ecfs' : dk.evActualR > ak.evActualR ? 'discord' : 'tie') : null,
             note: 'Core edge — higher = better'
         },
         {
@@ -2055,16 +2074,16 @@ function renderCompareRTable(ak, dk) {
         },
         {
             metric: 'Avg Win (R)',
-            ecfs: ak ? `${(ak.avgWinDollar / ECFS_RISK).toFixed(2)}R` : '—',
-            discord: dk ? `${(dk.avgWinDollar / DISCORD_RISK).toFixed(2)}R` : '—',
-            winner: ak && dk ? ((ak.avgWinDollar / ECFS_RISK) > (dk.avgWinDollar / DISCORD_RISK) ? 'ecfs' : 'discord') : null,
+            ecfs: ak ? `${(ak.avgWinDollar / akRisk).toFixed(2)}R` : '—',
+            discord: dk ? `${(dk.avgWinDollar / dkRisk).toFixed(2)}R` : '—',
+            winner: ak && dk ? ((ak.avgWinDollar / akRisk) > (dk.avgWinDollar / dkRisk) ? 'ecfs' : 'discord') : null,
             note: ''
         },
         {
             metric: 'Avg Loss (R)',
-            ecfs: ak ? `${(Math.abs(ak.avgLossDollar) / ECFS_RISK).toFixed(2)}R` : '—',
-            discord: dk ? `${(Math.abs(dk.avgLossDollar) / DISCORD_RISK).toFixed(2)}R` : '—',
-            winner: ak && dk ? ((Math.abs(ak.avgLossDollar) / ECFS_RISK) < (Math.abs(dk.avgLossDollar) / DISCORD_RISK) ? 'ecfs' : 'discord') : null,
+            ecfs: ak ? `${(Math.abs(ak.avgLossDollar) / akRisk).toFixed(2)}R` : '—',
+            discord: dk ? `${(Math.abs(dk.avgLossDollar) / dkRisk).toFixed(2)}R` : '—',
+            winner: ak && dk ? ((Math.abs(ak.avgLossDollar) / akRisk) < (Math.abs(dk.avgLossDollar) / dkRisk) ? 'ecfs' : 'discord') : null,
             note: 'Lower = better risk control'
         },
         {
@@ -2083,9 +2102,9 @@ function renderCompareRTable(ak, dk) {
         },
         {
             metric: 'Max DD (R)',
-            ecfs: ak ? `${(ak.maxDD / ECFS_RISK).toFixed(1)}R` : '—',
-            discord: dk ? `${(dk.maxDD / DISCORD_RISK).toFixed(1)}R` : '—',
-            winner: ak && dk ? ((ak.maxDD / ECFS_RISK) < (dk.maxDD / DISCORD_RISK) ? 'ecfs' : 'discord') : null,
+            ecfs: ak ? `${(ak.maxDD / akRisk).toFixed(1)}R` : '—',
+            discord: dk ? `${(dk.maxDD / dkRisk).toFixed(1)}R` : '—',
+            winner: ak && dk ? ((ak.maxDD / akRisk) < (dk.maxDD / dkRisk) ? 'ecfs' : 'discord') : null,
             note: 'Lower = less drawdown risk'
         },
         {
@@ -2133,9 +2152,9 @@ function renderCompareRTable(ak, dk) {
 
     // R definition reminder
     html += `<div class="mt-3 flex items-center gap-3 text-[10px] text-gray-500 justify-center">
-        <span><strong style="color:#d4af37">ECFS:</strong> 1R = $${ECFS_RISK}</span>
+        <span><strong style="color:#d4af37">ECFS:</strong> 1R = $${Math.round(akRisk)} (avg realized)</span>
         <span>|</span>
-        <span><strong style="color:#60a5fa">ECFS Predisposal:</strong> 1R = $${DISCORD_RISK}</span>
+        <span><strong style="color:#60a5fa">ECFS Predisposal:</strong> 1R = $${Math.round(dkRisk)} (avg realized)</span>
         <span>|</span>
         <span><i class="fas fa-trophy text-[#d4af37]"></i> = winner for that metric</span>
     </div>`;
@@ -2156,21 +2175,23 @@ function renderCompareInsights(ak, dk) {
     const insights = [];
 
     // 1. Risk context — the most important distinction
+    const akAvgR = ak.avgRiskDollars > 0 ? ak.avgRiskDollars : ECFS_RISK;
+    const dkAvgR = dk.avgRiskDollars > 0 ? dk.avgRiskDollars : DISCORD_RISK;
     insights.push({
         icon: 'fa-shield-alt',
         color: '#d4af37',
         title: 'Different Risk, Same Edge Framework',
-        text: `ECFS Active risks $${ECFS_RISK}/trade (2% of $5K) while ECFS Predisposal risks $${DISCORD_RISK}/day (2.5% of $20K). Dollar amounts differ, but R-normalized metrics tell the real story.`
+        text: `ECFS Active avg risk: $${Math.round(akAvgR)}/trade. ECFS Predisposal avg risk: $${Math.round(dkAvgR)}/trade. R-normalized metrics tell the real story.`
     });
 
     // 2. EV comparison in R
-    if (ak.evPlannedR !== dk.evPlannedR) {
-        const better = ak.evPlannedR > dk.evPlannedR ? 'ECFS Active' : 'ECFS Predisposal';
-        const bEV = Math.max(ak.evPlannedR, dk.evPlannedR);
-        const wEV = Math.min(ak.evPlannedR, dk.evPlannedR);
+    if (ak.evActualR !== dk.evActualR) {
+        const better = ak.evActualR > dk.evActualR ? 'ECFS Active' : 'ECFS Predisposal';
+        const bEV = Math.max(ak.evActualR, dk.evActualR);
+        const wEV = Math.min(ak.evActualR, dk.evActualR);
         insights.push({
             icon: 'fa-crosshairs',
-            color: ak.evPlannedR > dk.evPlannedR ? '#d4af37' : '#60a5fa',
+            color: ak.evActualR > dk.evActualR ? '#d4af37' : '#60a5fa',
             title: `${better} Has Higher Edge per Trade`,
             text: `${bEV >= 0 ? '+' : ''}${bEV.toFixed(1)}%R vs ${wEV >= 0 ? '+' : ''}${wEV.toFixed(1)}%R. In R-normalized terms, each ${better.split(' ')[0]} trade captures more of the risk budget.`
         });
@@ -2188,8 +2209,8 @@ function renderCompareInsights(ak, dk) {
     }
 
     // 4. Drawdown comparison in R
-    const akDDR = ak.maxDD / ECFS_RISK;
-    const dkDDR = dk.maxDD / DISCORD_RISK;
+    const akDDR = ak.maxDD / akAvgR;
+    const dkDDR = dk.maxDD / dkAvgR;
     if (Math.abs(akDDR - dkDDR) > 0.5) {
         const betterDD = akDDR < dkDDR ? 'ECFS Active' : 'ECFS Predisposal';
         insights.push({
@@ -2635,11 +2656,13 @@ function renderRadarChart(ak, dk) {
     const chart = echarts.init(container, 'dark');
     chartInstances['chart-radar-compare'] = chart;
 
-    // R-normalize the metrics for fair comparison
-    const akWinR = ak ? ak.avgWinDollar / ECFS_RISK : 0;
-    const dkWinR = dk ? dk.avgWinDollar / DISCORD_RISK : 0;
-    const akLossR = ak ? Math.abs(ak.avgLossDollar) / ECFS_RISK : 0;
-    const dkLossR = dk ? Math.abs(dk.avgLossDollar) / DISCORD_RISK : 0;
+    // R-normalize the metrics for fair comparison (using avg realized risk)
+    const akRiskR = ak && ak.avgRiskDollars > 0 ? ak.avgRiskDollars : ECFS_RISK;
+    const dkRiskR = dk && dk.avgRiskDollars > 0 ? dk.avgRiskDollars : DISCORD_RISK;
+    const akWinR = ak ? ak.avgWinDollar / akRiskR : 0;
+    const dkWinR = dk ? dk.avgWinDollar / dkRiskR : 0;
+    const akLossR = ak ? Math.abs(ak.avgLossDollar) / akRiskR : 0;
+    const dkLossR = dk ? Math.abs(dk.avgLossDollar) / dkRiskR : 0;
 
     // Normalize to 0-100 scale for comparison
     const maxWR = 100;
