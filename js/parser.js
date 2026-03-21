@@ -657,7 +657,7 @@ function calculateKPIs(trades, riskBudget, pointMultiplier, startingBalance = ST
         dailyPL[d].trades++;
         if (t.isWin) dailyPL[d].wins++;
     });
-    const tradingDays = Object.keys(dailyPL).sort();
+    const tradingDays = Object.keys(dailyPL).sort((a, b) => new Date(a) - new Date(b));
     const profitableDays = tradingDays.filter(d => dailyPL[d].pl > 0).length;
     
     // Weekly P&L

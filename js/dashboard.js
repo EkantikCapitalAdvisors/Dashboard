@@ -1214,8 +1214,10 @@ function renderFoodChain(method, k, allK, allTrades) {
     const calendarDays = (() => {
         const days = allK.tradingDays;
         if (days.length < 2) return 30; // default to 1 month if insufficient data
-        const first = new Date(days[0]);
-        const last = new Date(days[days.length - 1]);
+        // Sort chronologically (tradingDays are string dates, may sort alphabetically wrong)
+        const sorted = [...days].sort((a, b) => new Date(a) - new Date(b));
+        const first = new Date(sorted[0]);
+        const last = new Date(sorted[sorted.length - 1]);
         return Math.max(1, (last - first) / 86400000);
     })();
     const tradesPerMonth = allK.totalTrades / calendarDays * 30; // ~30 calendar days per month
@@ -1224,6 +1226,9 @@ function renderFoodChain(method, k, allK, allTrades) {
     // Annual R (EV in R per trade × trades per year)
     const evR = edgeR / 100; // convert % to decimal R
     const annualR = evR * tradesPerYear;
+
+    // Debug: log edge calculation breakdown
+    console.log(`[Edge Debug] ${method}: edgeR(evActualR)=${edgeR.toFixed(2)}%R, avgRisk=$${riskBudget.toFixed(0)}, evPerTrade=$${allK.evPerTrade.toFixed(2)}, trades=${allK.totalTrades}, calDays=${calendarDays}, trades/mo=${tradesPerMonth.toFixed(1)}, annualR=${annualR.toFixed(1)}`);
 
     // --- Period Label ---
     const el = (id) => document.getElementById(id);
@@ -1393,7 +1398,7 @@ function computeAnnualRFromAllTrades(method) {
     const kpis = calculateKPIs(trades, risk, ppt, startBal);
     if (!kpis || kpis.totalTrades < 1) return 0;
     const evR = kpis.evPlannedR / 100;
-    const days = kpis.tradingDays;
+    const days = [...kpis.tradingDays].sort((a, b) => new Date(a) - new Date(b));
     const calDays = days.length >= 2
         ? Math.max(1, (new Date(days[days.length - 1]) - new Date(days[0])) / 86400000)
         : 30;
@@ -1420,7 +1425,7 @@ function monteCarloMaxDD(method, { simulations = 5000, percentile = 95 } = {}) {
     const outcomesR = trades.map(t => t.dollarPL / riskBudget);
 
     // Estimate trades per year from calendar span
-    const mcDays = kpis.tradingDays;
+    const mcDays = [...kpis.tradingDays].sort((a, b) => new Date(a) - new Date(b));
     const mcCalDays = mcDays.length >= 2
         ? Math.max(1, (new Date(mcDays[mcDays.length - 1]) - new Date(mcDays[0])) / 86400000)
         : 30;
