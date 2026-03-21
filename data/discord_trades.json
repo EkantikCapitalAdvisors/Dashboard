@@ -167,7 +167,7 @@
     "is_win": false,
     "outcome": "Loss",
     "trade_date": "2/13/2026",
-    "upload_batch": "discord-sync-1774110074064"
+    "upload_batch": "discord-sync-1774110076960"
   },
   {
     "week_key": "02/16/2026",
@@ -201,7 +201,7 @@
     "is_win": false,
     "outcome": "Loss",
     "trade_date": "2/18/2026",
-    "upload_batch": "discord-sync-1774110074064"
+    "upload_batch": "discord-sync-1774110076960"
   },
   {
     "week_key": "02/16/2026",
@@ -218,7 +218,7 @@
     "is_win": true,
     "outcome": "Win",
     "trade_date": "2/19/2026",
-    "upload_batch": "discord-sync-1774110074064"
+    "upload_batch": "discord-sync-1774110076960"
   },
   {
     "week_key": "02/16/2026",
@@ -235,7 +235,7 @@
     "is_win": true,
     "outcome": "Win",
     "trade_date": "2/20/2026",
-    "upload_batch": "discord-sync-1774110074064"
+    "upload_batch": "discord-sync-1774110076960"
   },
   {
     "week_key": "02/23/2026",
@@ -337,7 +337,7 @@
     "is_win": true,
     "outcome": "Win",
     "trade_date": "3/5/2026",
-    "upload_batch": "discord-sync-1774110074064"
+    "upload_batch": "discord-sync-1774110076960"
   },
   {
     "week_key": "03/02/2026",
@@ -354,7 +354,7 @@
     "is_win": true,
     "outcome": "Win",
     "trade_date": "3/6/2026",
-    "upload_batch": "discord-sync-1774110074064"
+    "upload_batch": "discord-sync-1774110076960"
   },
   {
     "week_key": "03/09/2026",
@@ -371,7 +371,7 @@
     "is_win": true,
     "outcome": "Win",
     "trade_date": "3/9/2026",
-    "upload_batch": "discord-sync-1774110074064"
+    "upload_batch": "discord-sync-1774110076960"
   },
   {
     "week_key": "03/09/2026",
@@ -388,7 +388,7 @@
     "is_win": true,
     "outcome": "Win",
     "trade_date": "3/9/2026",
-    "upload_batch": "discord-sync-1774110074064"
+    "upload_batch": "discord-sync-1774110076960"
   },
   {
     "week_key": "03/09/2026",
@@ -422,7 +422,7 @@
     "is_win": true,
     "outcome": "Win",
     "trade_date": "3/10/2026",
-    "upload_batch": "discord-sync-1774110074064"
+    "upload_batch": "discord-sync-1774110076960"
   },
   {
     "week_key": "03/09/2026",
@@ -439,7 +439,7 @@
     "is_win": false,
     "outcome": "Loss",
     "trade_date": "3/12/2026",
-    "upload_batch": "discord-sync-1774110074064"
+    "upload_batch": "discord-sync-1774110076960"
   },
   {
     "week_key": "03/09/2026",
@@ -473,7 +473,7 @@
     "is_win": true,
     "outcome": "Win",
     "trade_date": "3/17/2026",
-    "upload_batch": "discord-sync-1774110074064"
+    "upload_batch": "discord-sync-1774110076960"
   },
   {
     "week_key": "03/16/2026",
@@ -490,7 +490,7 @@
     "is_win": true,
     "outcome": "Win",
     "trade_date": "3/19/2026",
-    "upload_batch": "discord-sync-1774110074064"
+    "upload_batch": "discord-sync-1774110076960"
   },
   {
     "week_key": "03/16/2026",
@@ -507,6 +507,6 @@
     "is_win": true,
     "outcome": "Win",
     "trade_date": "3/20/2026",
-    "upload_batch": "discord-sync-1774110074064"
+    "upload_batch": "discord-sync-1774110076960"
   }
 ]
