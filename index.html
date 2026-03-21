@@ -60,7 +60,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css" id="app-css">
+    <script>document.getElementById('app-css').href='css/style.css?v='+Date.now();</script>
 </head>
 <body class="font-inter antialiased bg-[#0a1628] text-gray-100">
 
@@ -1578,8 +1579,12 @@
         </div>
     </div>
 
-    <script src="js/parser.js"></script>
-    <script src="js/dashboard.js"></script>
+    <script>
+    // Cache-bust: write script tags with timestamp to always load latest version
+    var _cb='?v='+Date.now();
+    document.write('<scr'+'ipt src="js/parser.js'+_cb+'"><\/scr'+'ipt>');
+    document.write('<scr'+'ipt src="js/dashboard.js'+_cb+'"><\/scr'+'ipt>');
+    </script>
 
     <!-- Edge Convergence Simulation -->
     <script>
