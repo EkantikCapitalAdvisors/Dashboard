@@ -223,8 +223,14 @@ function dbRowToECFSTrade(row) {
 }
 
 function dbRowToDiscordTrade(row) {
-    const riskPts = row.risk_points || 0;
-    const riskDlr = row.risk_dollars || 0;
+    let riskPts = row.risk_points || 0;
+    let riskDlr = row.risk_dollars || 0;
+    // Sanity check: cap risk at 50 points (2500$) — catches corrupt stop prices
+    if (riskPts > 50) {
+        console.warn(`[Data] ${row.trade_num}: risk_points=${riskPts} looks corrupt (>50), defaulting to ${DEFAULT_STOP_POINTS}`);
+        riskPts = DEFAULT_STOP_POINTS;
+        riskDlr = DEFAULT_STOP_POINTS * DISCORD_PPT;
+    }
     const needsDefault = riskDlr === 0 || riskPts === 0;
     return {
         datetime: row.datetime,
