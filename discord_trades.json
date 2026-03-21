@@ -8,7 +8,7 @@
   {"datetime":"2/9/2026 09:03","tradeNum":"F7","direction":"Sell","entryPrice":6948,"stopPrice":6956,"trailingProfit":"—","pointsPL":-7,"riskPoints":8,"dollarPL":-350,"riskDollars":400,"isWin":false,"outcome":"Loss","date":"2/9/2026"},
   {"datetime":"2/11/2026 10:35","tradeNum":"F8","direction":"Sell","entryPrice":6964,"stopPrice":6977,"trailingProfit":"6955","pointsPL":9,"riskPoints":13,"dollarPL":450,"riskDollars":650,"isWin":true,"outcome":"Win","date":"2/11/2026"},
   {"datetime":"2/12/2026 13:25","tradeNum":"F9","direction":"Sell","entryPrice":6889,"stopPrice":6901,"trailingProfit":"6871","pointsPL":8,"riskPoints":12,"dollarPL":400,"riskDollars":600,"isWin":true,"outcome":"Win","date":"2/12/2026"},
-  {"datetime":"2/13/2026 07:29","tradeNum":"F10","direction":"Sell","entryPrice":6849,"stopPrice":6859,"trailingProfit":"—","pointsPL":-10,"riskPoints":10,"dollarPL":-500,"riskDollars":500,"isWin":false,"outcome":"Loss","date":"2/13/2026"}
+  {"datetime":"2/13/2026 07:29","tradeNum":"F10","direction":"Sell","entryPrice":6849,"stopPrice":6859,"trailingProfit":"—","pointsPL":-10,"riskPoints":10,"dollarPL":-500,"riskDollars":500,"isWin":false,"outcome":"Loss","date":"2/13/2026"},
   {
     "datetime": "2026-02-18 08:29:18",
     "tradeNum": "F11",
@@ -149,12 +149,12 @@
     "tradeNum": "F20",
     "direction": "Buy",
     "entryPrice": 6893,
-    "stopPrice": 679,
+    "stopPrice": 6883,
     "trailingProfit": "—",
     "pointsPL": 10,
-    "riskPoints": 0,
+    "riskPoints": 10,
     "dollarPL": 500,
-    "riskDollars": 0,
+    "riskDollars": 500,
     "isWin": true,
     "outcome": "Win",
     "date": "3/5/2026"
@@ -224,7 +224,7 @@
     "tradeNum": "F25",
     "direction": "Sell",
     "entryPrice": 6841,
-    "stopPrice": 5851,
+    "stopPrice": 6851,
     "trailingProfit": "—",
     "pointsPL": 4.5,
     "riskPoints": 0,
