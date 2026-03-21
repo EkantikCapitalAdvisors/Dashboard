@@ -901,7 +901,7 @@ function updateEdgeSection(method) {
 
     if (method === 'active') {
         const evBig = document.getElementById('active-ev-hero-big');
-        if (evBig) evBig.textContent = `${edgeK.evPlannedR >= 0 ? '+' : ''}${edgeK.evPlannedR.toFixed(1)}%R`;
+        if (evBig) evBig.textContent = `${edgeK.evActualR >= 0 ? '+' : ''}${edgeK.evActualR.toFixed(1)}%R`;
         setEl('active-ev-hero-sub', `${fmtDollar(edgeK.evPerTrade)} per trade (planned $100 risk)`);
         const actualRisk = document.getElementById('active-ev-actual-risk');
         if (actualRisk) actualRisk.innerHTML = `<strong>Actual risk-adjusted:</strong> ${edgeK.evActualR >= 0 ? '+' : ''}${edgeK.evActualR.toFixed(1)}%R (avg risk: ${fmtDollar(edgeK.avgRiskDollars)})`;
@@ -914,7 +914,7 @@ function updateEdgeSection(method) {
         setEl('active-edge-adherence', `${edgeK.riskAdherence.toFixed(0)}%`);
     } else {
         const evBig = document.getElementById('discord-ev-hero-big');
-        if (evBig) evBig.textContent = `${edgeK.evPlannedR >= 0 ? '+' : ''}${edgeK.evPlannedR.toFixed(1)}%R`;
+        if (evBig) evBig.textContent = `${edgeK.evActualR >= 0 ? '+' : ''}${edgeK.evActualR.toFixed(1)}%R`;
         setEl('discord-ev-hero-sub', `${fmtDollar(edgeK.evPerTrade)} per trade (2.5% daily risk)`);
         setColor('discord-edge-avgwin', fmtDollar(edgeK.avgWinDollar), 1);
         setEl('discord-edge-avgwin-pts', `+${edgeK.avgWinPts.toFixed(2)} pts`);
@@ -925,13 +925,14 @@ function updateEdgeSection(method) {
         setEl('discord-detail-wlratio', edgeK.wlRatio === Infinity ? '∞' : edgeK.wlRatio.toFixed(2));
     }
 
-    // Formula elements
-    const edgeR = edgeK.evPlannedR;
+    // Formula elements — use actual realized risk for R normalization
+    const edgeRiskDivisor = edgeK.avgRiskDollars > 0 ? edgeK.avgRiskDollars : riskBudget;
+    const edgeR = edgeK.evActualR;
     const edgeSign = edgeR >= 0 ? '+' : '';
     const winRateDec = edgeK.winRate / 100;
     const lossRateDec = 1 - winRateDec;
-    const avgWinR = riskBudget > 0 ? edgeK.avgWinDollar / riskBudget : 0;
-    const avgLossR = riskBudget > 0 ? Math.abs(edgeK.avgLossDollar) / riskBudget : 0;
+    const avgWinR = edgeRiskDivisor > 0 ? edgeK.avgWinDollar / edgeRiskDivisor : 0;
+    const avgLossR = edgeRiskDivisor > 0 ? Math.abs(edgeK.avgLossDollar) / edgeRiskDivisor : 0;
 
     setEl(`${prefix}-win-rate`, `${edgeK.winRate.toFixed(1)}%`);
     setEl(`${prefix}-ev-result`, `${edgeSign}${edgeR.toFixed(1)}%R`);
@@ -996,7 +997,7 @@ function renderActive(k, trades, allK, allTrades) {
     setColor('active-hero-pnl', fmtDollar(k.netPL), k.netPL);
     document.getElementById('active-hero-pnl-sub').textContent = `${k.totalTrades} trade${k.totalTrades !== 1 ? 's' : ''}`;
     setColor('active-hero-return', fmtPct(k.returnPct), k.returnPct);
-    setColor('active-hero-ev', `${fmtPct(k.evPlannedR)}R`, k.evPlannedR);
+    setColor('active-hero-ev', `${fmtPct(k.evActualR)}R`, k.evActualR);
     document.getElementById('active-hero-ev-sub').textContent = `${fmtDollar(k.evPerTrade)}/trade`;
     document.getElementById('active-hero-wr').textContent = `${k.winRate.toFixed(1)}%`;
     document.getElementById('active-hero-wr-sub').textContent = `${k.winCount}W / ${k.lossCount}L`;
@@ -1006,7 +1007,7 @@ function renderActive(k, trades, allK, allTrades) {
     document.getElementById('active-hero-dd-sub').textContent = `-${k.maxDDPct.toFixed(2)}%`;
 
     // The Edge
-    document.getElementById('active-ev-hero-big').textContent = `${k.evPlannedR >= 0 ? '+' : ''}${k.evPlannedR.toFixed(1)}%R`;
+    document.getElementById('active-ev-hero-big').textContent = `${k.evActualR >= 0 ? '+' : ''}${k.evActualR.toFixed(1)}%R`;
     document.getElementById('active-ev-hero-sub').textContent = `${fmtDollar(k.evPerTrade)} per trade (planned $100 risk)`;
     document.getElementById('active-ev-actual-risk').innerHTML = `<strong>Actual risk-adjusted:</strong> ${k.evActualR >= 0 ? '+' : ''}${k.evActualR.toFixed(1)}%R (avg risk: ${fmtDollar(k.avgRiskDollars)})`;
 
@@ -1072,7 +1073,7 @@ function renderActive(k, trades, allK, allTrades) {
     renderInceptionSummary('active', allK);
 
     // Edge %R by Week Trend Chart
-    renderEdgeTrendByWeek('chart-edge-trend-active', allTrades, ECFS_RISK, ECFS_PPT, 'active', allK.evPlannedR);
+    renderEdgeTrendByWeek('chart-edge-trend-active', allTrades, ECFS_RISK, ECFS_PPT, 'active', allK.evActualR);
 
     // Food Chain
     renderFoodChain('active', k, allK, allTrades);
@@ -1122,7 +1123,7 @@ function renderDiscord(k, trades, allK, allTrades) {
     setColor('discord-hero-pnl', fmtDollar(k.netPL), k.netPL);
     document.getElementById('discord-hero-pnl-sub').textContent = `${k.totalTrades} trade${k.totalTrades !== 1 ? 's' : ''}`;
     setColor('discord-hero-return', fmtPct(k.returnPct), k.returnPct);
-    setColor('discord-hero-ev', `${fmtPct(k.evPlannedR)}R`, k.evPlannedR);
+    setColor('discord-hero-ev', `${fmtPct(k.evActualR)}R`, k.evActualR);
     document.getElementById('discord-hero-ev-sub').textContent = `${fmtDollar(k.evPerTrade)}/trade`;
     document.getElementById('discord-hero-wr').textContent = `${k.winRate.toFixed(1)}%`;
     document.getElementById('discord-hero-wr-sub').textContent = `${k.winCount}W / ${k.lossCount}L`;
@@ -1167,7 +1168,7 @@ function renderDiscord(k, trades, allK, allTrades) {
     renderInceptionSummary('discord', allK);
 
     // Edge %R by Week Trend Chart
-    renderEdgeTrendByWeek('chart-edge-trend-discord', allTrades, DISCORD_RISK, DISCORD_PPT, 'discord', allK.evPlannedR);
+    renderEdgeTrendByWeek('chart-edge-trend-discord', allTrades, DISCORD_RISK, DISCORD_PPT, 'discord', allK.evActualR);
 
     // Food Chain
     renderFoodChain('discord', k, allK, allTrades);
@@ -1397,7 +1398,7 @@ function computeAnnualRFromAllTrades(method) {
     const startBal = method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
     const kpis = calculateKPIs(trades, risk, ppt, startBal);
     if (!kpis || kpis.totalTrades < 1) return 0;
-    const evR = kpis.evPlannedR / 100;
+    const evR = kpis.evActualR / 100;
     const days = [...kpis.tradingDays].sort((a, b) => new Date(a) - new Date(b));
     const calDays = days.length >= 2
         ? Math.max(1, (new Date(days[days.length - 1]) - new Date(days[0])) / 86400000)
@@ -1827,7 +1828,7 @@ function renderFoodChainChart(containerId, k, method) {
     const chart = echarts.init(container);
     chartInstances[containerId] = chart;
 
-    const edgeR = k.evPlannedR;
+    const edgeR = k.evActualR;
     const accentColor = method === 'active' ? '#d4af37' : '#60a5fa';
 
     // Benchmark data for the horizontal bar chart
@@ -2522,7 +2523,7 @@ function renderEdgeTrendByWeek(containerId, allTrades, riskBudget, ppt, method, 
         const trades = weeklyGroups[wk];
         if (trades.length < 1) return 0;
         const kpis = calculateKPIs(trades, riskBudget, ppt);
-        return kpis.evPlannedR;
+        return kpis.evActualR;
     });
 
     // Track cumulative EV progression (recalculate as if seeing more data each week)
@@ -2531,7 +2532,7 @@ function renderEdgeTrendByWeek(containerId, allTrades, riskBudget, ppt, method, 
         cumTrades = cumTrades.concat(weeklyGroups[wk]);
         if (cumTrades.length < 1) return 0;
         const kpis = calculateKPIs(cumTrades, riskBudget, ppt);
-        return kpis.evPlannedR;
+        return kpis.evActualR;
     });
 
     // Trade count per week
@@ -2672,7 +2673,7 @@ function renderRadarChart(ak, dk) {
     // Normalize to 0-100 scale for comparison
     const maxWR = 100;
     const maxPF = Math.max(ak ? ak.profitFactor : 0, dk ? dk.profitFactor : 0, 2);
-    const maxEV = Math.max(ak ? Math.abs(ak.evPlannedR) : 0, dk ? Math.abs(dk.evPlannedR) : 0, 10);
+    const maxEV = Math.max(ak ? Math.abs(ak.evActualR) : 0, dk ? Math.abs(dk.evActualR) : 0, 10);
     const maxRF = Math.max(ak ? ak.recoveryFactor : 0, dk ? dk.recoveryFactor : 0, 3);
     const maxWinR = Math.max(akWinR, dkWinR, 1);
     const maxWDays = 100;
@@ -2695,7 +2696,7 @@ function renderRadarChart(ak, dk) {
                 value: [
                     ak.winRate,
                     ak.profitFactor === Infinity ? maxPF : ak.profitFactor,
-                    Math.max(0, ak.evPlannedR),
+                    Math.max(0, ak.evActualR),
                     ak.recoveryFactor === Infinity ? maxRF : ak.recoveryFactor,
                     akWinR,
                     ak.tradingDays.length > 0 ? ak.profitableDays / ak.tradingDays.length * 100 : 0
@@ -2715,7 +2716,7 @@ function renderRadarChart(ak, dk) {
                 value: [
                     dk.winRate,
                     dk.profitFactor === Infinity ? maxPF : dk.profitFactor,
-                    Math.max(0, dk.evPlannedR),
+                    Math.max(0, dk.evActualR),
                     dk.recoveryFactor === Infinity ? maxRF : dk.recoveryFactor,
                     dkWinR,
                     dk.tradingDays.length > 0 ? dk.profitableDays / dk.tradingDays.length * 100 : 0
@@ -2800,7 +2801,7 @@ function renderMonthlySummary(containerId, allTrades, riskBudget, ppt, startingB
             <td class="text-gray-300 text-right px-2 py-2.5 border-b border-gray-700/20">${mKPIs.winRate.toFixed(0)}%</td>
             <td class="${plColor} font-semibold text-right px-2 py-2.5 border-b border-gray-700/20">${mKPIs.netPL >= 0 ? '+' : ''}$${mKPIs.netPL.toFixed(2)}</td>
             <td class="${plColor} text-right px-2 py-2.5 border-b border-gray-700/20">${fmtPct(mKPIs.returnPct)}</td>
-            <td class="text-right px-2 py-2.5 border-b border-gray-700/20" style="color:${mKPIs.evPlannedR >= 0 ? '#4ade80' : '#f87171'}">${mKPIs.evPlannedR >= 0 ? '+' : ''}${mKPIs.evPlannedR.toFixed(1)}%</td>
+            <td class="text-right px-2 py-2.5 border-b border-gray-700/20" style="color:${mKPIs.evActualR >= 0 ? '#4ade80' : '#f87171'}">${mKPIs.evActualR >= 0 ? '+' : ''}${mKPIs.evActualR.toFixed(1)}%</td>
             <td class="text-gray-300 text-right px-2 py-2.5 border-b border-gray-700/20">${mKPIs.profitFactor === Infinity ? '∞' : mKPIs.profitFactor.toFixed(2)}</td>
             <td class="${cumColor} font-semibold text-right px-2 py-2.5 border-b border-gray-700/20">${cumPL >= 0 ? '+' : ''}$${cumPL.toFixed(2)}</td>
         </tr>`;
@@ -3013,33 +3014,33 @@ function saveTradeEdit(method, tradeNum) {
 function buildEdgeExplanation(k) {
     // Handle edge cases: no wins, no losses, very small sample
     if (k.winCount === 0) {
-        return `No winning trades yet in this period. ${k.totalTrades} trade${k.totalTrades !== 1 ? 's' : ''} taken, all resulting in losses. EV is ${k.evPlannedR.toFixed(1)}%R — more data needed to assess the edge.`;
+        return `No winning trades yet in this period. ${k.totalTrades} trade${k.totalTrades !== 1 ? 's' : ''} taken, all resulting in losses. EV is ${k.evActualR.toFixed(1)}%R — more data needed to assess the edge.`;
     }
     if (k.lossCount === 0) {
-        return `Perfect win rate so far — ${k.winCount} trade${k.winCount !== 1 ? 's' : ''}, all winners. EV is +${k.evPlannedR.toFixed(1)}%R per trade. Note: a longer track record will provide a more reliable edge estimate.`;
+        return `Perfect win rate so far — ${k.winCount} trade${k.winCount !== 1 ? 's' : ''}, all winners. EV is +${k.evActualR.toFixed(1)}%R per trade. Note: a longer track record will provide a more reliable edge estimate.`;
     }
     if (k.totalTrades < 3) {
-        return `Only ${k.totalTrades} trade${k.totalTrades !== 1 ? 's' : ''} — too small a sample for reliable statistics. Current EV: ${k.evPlannedR >= 0 ? '+' : ''}${k.evPlannedR.toFixed(1)}%R per trade.`;
+        return `Only ${k.totalTrades} trade${k.totalTrades !== 1 ? 's' : ''} — too small a sample for reliable statistics. Current EV: ${k.evActualR >= 0 ? '+' : ''}${k.evActualR.toFixed(1)}%R per trade.`;
     }
 
     const winBigger = k.wlRatio > 1;
     const sub50 = k.winRate < 50;
 
-    if (k.evPlannedR < 0) {
+    if (k.evActualR < 0) {
         // Negative EV
         if (sub50 && !winBigger) {
-            return `Win rate is ${k.winRate.toFixed(0)}% with a ${k.wlRatio.toFixed(2)}x win/loss ratio — resulting in a negative EV of ${k.evPlannedR.toFixed(1)}%R per trade. Risk management is key to recovery.`;
+            return `Win rate is ${k.winRate.toFixed(0)}% with a ${k.wlRatio.toFixed(2)}x win/loss ratio — resulting in a negative EV of ${k.evActualR.toFixed(1)}%R per trade. Risk management is key to recovery.`;
         }
-        return `Current EV is ${k.evPlannedR.toFixed(1)}%R per trade. While the edge is negative over this period, disciplined execution and risk management can stabilize results.`;
+        return `Current EV is ${k.evActualR.toFixed(1)}%R per trade. While the edge is negative over this period, disciplined execution and risk management can stabilize results.`;
     }
 
     // Positive EV
     if (winBigger && sub50) {
-        return `Wins are ${((k.wlRatio - 1) * 100).toFixed(0)}% bigger than losses — so even with a sub-50% win rate, the math is positive. Every trade has a statistical edge worth +${k.evPlannedR.toFixed(1)}% of risk.`;
+        return `Wins are ${((k.wlRatio - 1) * 100).toFixed(0)}% bigger than losses — so even with a sub-50% win rate, the math is positive. Every trade has a statistical edge worth +${k.evActualR.toFixed(1)}% of risk.`;
     } else if (winBigger) {
-        return `With a ${k.winRate.toFixed(0)}% win rate and wins that are ${((k.wlRatio - 1) * 100).toFixed(0)}% larger than losses, every trade carries a +${k.evPlannedR.toFixed(1)}%R expected value.`;
+        return `With a ${k.winRate.toFixed(0)}% win rate and wins that are ${((k.wlRatio - 1) * 100).toFixed(0)}% larger than losses, every trade carries a +${k.evActualR.toFixed(1)}%R expected value.`;
     } else {
-        return `A ${k.winRate.toFixed(0)}% win rate generates a positive edge of +${k.evPlannedR.toFixed(1)}%R per trade. Disciplined risk management keeps losses controlled.`;
+        return `A ${k.winRate.toFixed(0)}% win rate generates a positive edge of +${k.evActualR.toFixed(1)}%R per trade. Disciplined risk management keeps losses controlled.`;
     }
 }
 

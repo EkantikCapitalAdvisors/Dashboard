@@ -631,21 +631,21 @@ function calculateKPIs(trades, riskBudget, pointMultiplier, startingBalance = ST
     const avgLossCut = lossesWithRisk.length > 0 ? lossesWithRisk.reduce((s, t) => s + (Math.abs(t.dollarPL) / t.riskDollars), 0) / lossesWithRisk.length : 0;
     
     // Drawdown
-    let cumPL = 0, peak = 0, maxDD = 0, currentDD = 0;
+    let cumPL = 0, peak = 0, maxDD = 0, currentDD = 0, peakAtMaxDD = 0;
     const equityCurve = [];
     const drawdownCurve = [];
-    
+
     trades.forEach(t => {
         cumPL += t.dollarPL;
         if (cumPL > peak) peak = cumPL;
         const dd = peak - cumPL;
-        if (dd > maxDD) maxDD = dd;
+        if (dd > maxDD) { maxDD = dd; peakAtMaxDD = peak; }
         equityCurve.push({ time: t.exitTime || t.datetime, cumPL, balance: startingBalance + cumPL });
         drawdownCurve.push({ time: t.exitTime || t.datetime, dd: -(peak - cumPL) });
     });
     currentDD = peak - cumPL;
-    
-    const maxDDPct = peak > 0 ? (maxDD / (startingBalance + peak) * 100) : (maxDD / startingBalance * 100);
+
+    const maxDDPct = peakAtMaxDD > 0 ? (maxDD / (startingBalance + peakAtMaxDD) * 100) : (maxDD / startingBalance * 100);
     const recoveryFactor = maxDD > 0 ? netPL / maxDD : Infinity;
     
     // Streaks
