@@ -119,6 +119,11 @@
                     <a href="#" class="text-blue-400 font-semibold text-sm flex items-center transition-colors" id="nav-discord">
                         <i class="fas fa-comments mr-1.5 text-xs"></i><span class="hidden sm:inline">ECFS Predisposal</span><span class="sm:hidden">ECFS</span>
                     </a>
+                    <div class="hidden sm:block w-px h-5 bg-gray-700"></div>
+                    <a href="https://discord.gg/GprT4S8Vrj" target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-1.5 text-[#5865F2] hover:text-white text-sm font-semibold transition-colors">
+                        <i class="fab fa-discord"></i><span class="hidden sm:inline">Follow Trades</span>
+                    </a>
                     <template id="strategies-menu-disabled">
                     <div class="hidden sm:block w-px h-5 bg-gray-700"></div>
                     <div class="relative group">
@@ -188,6 +193,11 @@
                             <i class="fas fa-clock mr-2"></i><strong>Last Updated:</strong> <span id="last-updated">Loading...</span>
                         </p>
                     </div>
+                    <a href="https://discord.gg/GprT4S8Vrj" target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-2 bg-[#5865F2]/20 border border-[#5865F2]/50 hover:bg-[#5865F2]/30 rounded-lg px-6 py-3 transition-all group">
+                        <i class="fab fa-discord text-[#5865F2] text-lg group-hover:scale-110 transition-transform"></i>
+                        <span class="text-white text-sm font-semibold">Follow Live Trades</span>
+                    </a>
                 </div>
 
                 <!-- Share via sidebar (desktop) + FAB (mobile) -->
@@ -223,7 +233,7 @@
                 <div id="panel-discord" class="execution-panel">
                     <!-- Info Card -->
                     <div class="bg-gradient-to-br from-[#0d1d35] to-[#0a1628] border border-blue-400/30 rounded-2xl p-6 mb-6">
-                        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
                             <div class="mb-3 md:mb-0">
                                 <h2 class="font-playfair text-2xl sm:text-3xl font-bold text-white mb-1">ECFS Predisposal Execution</h2>
                                 <p class="text-gray-400 text-sm">Selective, high-conviction futures trades filtered before market open</p>
@@ -232,6 +242,22 @@
                             <div class="bg-blue-500/10 border border-blue-400/30 rounded-lg px-4 py-2 text-center">
                                 <p class="text-blue-400 font-semibold text-xs"><i class="fas fa-shield-alt mr-1"></i>Risk: $500/day (2.5%)</p>
                                 <p class="text-gray-500 text-[9px] mt-0.5">daily risk limit</p>
+                            </div>
+                        </div>
+                        <!-- Discord + Data Transparency -->
+                        <div class="flex flex-col sm:flex-row items-center gap-3 pt-4 border-t border-blue-400/10">
+                            <a href="https://discord.gg/GprT4S8Vrj" target="_blank" rel="noopener"
+                               class="inline-flex items-center gap-2.5 bg-[#5865F2]/15 border border-[#5865F2]/40 hover:bg-[#5865F2]/25 rounded-lg px-5 py-2.5 transition-all group flex-shrink-0">
+                                <i class="fab fa-discord text-[#5865F2] text-base group-hover:scale-110 transition-transform"></i>
+                                <div>
+                                    <p class="text-white text-sm font-semibold leading-tight">Join Discord Channel</p>
+                                    <p class="text-[#5865F2]/70 text-[10px]">Follow trades in real time</p>
+                                </div>
+                            </a>
+                            <div class="text-gray-500 text-[10px] leading-relaxed">
+                                <i class="fas fa-database text-blue-400/50 mr-1"></i>
+                                All performance data on this dashboard is calculated from <strong class="text-gray-300">documented Discord trades</strong> — posted in the channel before or at execution.
+                                Full trade history can be <strong class="text-gray-300">exported as JSON</strong> below for independent verification.
                             </div>
                         </div>
                     </div>
@@ -245,7 +271,7 @@
                             </div>
                             <div>
                                 <p class="text-white text-sm font-semibold">Live Edge — Updated Weekly</p>
-                                <p class="text-gray-400 text-[11px]">Every number below is calculated from <strong class="text-blue-400" id="discord-live-trade-count">—</strong> real trades. Watch the edge evolve over time.</p>
+                                <p class="text-gray-400 text-[11px]">Every number below is calculated from <strong class="text-blue-400" id="discord-live-trade-count">—</strong> real trades documented in <a href="https://discord.gg/GprT4S8Vrj" target="_blank" rel="noopener" class="text-[#5865F2] hover:underline">Discord <i class="fab fa-discord text-[10px]"></i></a>. Watch the edge evolve over time.</p>
                             </div>
                         </div>
                         <div class="bg-[#0a1628] border border-gray-700/40 rounded-lg px-3 py-1.5 flex-shrink-0">
