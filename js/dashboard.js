@@ -1131,6 +1131,8 @@ function renderDiscord(k, trades, allK, allTrades) {
     document.getElementById('discord-hero-pf-sub').textContent = `${fmtDollar(k.grossWins)} / ${fmtDollar(k.grossLosses)}`;
     setColor('discord-hero-dd', `-${fmtDollar(k.maxDD)}`, k.maxDD > 0 ? -1 : 0);
     document.getElementById('discord-hero-dd-sub').textContent = `-${k.maxDDPct.toFixed(2)}%`;
+    setColor('discord-hero-espts', `${k.netPoints >= 0 ? '+' : ''}${k.netPoints.toFixed(2)}`, k.netPoints);
+    document.getElementById('discord-hero-espts-sub').textContent = `${k.avgWinPts.toFixed(1)} avg win · ${k.avgLossPts.toFixed(1)} avg loss`;
 
     // Edge
     document.getElementById('discord-ev-hero-big').textContent = `${k.evActualR >= 0 ? '+' : ''}${k.evActualR.toFixed(1)}%R`;
