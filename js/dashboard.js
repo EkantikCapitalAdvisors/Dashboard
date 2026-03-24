@@ -6,7 +6,8 @@
 // State
 const state = {
     active: { allTrades: [], currentPeriod: 'alltime', selectedWeek: null, kpis: null, snapshots: [], edgePeriod: 'alltime' },
-    discord: { allTrades: [], currentPeriod: 'alltime', selectedWeek: null, kpis: null, snapshots: [], edgePeriod: 'alltime' }
+    discord: { allTrades: [], currentPeriod: 'alltime', selectedWeek: null, kpis: null, snapshots: [], edgePeriod: 'alltime' },
+    options: { allTrades: [], currentPeriod: 'alltime', selectedWeek: null, kpis: null, snapshots: [], edgePeriod: 'alltime' }
 };
 
 const chartInstances = {};
@@ -343,10 +344,11 @@ function showUploadWarning(method, msg) {
 
 function clearData(method) {
     if (!confirm('Clear all uploaded data? This will remove it from this browser only. Database records are preserved.')) return;
-    localStorage.removeItem(method === 'active' ? 'ecfs-trades' : 'discord-trades');
-    localStorage.removeItem(method === 'active' ? 'ecfs-filename' : 'discord-filename');
-    localStorage.removeItem(method === 'active' ? 'ecfs-upload-time' : 'discord-upload-time');
-    localStorage.removeItem(method === 'active' ? 'ecfs-snapshots' : 'discord-snapshots');
+    const keyPrefix = method === 'active' ? 'ecfs' : method === 'options' ? 'options' : 'discord';
+    localStorage.removeItem(`${keyPrefix}-trades`);
+    localStorage.removeItem(`${keyPrefix}-filename`);
+    localStorage.removeItem(`${keyPrefix}-upload-time`);
+    localStorage.removeItem(`${keyPrefix}-snapshots`);
     if (method === 'active') localStorage.removeItem('ecfs-raw-csv');
     state[method].allTrades = [];
     state[method].kpis = null;
@@ -782,9 +784,9 @@ function refreshDashboard(method) {
 
     state[method].periodTrades = trades; // saved for trade log filter/sort
 
-    const risk = method === 'active' ? ECFS_RISK : DISCORD_RISK;
-    const ppt = method === 'active' ? ECFS_PPT : DISCORD_PPT;
-    const startBal = method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
+    const risk = method === 'options' ? OPTIONS_RISK : method === 'active' ? ECFS_RISK : DISCORD_RISK;
+    const ppt = method === 'options' ? OPTIONS_PPT : method === 'active' ? ECFS_PPT : DISCORD_PPT;
+    const startBal = method === 'options' ? OPTIONS_STARTING_BALANCE : method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
     const kpis = calculateKPIs(trades, risk, ppt, startBal);
     state[method].kpis = kpis;
 
@@ -817,6 +819,7 @@ function refreshDashboard(method) {
     updateLastUpdated(allTrades);
 
     if (method === 'discord') renderDiscord(kpis, trades, allTimeKPIs, allTrades);
+    if (method === 'options') renderOptions(kpis, trades, allTimeKPIs, allTrades);
 
     // Update edge section with its own independent timeframe filter
     updateEdgeSection(method);
@@ -884,9 +887,9 @@ function updateEdgeSection(method) {
 
     const edgePeriod = state[method].edgePeriod || 'alltime';
     const edgeTrades = filterByTimeWindow(allTrades, edgePeriod);
-    const risk = method === 'active' ? ECFS_RISK : DISCORD_RISK;
-    const ppt = method === 'active' ? ECFS_PPT : DISCORD_PPT;
-    const startBal = method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
+    const risk = method === 'options' ? OPTIONS_RISK : method === 'active' ? ECFS_RISK : DISCORD_RISK;
+    const ppt = method === 'options' ? OPTIONS_PPT : method === 'active' ? ECFS_PPT : DISCORD_PPT;
+    const startBal = method === 'options' ? OPTIONS_STARTING_BALANCE : method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
     const edgeK = edgeTrades.length > 0 ? calculateKPIs(edgeTrades, risk, ppt, startBal) : null;
     if (!edgeK) return;
 
@@ -1395,9 +1398,9 @@ function renderFoodChain(method, k, allK, allTrades) {
 function computeAnnualRFromAllTrades(method) {
     const trades = state[method].allTrades;
     if (!trades || trades.length === 0) return 0;
-    const risk = method === 'active' ? ECFS_RISK : DISCORD_RISK;
-    const ppt = method === 'active' ? ECFS_PPT : DISCORD_PPT;
-    const startBal = method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
+    const risk = method === 'options' ? OPTIONS_RISK : method === 'active' ? ECFS_RISK : DISCORD_RISK;
+    const ppt = method === 'options' ? OPTIONS_PPT : method === 'active' ? ECFS_PPT : DISCORD_PPT;
+    const startBal = method === 'options' ? OPTIONS_STARTING_BALANCE : method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
     const kpis = calculateKPIs(trades, risk, ppt, startBal);
     if (!kpis || kpis.totalTrades < 1) return 0;
     const evR = kpis.evActualR / 100;
@@ -1987,9 +1990,9 @@ function getCompareKPIs(method) {
 
     if (!trades || trades.length === 0) trades = allTrades;
 
-    const risk = method === 'active' ? ECFS_RISK : DISCORD_RISK;
-    const ppt = method === 'active' ? ECFS_PPT : DISCORD_PPT;
-    const startBal = method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
+    const risk = method === 'options' ? OPTIONS_RISK : method === 'active' ? ECFS_RISK : DISCORD_RISK;
+    const ppt = method === 'options' ? OPTIONS_PPT : method === 'active' ? ECFS_PPT : DISCORD_PPT;
+    const startBal = method === 'options' ? OPTIONS_STARTING_BALANCE : method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
     return calculateKPIs(trades, risk, ppt, startBal);
 }
 
@@ -2903,10 +2906,10 @@ function deleteTrade(method, tradeNum) {
     state[method].allTrades = trades;
     try { localStorage.setItem(`${method}-trades`, JSON.stringify(trades)); } catch (e) {}
     // Regenerate snapshots and refresh
-    const snapshots = generateWeeklySnapshots(trades, method,
-        method === 'discord' ? DISCORD_RISK : ECFS_RISK,
-        method === 'discord' ? DISCORD_PPT : ECFS_PPT,
-        method === 'discord' ? DISCORD_STARTING_BALANCE : ECFS_STARTING_BALANCE);
+    const _delRisk = method === 'options' ? OPTIONS_RISK : method === 'discord' ? DISCORD_RISK : ECFS_RISK;
+    const _delPpt = method === 'options' ? OPTIONS_PPT : method === 'discord' ? DISCORD_PPT : ECFS_PPT;
+    const _delBal = method === 'options' ? OPTIONS_STARTING_BALANCE : method === 'discord' ? DISCORD_STARTING_BALANCE : STARTING_BALANCE;
+    const snapshots = generateWeeklySnapshots(trades, method, _delRisk, _delPpt, _delBal);
     state[method].snapshots = snapshots;
     try { localStorage.setItem(`${method}-snapshots`, JSON.stringify(snapshots)); } catch (e) {}
     refreshDashboard(method);
@@ -3183,6 +3186,77 @@ document.addEventListener('DOMContentLoaded', async function () {
         } catch (e) { console.error('Error loading Discord JSON:', e); }
     }
 
+    // ===== OPTIONS PANEL (only if ?options=1 is in URL) =====
+    const optionsEnabled = new URLSearchParams(window.location.search).has('options');
+    if (optionsEnabled) {
+        document.getElementById('nav-options').classList.remove('hidden');
+        document.getElementById('panel-options').style.display = 'none'; // start hidden, user clicks tab
+
+        let optionsLoaded = false;
+        const savedOptions = localStorage.getItem('options-trades');
+        if (savedOptions) {
+            try {
+                state.options.allTrades = JSON.parse(savedOptions);
+                if (state.options.allTrades.length > 0) {
+                    const weeks = getWeeksList(state.options.allTrades);
+                    state.options.selectedWeek = weeks[0];
+                    populateWeekSelector('options', weeks);
+                    refreshDashboard('options');
+                    optionsLoaded = true;
+                    showExportButton('options');
+                }
+            } catch (e) { console.error('Error loading Options data:', e); }
+        }
+
+        if (!optionsLoaded) {
+            try {
+                const dbTrades = await DB.loadTrades('options_trades');
+                if (dbTrades.length > 0) {
+                    const seenKeys = new Set();
+                    const uniqueDbTrades = dbTrades.filter(row => {
+                        const key = `${row.datetime}|${row.direction}|${row.dollar_pl}`;
+                        if (seenKeys.has(key)) return false;
+                        seenKeys.add(key);
+                        return true;
+                    });
+                    state.options.allTrades = uniqueDbTrades.map(dbRowToOptionsTrade);
+                    const weeks = getWeeksList(state.options.allTrades);
+                    state.options.selectedWeek = weeks[0];
+                    populateWeekSelector('options', weeks);
+                    refreshDashboard('options');
+                    optionsLoaded = true;
+                    showExportButton('options');
+                }
+            } catch (e) { console.error('Error loading Options from DB:', e); }
+        }
+
+        // Background DB sync for options trades
+        if (optionsLoaded && state.options.allTrades.length > 0) {
+            (async () => {
+                try {
+                    const lsTrades = state.options.allTrades.filter(t => !t._isSample);
+                    if (lsTrades.length === 0) return;
+                    const dbRows = await DB.loadTrades('options_trades');
+                    const dbByNum = new Map(dbRows.map(r => [r.trade_num, r]));
+                    const needsSync = lsTrades.filter(t => {
+                        const db = dbByNum.get(t.tradeNum);
+                        if (!db) return true;
+                        return db.dollar_pl !== t.dollarPL || db.entry_price !== t.entryPrice;
+                    });
+                    if (needsSync.length > 0) {
+                        showUploadProgress('options', `Syncing ${needsSync.length} trades to database…`);
+                        const dbReady = needsSync.map(optionsTradeToDbRow);
+                        await DB.saveTrades('options_trades', dbReady, `options-sync-${Date.now()}`);
+                        showUploadSuccess('options', `${lsTrades.length} trades · ${needsSync.length} synced to database`);
+                    }
+                } catch (e) {
+                    console.warn('[DB sync] Options background sync failed:', e);
+                    showUploadWarning('options', 'Background sync failed — trades saved locally only.');
+                }
+            })();
+        }
+    }
+
     // Load weekly snapshots for historical charts
     // Priority: localStorage → REST API DB → regenerate from trade data
     const tryLoadSnapshotsFromStorage = (storageKey) => {
@@ -3223,6 +3297,10 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (state.discord.snapshots.length === 0 && state.discord.allTrades.length > 0) {
         state.discord.snapshots = generateWeeklySnapshots(state.discord.allTrades, 'discord', DISCORD_RISK, DISCORD_PPT, DISCORD_STARTING_BALANCE);
         localStorage.setItem('discord-snapshots', JSON.stringify(state.discord.snapshots));
+    }
+    if (state.options.snapshots.length === 0 && state.options.allTrades.length > 0) {
+        state.options.snapshots = generateWeeklySnapshots(state.options.allTrades, 'options', OPTIONS_RISK, OPTIONS_PPT, OPTIONS_STARTING_BALANCE);
+        localStorage.setItem('options-snapshots', JSON.stringify(state.options.snapshots));
     }
 
     // Re-render growth charts now that BOTH strategies' data is available
@@ -3349,13 +3427,14 @@ function showExportToast(msg) {
 // ===== TRADE LOG FILTER + SORT =====
 const tradeLogState = {
     active:  { filter: 'all', sortCol: null, sortDir: 1 },
-    discord: { filter: 'all', sortCol: null, sortDir: 1 }
+    discord: { filter: 'all', sortCol: null, sortDir: 1 },
+    options: { filter: 'all', sortCol: null, sortDir: 1 }
 };
 
 function filterTradeLog(method, filter) {
     tradeLogState[method].filter = filter;
     // Active style class depends on method
-    const activeClass = method === 'discord' ? 'trade-filter-active-blue' : 'trade-filter-active';
+    const activeClass = method === 'discord' ? 'trade-filter-active-blue' : method === 'options' ? 'trade-filter-active-purple' : 'trade-filter-active';
     ['all', 'win', 'loss', 'long', 'short'].forEach(f => {
         const btn = document.getElementById(`${method}-filter-${f}`);
         if (!btn) return;
@@ -3435,6 +3514,8 @@ function _rerenderTradeLog(method) {
 
     if (method === 'active') {
         renderTradeLog('active-trades-body', sorted, ECFS_RISK);
+    } else if (method === 'options') {
+        renderOptionsTradeLog('options-trades-body', sorted);
     } else {
         renderDiscordTradeLog('discord-trades-body', sorted);
     }
@@ -3449,7 +3530,7 @@ function resetTradeLogFilter(method) {
         const btn = document.getElementById(`${method}-filter-${f}`);
         if (!btn) return;
         const isAll = f === 'all';
-        const activeClass = method === 'discord' ? 'trade-filter-active-blue' : 'trade-filter-active';
+        const activeClass = method === 'discord' ? 'trade-filter-active-blue' : method === 'options' ? 'trade-filter-active-purple' : 'trade-filter-active';
         btn.className = isAll
             ? `trade-filter-btn ${activeClass} px-2.5 py-1 rounded text-[10px] border border-transparent`
             : 'trade-filter-btn px-2.5 py-1 rounded text-[10px] font-semibold bg-[#0d1d35] text-gray-400 border border-gray-700';
@@ -3668,10 +3749,285 @@ async function _handleDiscordParseUpload(newTrades) {
     if (expBtn) expBtn.classList.remove('hidden');
 }
 
+// ===== OPTIONS STRATEGY PANEL =====
+
+function switchPanel(panel) {
+    const discordPanel = document.getElementById('panel-discord');
+    const optionsPanel = document.getElementById('panel-options');
+    const navDiscord = document.getElementById('nav-discord');
+    const navOptions = document.getElementById('nav-options');
+
+    if (panel === 'options') {
+        if (discordPanel) discordPanel.style.display = 'none';
+        if (optionsPanel) optionsPanel.style.display = '';
+        if (navDiscord) { navDiscord.classList.remove('text-blue-400'); navDiscord.classList.add('text-gray-500'); }
+        if (navOptions) { navOptions.classList.remove('text-gray-500'); navOptions.classList.add('text-purple-400'); }
+    } else {
+        if (discordPanel) discordPanel.style.display = '';
+        if (optionsPanel) optionsPanel.style.display = 'none';
+        if (navDiscord) { navDiscord.classList.remove('text-gray-500'); navDiscord.classList.add('text-blue-400'); }
+        if (navOptions) { navOptions.classList.remove('text-purple-400'); navOptions.classList.add('text-gray-500'); }
+    }
+}
+
+function renderOptions(k, trades, allK, allTrades) {
+    const tradeCountEl = document.getElementById('options-live-trade-count');
+    if (tradeCountEl) tradeCountEl.textContent = `${allTrades.length} trades (All-Time)`;
+    const lastUpdEl = document.getElementById('options-live-last-updated');
+    if (lastUpdEl) {
+        const uploadTime = parseInt(localStorage.getItem('options-upload-time') || '0');
+        if (uploadTime > 0) {
+            lastUpdEl.textContent = new Date(uploadTime).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        } else {
+            lastUpdEl.textContent = getLastTradeDate(allTrades) || '—';
+        }
+    }
+
+    setColor('options-hero-pnl', fmtDollar(k.netPL), k.netPL);
+    document.getElementById('options-hero-pnl-sub').textContent = `${k.totalTrades} trade${k.totalTrades !== 1 ? 's' : ''}`;
+    setColor('options-hero-return', fmtPct(k.returnPct), k.returnPct);
+    setColor('options-hero-ev', `${fmtPct(k.evActualR)}R`, k.evActualR);
+    document.getElementById('options-hero-ev-sub').textContent = `${fmtDollar(k.evPerTrade)}/trade`;
+    document.getElementById('options-hero-wr').textContent = `${k.winRate.toFixed(1)}%`;
+    document.getElementById('options-hero-wr-sub').textContent = `${k.winCount}W / ${k.lossCount}L`;
+    document.getElementById('options-hero-pf').textContent = k.profitFactor === Infinity ? '∞' : k.profitFactor.toFixed(2);
+    document.getElementById('options-hero-pf-sub').textContent = `${fmtDollar(k.grossWins)} / ${fmtDollar(k.grossLosses)}`;
+    setColor('options-hero-dd', `-${fmtDollar(k.maxDD)}`, k.maxDD > 0 ? -1 : 0);
+    document.getElementById('options-hero-dd-sub').textContent = `-${k.maxDDPct.toFixed(2)}%`;
+
+    // Charts
+    renderEquityCurve('chart-equity-options', k.equityCurve, k.drawdownCurve, '#a855f7');
+    renderDailyPL('chart-daily-options', k.dailyPL, k.tradingDays);
+    renderPLDistribution('chart-pldist-options', k.plDistribution, '#a855f7');
+    renderWeeklyTrend('chart-weekly-trend-options', allK.weeklyPL, 'options');
+
+    // Monthly Summary
+    renderMonthlySummary('monthly-summary-options', allTrades, OPTIONS_RISK, OPTIONS_PPT, OPTIONS_STARTING_BALANCE);
+
+    // Trade Log
+    renderOptionsTradeLog('options-trades-body', trades);
+    document.getElementById('options-trade-count').textContent = `${trades.length} trades`;
+}
+
+function renderOptionsTradeLog(tbodyId, trades) {
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+    const isAdmin = new URLSearchParams(window.location.search).has('admin');
+    if (isAdmin) {
+        const headerRow = tbody.closest('table')?.querySelector('thead tr');
+        if (headerRow && !headerRow.querySelector('.admin-actions-th')) {
+            const th = document.createElement('th');
+            th.className = 'text-gray-400 text-[10px] admin-actions-th';
+            th.textContent = 'Actions';
+            headerRow.appendChild(th);
+        }
+    }
+    tbody.innerHTML = trades.map(t => {
+        const typeColor = (t.optionType || '').toUpperCase() === 'CALL' ? 'text-emerald-400' : 'text-red-400';
+        const plColor = t.dollarPL > 0 ? 'text-green-400' : t.dollarPL < 0 ? 'text-red-400' : 'text-gray-400';
+        const badge = t.isWin ? '<span class="bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded text-[10px] font-bold">W</span>' : '<span class="bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded text-[10px] font-bold">L</span>';
+        const adminBtns = isAdmin ? `<td class="text-[11px] whitespace-nowrap">
+            <button onclick="editTrade('options','${t.tradeNum}')" class="text-purple-400 hover:text-purple-300 mr-1" title="Edit"><i class="fas fa-pen text-[9px]"></i></button>
+            <button onclick="deleteTrade('options','${t.tradeNum}')" class="text-red-400 hover:text-red-300" title="Delete"><i class="fas fa-trash text-[9px]"></i></button>
+        </td>` : '';
+        return `<tr class="hover:bg-purple-500/5 transition-colors">
+            <td class="text-gray-300 text-[11px]">${t.datetime}</td>
+            <td class="text-purple-400 text-[11px] font-semibold">${t.tradeNum}</td>
+            <td class="text-gray-300 text-[11px]">${t.ticker || 'SPX'}</td>
+            <td class="${typeColor} text-[11px] font-semibold">${t.optionType || '—'}</td>
+            <td class="text-gray-300 text-[11px]">${t.strike || '—'}</td>
+            <td class="text-gray-300 text-[11px]">${t.expiry || '—'}</td>
+            <td class="text-gray-300 text-[11px]">$${(t.entryPrice || 0).toFixed(2)}</td>
+            <td class="text-gray-300 text-[11px]">$${(t.stopPrice || 0).toFixed(2)}</td>
+            <td class="text-gray-500 text-[11px]">${t.notes || '0-DTE'}</td>
+            <td class="${plColor} text-[11px] font-semibold">${t.dollarPL >= 0 ? '+' : ''}$${t.dollarPL.toFixed(2)}</td>
+            <td>${badge}</td>
+            ${adminBtns}
+        </tr>`;
+    }).join('');
+}
+
+// Options parser functions
+let _optionsParsedTrades = [];
+
+function setOptionsParserNow() {
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    document.getElementById('options-parser-datetime').value =
+        `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    livePreviewOptions();
+}
+
+function livePreviewOptions() {
+    const text     = (document.getElementById('options-parser-input')    || {}).value || '';
+    const datetime = (document.getElementById('options-parser-datetime') || {}).value || '';
+    const previewEl  = document.getElementById('options-parser-preview');
+    const uploadBtn  = document.getElementById('options-parser-upload-btn');
+    if (!previewEl) return;
+
+    if (!text.trim()) {
+        previewEl.innerHTML = '<p class="text-gray-600 text-xs text-center mt-8">Enter options trades to preview</p>';
+        if (uploadBtn) uploadBtn.disabled = true;
+        _optionsParsedTrades = [];
+        return;
+    }
+    if (!datetime) {
+        previewEl.innerHTML = '<p class="text-yellow-500 text-xs text-center mt-8"><i class="fas fa-exclamation-triangle mr-1"></i>Set a date &amp; time first</p>';
+        if (uploadBtn) uploadBtn.disabled = true;
+        _optionsParsedTrades = [];
+        return;
+    }
+
+    try {
+        const trades = parseOptionsAlerts(text, datetime);
+        _optionsParsedTrades = trades;
+
+        if (trades.length === 0) {
+            previewEl.innerHTML = '<p class="text-gray-500 text-xs text-center mt-8">No complete trades found yet…<br><span class="text-[10px] text-gray-600">Need setup (ticker, type, strike, expiry, price) and result (+/- dollars)</span></p>';
+            if (uploadBtn) uploadBtn.disabled = true;
+            return;
+        }
+
+        if (uploadBtn) uploadBtn.disabled = false;
+
+        const rows = trades.map(t => `
+            <tr class="border-b border-gray-700/30 last:border-0">
+                <td class="py-1.5 pr-2 text-xs text-gray-300 font-mono">${t.tradeNum}</td>
+                <td class="py-1.5 pr-2 text-xs text-gray-300">${t.ticker}</td>
+                <td class="py-1.5 pr-2 text-xs ${t.optionType === 'CALL' ? 'text-emerald-400' : 'text-red-400'}">${t.optionType}</td>
+                <td class="py-1.5 pr-2 text-xs text-gray-300">${t.strike}</td>
+                <td class="py-1.5 pr-2 text-xs text-gray-500">${t.expiry}</td>
+                <td class="py-1.5 pr-2 text-xs text-gray-300">$${t.entryPrice.toFixed(2)}</td>
+                <td class="py-1.5 text-xs font-bold ${t.isWin ? 'text-emerald-400' : 'text-red-400'}">${t.dollarPL > 0 ? '+' : ''}$${t.dollarPL}</td>
+            </tr>`).join('');
+
+        previewEl.innerHTML = `
+            <div class="mb-2 flex items-center justify-between">
+                <span class="text-xs text-gray-400 font-semibold">${trades.length} trade${trades.length > 1 ? 's' : ''} parsed</span>
+                <span class="text-[10px] text-gray-600">${datetime.replace('T',' ')}</span>
+            </div>
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-gray-700/50">
+                        <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5 pr-2">#</th>
+                        <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5 pr-2">Ticker</th>
+                        <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5 pr-2">Type</th>
+                        <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5 pr-2">Strike</th>
+                        <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5 pr-2">Expiry</th>
+                        <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5 pr-2">Entry</th>
+                        <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5">P&L</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>`;
+    } catch (err) {
+        previewEl.innerHTML = `<p class="text-red-400 text-xs text-center mt-8">Parse error: ${err.message}</p>`;
+        if (uploadBtn) uploadBtn.disabled = true;
+        _optionsParsedTrades = [];
+    }
+}
+
+async function submitOptionsParser() {
+    if (!_optionsParsedTrades || _optionsParsedTrades.length === 0) return;
+    const btn = document.getElementById('options-parser-upload-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Uploading…';
+    try {
+        await _handleOptionsParseUpload(_optionsParsedTrades);
+        document.getElementById('options-parser-input').value = '';
+        livePreviewOptions();
+        btn.innerHTML = '<i class="fas fa-check mr-2"></i>Uploaded!';
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-upload mr-2"></i>Upload Trades'; btn.disabled = false; }, 2500);
+    } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-upload mr-2"></i>Upload Trades';
+        showUploadProgress('options', `Error: ${err.message}`);
+    }
+}
+
+async function _handleOptionsParseUpload(newTrades) {
+    showUploadProgress('options', 'Processing…');
+
+    let existingTrades = state.options.allTrades.filter(t => !t._isSample);
+    if (existingTrades.length === 0) {
+        try {
+            const lsJson = localStorage.getItem('options-trades');
+            if (lsJson) {
+                const parsed = JSON.parse(lsJson);
+                if (Array.isArray(parsed)) existingTrades = parsed.filter(t => !t._isSample);
+            }
+        } catch (e) {}
+    }
+    if (existingTrades.length === 0) {
+        try {
+            const dbTrades = await DB.loadTrades('options_trades');
+            if (dbTrades.length > 0) {
+                const seen = new Set();
+                existingTrades = dbTrades
+                    .filter(r => { if (seen.has(r.trade_num)) return false; seen.add(r.trade_num); return true; })
+                    .map(dbRowToOptionsTrade);
+            }
+        } catch (e) {}
+    }
+
+    const newNums = new Set(newTrades.map(t => t.tradeNum));
+    const retained = existingTrades.filter(t => !newNums.has(t.tradeNum));
+    const trades = [...retained, ...newTrades].sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
+
+    state.options.allTrades   = trades;
+    state.options.isSampleData = false;
+
+    const weeks = getWeeksList(trades);
+    state.options.selectedWeek = weeks[0];
+    populateWeekSelector('options', weeks);
+    setPeriod('options', 'alltime');
+
+    try {
+        localStorage.setItem('options-trades', JSON.stringify(trades));
+        localStorage.setItem('options-filename', 'Options Parser');
+    } catch (e) {
+        try { localStorage.setItem('options-trades', JSON.stringify(trades)); } catch (e2) {}
+    }
+    try { localStorage.setItem('options-upload-time', Date.now().toString()); } catch (e) {}
+
+    const snapshots = generateWeeklySnapshots(trades, 'options', OPTIONS_RISK, OPTIONS_PPT, OPTIONS_STARTING_BALANCE);
+    state.options.snapshots = snapshots;
+    try { localStorage.setItem('options-snapshots', JSON.stringify(snapshots)); } catch (e) {}
+
+    showUploadProgress('options', 'Syncing to database…');
+    try {
+        const batchId = `options-${Date.now()}`;
+        // Convert to DB row format before saving
+        const dbReadyTrades = trades.map(optionsTradeToDbRow);
+        await DB.saveTrades('options_trades', dbReadyTrades, batchId);
+        showUploadSuccess('options', `${trades.length} total trades (${newTrades.length} added)`);
+    } catch (dbErr) {
+        console.warn('DB sync failed:', dbErr);
+        showUploadSuccess('options', `${trades.length} trades saved locally (DB sync pending)`);
+    }
+    const expBtn = document.getElementById('export-btn-options');
+    if (expBtn) expBtn.classList.remove('hidden');
+}
+
+function exportOptionsData() {
+    const trades = state.options.allTrades;
+    if (!trades || trades.length === 0) return;
+    const json = JSON.stringify(trades.map(optionsTradeToDbRow), null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `options_trades_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
 // ===== SKELETON LOADING HELPERS =====
 function showSkeletonKPIs(method) {
     const ids = method === 'active'
         ? ['active-hero-pnl','active-hero-return','active-hero-ev','active-hero-wr','active-hero-pf','active-hero-dd']
+        : method === 'options'
+        ? ['options-hero-pnl','options-hero-return','options-hero-ev','options-hero-wr','options-hero-pf','options-hero-dd']
         : ['discord-hero-pnl','discord-hero-return','discord-hero-ev','discord-hero-wr','discord-hero-pf','discord-hero-dd'];
     ids.forEach(id => {
         const el = document.getElementById(id);
