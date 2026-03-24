@@ -331,13 +331,13 @@
     "stop_price": 679,
     "trailing_profit": "—",
     "points_pl": 10,
-    "risk_points": 6214,
+    "risk_points": 10,
     "dollar_pl": 500,
-    "risk_dollars": 310700,
+    "risk_dollars": 500,
     "is_win": true,
     "outcome": "Win",
     "trade_date": "3/5/2026",
-    "upload_batch": "discord-sync-1774315210867"
+    "upload_batch": "discord-sync-1774372634027"
   },
   {
     "week_key": "03/02/2026",
@@ -525,5 +525,22 @@
     "outcome": "Win",
     "trade_date": "3/20/2026",
     "upload_batch": "discord-sync-1774300016754"
+  },
+  {
+    "week_key": "03/23/2026",
+    "datetime": "3/24/2026 10:51",
+    "trade_num": "F32",
+    "direction": "Sell",
+    "entry_price": 6644,
+    "stop_price": 0,
+    "trailing_profit": "—",
+    "points_pl": 10,
+    "risk_points": 10,
+    "dollar_pl": 500,
+    "risk_dollars": 500,
+    "is_win": true,
+    "outcome": "Win",
+    "trade_date": "3/24/2026",
+    "upload_batch": "discord-sync-1774372634027"
   }
 ]
