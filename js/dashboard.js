@@ -4176,6 +4176,38 @@ function exportOptionsData() {
     URL.revokeObjectURL(url);
 }
 
+// ===== IMPORT OPTIONS FROM EXPORTED JSON =====
+function importOptionsJson() {
+    document.getElementById('options-import-file').click();
+}
+
+async function handleOptionsJsonImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    event.target.value = ''; // reset so same file can be re-imported
+
+    try {
+        const text = await file.text();
+        const rows = JSON.parse(text);
+        if (!Array.isArray(rows) || rows.length === 0) {
+            showUploadProgress('options', 'Error: JSON file is empty or invalid');
+            return;
+        }
+
+        // Accept both DB-row format (snake_case from export) and camelCase
+        const trades = rows.map(r => {
+            if (r.trade_num !== undefined) return dbRowToOptionsTrade(r);
+            return r; // already camelCase
+        });
+
+        showUploadProgress('options', `Importing ${trades.length} trades…`);
+        await _handleOptionsParseUpload(trades);
+    } catch (err) {
+        console.error('JSON import error:', err);
+        showUploadProgress('options', `Error: ${err.message}`);
+    }
+}
+
 // ===== SKELETON LOADING HELPERS =====
 function showSkeletonKPIs(method) {
     const ids = method === 'active'

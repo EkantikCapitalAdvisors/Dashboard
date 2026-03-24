@@ -1358,6 +1358,10 @@
                                     <button id="export-btn-options" onclick="exportOptionsData()" class="hidden px-4 py-2.5 bg-emerald-600/80 hover:bg-emerald-500 text-white font-semibold text-sm rounded-lg transition-all inline-flex items-center" title="Export JSON">
                                         <i class="fas fa-download mr-1.5"></i>Export
                                     </button>
+                                    <button onclick="importOptionsJson()" class="px-4 py-2.5 bg-amber-600/80 hover:bg-amber-500 text-white font-semibold text-sm rounded-lg transition-all inline-flex items-center" title="Import from exported JSON">
+                                        <i class="fas fa-file-import mr-1.5"></i>Import
+                                    </button>
+                                    <input type="file" id="options-import-file" accept=".json" class="hidden" onchange="handleOptionsJsonImport(event)">
                                     <button onclick="clearData('options')" class="px-4 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all" title="Clear all trades">
                                         <i class="fas fa-trash"></i>
                                     </button>
