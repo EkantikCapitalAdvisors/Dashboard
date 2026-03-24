@@ -3186,8 +3186,9 @@ document.addEventListener('DOMContentLoaded', async function () {
         } catch (e) { console.error('Error loading Discord JSON:', e); }
     }
 
-    // ===== OPTIONS PANEL (only if ?options=1 is in URL) =====
-    const optionsEnabled = new URLSearchParams(window.location.search).has('options');
+    // ===== OPTIONS PANEL (only if ?options or ?option is in URL) =====
+    const _urlParams = new URLSearchParams(window.location.search);
+    const optionsEnabled = _urlParams.has('options') || _urlParams.has('option');
     if (optionsEnabled) {
         document.getElementById('nav-options').classList.remove('hidden');
         document.getElementById('panel-options').style.display = 'none'; // start hidden, user clicks tab
