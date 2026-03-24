@@ -3883,6 +3883,8 @@ function switchPanel(panel) {
         if (navOptions) { navOptions.classList.remove('text-purple-400'); navOptions.classList.add('text-gray-500'); }
     }
     updateHeroBadgesForPanel(panel);
+    const disclaimerAmt = document.getElementById('disclaimer-portfolio-amount');
+    if (disclaimerAmt) disclaimerAmt.textContent = panel === 'options' ? '$10,000 starting portfolio' : '$20,000 starting portfolio';
 }
 
 function updateHeroBadgesForPanel(panel) {
