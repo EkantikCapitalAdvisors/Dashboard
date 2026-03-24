@@ -29,6 +29,11 @@
     color: #0a1628 !important;
     border-color: transparent !important;
 }
+.active-edge-period-purple {
+    background: linear-gradient(135deg, #9333ea 0%, #a855f7 100%) !important;
+    color: #0a1628 !important;
+    border-color: transparent !important;
+}
 
 /* Week Navigation */
 .week-nav-button { transition: all 0.2s ease; }

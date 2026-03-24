@@ -1126,6 +1126,190 @@
 
                     </div><!-- /detailed-dashboard-options -->
 
+                    <!-- ╔══════════════════════════════════════════════════════╗ -->
+                    <!-- ║  UNDERSTANDING THE EDGE — OPTIONS                    ║ -->
+                    <!-- ╚══════════════════════════════════════════════════════╝ -->
+
+                    <div class="text-center mb-6">
+                        <button onclick="toggleOptionsEdgeSection()" id="btn-edge-theory-options" class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-purple-500/20 to-purple-500/5 border-2 border-purple-400/40 text-white font-bold text-sm rounded-xl hover:border-purple-400/80 hover:shadow-lg hover:shadow-purple-400/20 transition-all">
+                            <i class="fas fa-brain mr-2 text-purple-400"></i>Understanding the Edge — How & Why It Works
+                            <i class="fas fa-chevron-down ml-3 text-purple-400 text-xs transition-transform" id="icon-edge-theory-options"></i>
+                        </button>
+                    </div>
+
+                    <div id="edge-theory-section-options" class="hidden">
+
+                    <!-- 1. How Is The Edge Calculated? (Options) -->
+                    <div class="bg-gradient-to-br from-[#1a0d35] to-[#0a1628] border border-purple-400/25 rounded-2xl p-6 sm:p-8 mb-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 rounded-full bg-purple-400/15 flex items-center justify-center flex-shrink-0">
+                                <span class="text-purple-400 font-bold text-lg">1</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white">How Is The Edge Calculated?</h3>
+                                <p class="text-gray-400 text-xs mt-0.5">The mathematical formula behind every options trade</p>
+                            </div>
+                        </div>
+
+                        <!-- Edge Timeframe Filter -->
+                        <div class="flex items-center justify-between mb-5 flex-wrap gap-2">
+                            <span class="text-gray-500 text-[10px] flex items-center gap-1.5">
+                                <i class="fas fa-filter text-purple-400/60"></i>
+                                <span id="edge-period-label-options" class="text-gray-400">All-Time</span>
+                            </span>
+                            <div class="flex gap-1.5">
+                                <button onclick="setEdgePeriod('options','1week')" id="edge-period-options-1week"
+                                    class="edge-period-btn px-2.5 py-1 bg-[#0d1d35] text-gray-400 rounded text-[10px] font-bold border border-gray-700 hover:border-purple-400/50 transition-all">1 Week</button>
+                                <button onclick="setEdgePeriod('options','2weeks')" id="edge-period-options-2weeks"
+                                    class="edge-period-btn px-2.5 py-1 bg-[#0d1d35] text-gray-400 rounded text-[10px] font-bold border border-gray-700 hover:border-purple-400/50 transition-all">2 Weeks</button>
+                                <button onclick="setEdgePeriod('options','1month')" id="edge-period-options-1month"
+                                    class="edge-period-btn px-2.5 py-1 bg-[#0d1d35] text-gray-400 rounded text-[10px] font-bold border border-gray-700 hover:border-purple-400/50 transition-all">1 Month</button>
+                                <button onclick="setEdgePeriod('options','3months')" id="edge-period-options-3months"
+                                    class="edge-period-btn px-2.5 py-1 bg-[#0d1d35] text-gray-400 rounded text-[10px] font-bold border border-gray-700 hover:border-purple-400/50 transition-all">3 Months</button>
+                                <button onclick="setEdgePeriod('options','alltime')" id="edge-period-options-alltime"
+                                    class="edge-period-btn active-edge-period-purple px-2.5 py-1 rounded text-[10px] font-bold transition-all">All-Time</button>
+                            </div>
+                        </div>
+
+                        <!-- The Formula — Visual -->
+                        <div class="bg-[#0a1628] border border-purple-400/15 rounded-xl p-5 mb-6">
+                            <p class="text-gray-500 text-[10px] uppercase tracking-widest mb-3 text-center">EXPECTED VALUE FORMULA</p>
+                            <div class="flex flex-wrap items-center justify-center gap-3 mb-4">
+                                <div class="bg-purple-500/10 border border-purple-400/30 rounded-lg px-4 py-2 text-center">
+                                    <p class="text-[9px] text-purple-400 font-bold">WIN RATE</p>
+                                    <p class="text-lg font-bold text-white" id="ofc-win-rate">—</p>
+                                </div>
+                                <span class="text-gray-500 text-xl">&times;</span>
+                                <div class="bg-green-500/10 border border-green-400/30 rounded-lg px-4 py-2 text-center">
+                                    <p class="text-[9px] text-green-400 font-bold">AVG WIN</p>
+                                    <p class="text-lg font-bold text-green-400" id="options-edge-avgwin">—</p>
+                                    <p class="text-[9px] text-gray-500" id="options-edge-avgwin-pts"></p>
+                                </div>
+                                <span class="text-gray-500 text-xl">&minus;</span>
+                                <div class="bg-red-500/10 border border-red-400/30 rounded-lg px-4 py-2 text-center">
+                                    <p class="text-[9px] text-red-400 font-bold">LOSS RATE &times; AVG LOSS</p>
+                                    <p class="text-lg font-bold text-red-400" id="options-edge-avgloss">—</p>
+                                    <p class="text-[9px] text-gray-500" id="options-edge-avgloss-pts"></p>
+                                </div>
+                                <span class="text-gray-500 text-xl">=</span>
+                                <div class="bg-purple-400/10 border border-purple-400/40 rounded-lg px-5 py-2 text-center">
+                                    <p class="text-[9px] text-purple-400 font-bold">EDGE PER TRADE</p>
+                                    <p class="text-2xl font-bold text-purple-400" id="options-ev-hero-big">—</p>
+                                    <p class="text-[9px] text-gray-400" id="options-ev-hero-sub"></p>
+                                </div>
+                            </div>
+                            <div class="bg-[#0a1628]/80 rounded-lg p-3 font-mono text-xs space-y-0.5 max-w-lg mx-auto">
+                                <p class="text-gray-400">EV = (Win% &times; Avg Win) &minus; (Loss% &times; Avg Loss)</p>
+                                <p class="text-gray-300" id="ofc-formula-line1">EV = ...</p>
+                                <p class="text-gray-300" id="ofc-formula-line2">EV = ...</p>
+                                <p class="text-purple-400 font-bold" id="ofc-formula-result">EV = ...</p>
+                            </div>
+                        </div>
+
+                        <!-- Plain English Explanation -->
+                        <div class="bg-[#0a1628]/60 border border-gray-700/50 rounded-lg p-4 mb-4">
+                            <p class="text-gray-300 text-sm leading-relaxed" id="options-edge-explanation">Upload options trades to see your edge analysis.</p>
+                        </div>
+
+                        <!-- Win Rate + Risk Details -->
+                        <div class="grid sm:grid-cols-3 gap-3">
+                            <div class="bg-purple-900/15 border border-purple-500/20 rounded-lg p-3 text-center">
+                                <p class="text-[10px] text-purple-400 font-bold">WIN RATE</p>
+                                <p class="text-lg font-bold text-white" id="options-edge-wr">—</p>
+                            </div>
+                            <div class="bg-purple-400/8 border border-purple-400/20 rounded-lg p-3 text-center">
+                                <p class="text-[10px] text-purple-400 font-bold">RISK BUDGET</p>
+                                <p class="text-lg font-bold text-white">$500 <span class="text-xs text-gray-500">/day</span></p>
+                            </div>
+                            <div class="bg-gray-800/40 border border-gray-700/30 rounded-lg p-3 text-center">
+                                <p class="text-[10px] text-gray-400 font-bold">W/L RATIO</p>
+                                <p class="text-lg font-bold text-white" id="options-detail-wlratio">—</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Edge Week by Week (Options) -->
+                    <div class="bg-gradient-to-br from-[#1a0d35] to-[#0a1628] border border-purple-400/25 rounded-2xl p-6 sm:p-8 mb-6" id="edge-trend-options-section">
+                        <div class="flex items-center gap-3 mb-5">
+                            <div class="w-10 h-10 rounded-full bg-purple-400/15 flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-chart-bar text-purple-400 text-sm"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white">Edge Week by Week</h3>
+                                <p class="text-gray-400 text-xs mt-0.5">Weekly EV per trade (%R) &middot; bars = each week &middot; line = cumulative edge as data grows</p>
+                            </div>
+                        </div>
+                        <div id="chart-edge-trend-options" style="height: 280px; width: 100%;"></div>
+                        <p class="text-[10px] text-gray-500 mt-2 text-center" id="edge-trend-options-note"></p>
+                    </div>
+
+                    <!-- 2. What Makes It Powerful? (Options) -->
+                    <div class="bg-gradient-to-br from-[#1a0d35] to-[#0a1628] border border-purple-400/25 rounded-2xl p-6 sm:p-8 mb-6" id="foodchain-options">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-full bg-purple-400/15 flex items-center justify-center flex-shrink-0">
+                                <span class="text-purple-400 font-bold text-lg">2</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white">What Makes This Edge Powerful?</h3>
+                                <p class="text-gray-400 text-xs mt-0.5">Edge &times; frequency = annual returns <span class="text-gray-600" id="ofc-period-label"></span></p>
+                            </div>
+                        </div>
+
+                        <!-- Food Chain Comparison Table -->
+                        <div class="overflow-x-auto mb-5">
+                            <table class="w-full text-xs border-collapse">
+                                <thead>
+                                    <tr>
+                                        <th class="text-left text-gray-400 font-bold px-3 py-2.5 border-b-2 border-purple-400/20 bg-purple-400/5">Strategy</th>
+                                        <th class="text-right text-gray-400 font-bold px-3 py-2.5 border-b-2 border-purple-400/20 bg-purple-400/5">Edge/Trade</th>
+                                        <th class="text-right text-gray-400 font-bold px-3 py-2.5 border-b-2 border-purple-400/20 bg-purple-400/5">Trades/Mo</th>
+                                        <th class="text-right text-gray-400 font-bold px-3 py-2.5 border-b-2 border-purple-400/20 bg-purple-400/5">Annual R <span id="ofc-annual-r-header-note" class="text-[9px] font-normal text-gray-500 block">extrapolated &middot; all-time</span></th>
+                                        <th class="text-right text-gray-400 font-bold px-3 py-2.5 border-b-2 border-purple-400/20 bg-purple-400/5">&frac12; Kelly <span class="text-[9px] font-normal text-gray-500 block">recommended size</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ofc-table-body"></tbody>
+                            </table>
+                        </div>
+
+                        <!-- Summary Callout -->
+                        <div id="ofc-summary-callout" class="bg-purple-400/8 border border-purple-400/25 rounded-lg p-3 text-center mb-6">
+                            <p class="text-xs text-gray-300" id="ofc-summary-text">Upload data to see your edge position</p>
+                        </div>
+
+                        <!-- Why It Matters -->
+                        <div class="grid sm:grid-cols-3 gap-4 mb-6">
+                            <div class="bg-[#0a1628]/60 border border-purple-400/15 rounded-xl p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white">1</span>
+                                    <p class="text-white text-xs font-semibold">Magnitude</p>
+                                </div>
+                                <p class="text-gray-400 text-[11px] leading-relaxed" id="ofc-why-magnitude">Your edge per trade compared to industry benchmarks and ECFS Predisposal.</p>
+                            </div>
+                            <div class="bg-[#0a1628]/60 border border-purple-400/15 rounded-xl p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white">2</span>
+                                    <p class="text-white text-xs font-semibold">Frequency</p>
+                                </div>
+                                <p class="text-gray-400 text-[11px] leading-relaxed" id="ofc-why-frequency">Edge &times; trades &times; 12 months = Annual R</p>
+                            </div>
+                            <div class="bg-[#0a1628]/60 border border-purple-400/15 rounded-xl p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white">3</span>
+                                    <p class="text-white text-xs font-semibold">Compounding</p>
+                                </div>
+                                <p class="text-gray-400 text-[11px] leading-relaxed">With selective, high-conviction options trades at 5% daily risk, fewer trades compound into outsized returns.</p>
+                            </div>
+                        </div>
+
+                        <!-- Edge Position Chart -->
+                        <div class="bg-[#0a1628]/60 border border-purple-400/15 rounded-xl p-4">
+                            <h4 class="text-sm font-bold text-purple-400 mb-2"><i class="fas fa-signal mr-1.5"></i>Edge Position vs. Industry</h4>
+                            <div id="ofc-position-chart" style="height: 260px; width: 100%;"></div>
+                        </div>
+                    </div>
+
+                    </div><!-- /edge-theory-section-options -->
+
                     <!-- Upload Card — Options Parser -->
                     <div class="bg-gradient-to-br from-purple-900/10 to-[#0d1d35] border border-purple-400/20 rounded-xl p-5 mb-6">
                         <div class="grid md:grid-cols-2 gap-4">

@@ -598,9 +598,9 @@ function setPeriod(method, period) {
     const edgePeriodMap = { alltime: 'alltime', '1week': '1week', '3months': '3months', '6months': 'alltime', monthly: '1month', week: '2weeks' };
     const mappedEdgePeriod = edgePeriodMap[period] || 'alltime';
     state[method].edgePeriod = mappedEdgePeriod;
-    const activeEdgeClass = method === 'active' ? 'active-edge-period' : 'active-edge-period-blue';
+    const activeEdgeClass = method === 'active' ? 'active-edge-period' : method === 'options' ? 'active-edge-period-purple' : 'active-edge-period-blue';
     document.querySelectorAll(`#panel-${method} .edge-period-btn`).forEach(b => {
-        b.classList.remove('active-edge-period', 'active-edge-period-blue');
+        b.classList.remove('active-edge-period', 'active-edge-period-blue', 'active-edge-period-purple');
         b.classList.add('bg-[#0d1d35]', 'text-gray-400', 'border', 'border-gray-700');
     });
     const edgeBtn = document.getElementById(`edge-period-${method}-${mappedEdgePeriod}`);
@@ -723,6 +723,29 @@ function toggleDetailedDashboard(method) {
 function toggleEdgeSection() {
     const panel = document.getElementById('edge-theory-section');
     const icon = document.getElementById('icon-edge-theory');
+    if (!panel) return;
+
+    const isHidden = panel.classList.contains('hidden');
+    panel.classList.toggle('hidden');
+
+    if (icon) {
+        icon.classList.toggle('fa-chevron-down', !isHidden);
+        icon.classList.toggle('fa-chevron-up', isHidden);
+    }
+
+    if (isHidden) {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(() => {
+            Object.keys(chartInstances).forEach(key => {
+                try { chartInstances[key].resize(); } catch(e) {}
+            });
+        }, 300);
+    }
+}
+
+function toggleOptionsEdgeSection() {
+    const panel = document.getElementById('edge-theory-section-options');
+    const icon = document.getElementById('icon-edge-theory-options');
     if (!panel) return;
 
     const isHidden = panel.classList.contains('hidden');
@@ -868,9 +891,9 @@ function filterByTimeWindow(trades, period) {
 
 function setEdgePeriod(method, period) {
     state[method].edgePeriod = period;
-    const activeClass = method === 'active' ? 'active-edge-period' : 'active-edge-period-blue';
+    const activeClass = method === 'active' ? 'active-edge-period' : method === 'options' ? 'active-edge-period-purple' : 'active-edge-period-blue';
     document.querySelectorAll(`#panel-${method} .edge-period-btn`).forEach(b => {
-        b.classList.remove('active-edge-period', 'active-edge-period-blue');
+        b.classList.remove('active-edge-period', 'active-edge-period-blue', 'active-edge-period-purple');
         b.classList.add('bg-[#0d1d35]', 'text-gray-400', 'border', 'border-gray-700');
     });
     const btn = document.getElementById(`edge-period-${method}-${period}`);
@@ -893,7 +916,7 @@ function updateEdgeSection(method) {
     const edgeK = edgeTrades.length > 0 ? calculateKPIs(edgeTrades, risk, ppt, startBal) : null;
     if (!edgeK) return;
 
-    const prefix = method === 'active' ? 'fc' : 'dfc';
+    const prefix = method === 'active' ? 'fc' : method === 'options' ? 'ofc' : 'dfc';
     const riskBudget = risk;
     const setEl = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
 
@@ -915,6 +938,17 @@ function updateEdgeSection(method) {
         setEl('active-edge-wr', `${edgeK.winRate.toFixed(1)}% (${edgeK.winCount}W / ${edgeK.lossCount}L)`);
         setEl('active-edge-explanation', buildEdgeExplanation(edgeK));
         setEl('active-edge-adherence', `${edgeK.riskAdherence.toFixed(0)}%`);
+    } else if (method === 'options') {
+        const evBig = document.getElementById('options-ev-hero-big');
+        if (evBig) evBig.textContent = `${edgeK.evActualR >= 0 ? '+' : ''}${edgeK.evActualR.toFixed(1)}%R`;
+        setEl('options-ev-hero-sub', `${fmtDollar(edgeK.evPerTrade)} per trade (5% daily risk)`);
+        setColor('options-edge-avgwin', fmtDollar(edgeK.avgWinDollar), 1);
+        setEl('options-edge-avgwin-pts', `$${edgeK.avgWinDollar.toFixed(0)} avg`);
+        setColor('options-edge-avgloss', fmtDollar(edgeK.avgLossDollar), -1);
+        setEl('options-edge-avgloss-pts', `$${Math.abs(edgeK.avgLossDollar).toFixed(0)} avg`);
+        setEl('options-edge-wr', `${edgeK.winRate.toFixed(1)}% (${edgeK.winCount}W / ${edgeK.lossCount}L)`);
+        setEl('options-edge-explanation', buildEdgeExplanation(edgeK));
+        setEl('options-detail-wlratio', edgeK.wlRatio === Infinity ? '∞' : edgeK.wlRatio.toFixed(2));
     } else {
         const evBig = document.getElementById('discord-ev-hero-big');
         if (evBig) evBig.textContent = `${edgeK.evActualR >= 0 ? '+' : ''}${edgeK.evActualR.toFixed(1)}%R`;
@@ -1184,8 +1218,8 @@ function renderDiscord(k, trades, allK, allTrades) {
 
 // ===== EDGE ON THE FOOD CHAIN (Dynamic) =====
 function renderFoodChain(method, k, allK, allTrades) {
-    const prefix = method === 'active' ? 'fc' : 'dfc';
-    const containerId = method === 'active' ? 'foodchain-active' : 'foodchain-discord';
+    const prefix = method === 'active' ? 'fc' : method === 'options' ? 'ofc' : 'dfc';
+    const containerId = method === 'active' ? 'foodchain-active' : method === 'options' ? 'foodchain-options' : 'foodchain-discord';
     const container = document.getElementById(containerId);
     if (!container || !k || k.totalTrades < 1) {
         if (container) container.classList.add('hidden');
@@ -1196,10 +1230,10 @@ function renderFoodChain(method, k, allK, allTrades) {
     container.classList.remove('hidden');
 
     // Constants
-    const plannedRisk = method === 'active' ? ECFS_RISK : DISCORD_RISK;
-    const ppt = method === 'active' ? ECFS_PPT : DISCORD_PPT;
-    const instrument = method === 'active' ? 'MES' : 'ES';
-    const accentColor = method === 'active' ? '#d4af37' : '#60a5fa';
+    const plannedRisk = method === 'active' ? ECFS_RISK : method === 'options' ? OPTIONS_RISK : DISCORD_RISK;
+    const ppt = method === 'active' ? ECFS_PPT : method === 'options' ? OPTIONS_PPT : DISCORD_PPT;
+    const instrument = method === 'active' ? 'MES' : method === 'options' ? 'SPX Options' : 'ES';
+    const accentColor = method === 'active' ? '#d4af37' : method === 'options' ? '#a855f7' : '#60a5fa';
 
     // Use dynamic average realized risk instead of static budget
     const riskBudget = allK.avgRiskDollars > 0 ? allK.avgRiskDollars : plannedRisk;
@@ -1260,7 +1294,7 @@ function renderFoodChain(method, k, allK, allTrades) {
     setEl(`${prefix}-annual-r`, `≈${annualR.toFixed(0)} R`);
 
     // Summary callout: explicit math so the user knows exactly how Annual R was derived
-    const strategyLabel = 'ECFS Predisposal (ES)';
+    const strategyLabel = method === 'options' ? 'Options Strategy (SPX)' : 'ECFS Predisposal (ES)';
     const riskLabel = `$${Math.round(riskBudget)}`;
     const dataAsOf = `<span style="color:#9ca3af;font-weight:normal;"><i class="fas fa-sync-alt" style="font-size:9px;margin-right:3px;"></i>Extrapolated from <strong>${allK.totalTrades} all-time trades</strong> as of ${lastTradeDate} · avg realized risk: ${riskLabel} · updated weekly</span>`;
     setHTML(`${prefix}-summary-text`,
@@ -1288,7 +1322,7 @@ function renderFoodChain(method, k, allK, allTrades) {
     setEl(`${prefix}-formula-result`, `EV = ${edgeSign}${(edgeR / 100).toFixed(3)}R per trade (${edgeSign}${edgeR.toFixed(1)}%R)`);
 
     // --- Returns Scaling Bars ---
-    const accountSize = method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
+    const accountSize = method === 'active' ? STARTING_BALANCE : method === 'options' ? OPTIONS_STARTING_BALANCE : DISCORD_STARTING_BALANCE;
     const barsContainer = el(`${prefix}-returns-bars`);
     if (barsContainer) {
         // Different risk levels (% of account)
@@ -1319,6 +1353,8 @@ function renderFoodChain(method, k, allK, allTrades) {
                 ? 'linear-gradient(to right, #dc2626, #f87171)'
                 : method === 'active'
                     ? 'linear-gradient(to right, #d4af37, #f4c430)'
+                    : method === 'options'
+                    ? 'linear-gradient(to right, #9333ea, #a855f7)'
                     : 'linear-gradient(to right, #3b82f6, #93c5fd)';
 
             const labelColor = isCurrent ? accentColor : '#9ca3af';
@@ -1752,14 +1788,14 @@ function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, pe
     if (!tbody) return;
 
     const edgeSign = edgeR >= 0 ? '+' : '';
-    const strategyName = 'ECFS Predisposal';
-    const icon = 'fa-comments';
+    const strategyName = method === 'options' ? 'Options Strategy' : 'ECFS Predisposal';
+    const icon = method === 'options' ? 'fa-chart-pie' : 'fa-comments';
     const lastDate = getLastTradeDate(state[method].allTrades) || 'latest';
     const totalTrades = state[method].allTrades ? state[method].allTrades.length : 0;
 
     // Kelly Criterion: K% = W - (1-W)/R  where W = win rate, R = avg win / avg loss
     // Half-Kelly is the industry-standard recommendation for smoother equity curves
-    const accountSize = method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
+    const accountSize = method === 'active' ? STARTING_BALANCE : method === 'options' ? OPTIONS_STARTING_BALANCE : DISCORD_STARTING_BALANCE;
     const userKelly = (rr > 0 && winRate > 0) ? ((winRate / 100) - ((1 - winRate / 100) / rr)) * 100 : 0;
     const halfKelly = userKelly / 2;
     const halfKellyDollar = Math.round(accountSize * halfKelly / 100);
@@ -1785,6 +1821,35 @@ function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, pe
         }
     ];
 
+    // When viewing Options, add ECFS Predisposal as a reference row
+    if (method === 'options' && state.discord && state.discord.allTrades && state.discord.allTrades.length > 0) {
+        const ecfsAllK = calculateKPIs(state.discord.allTrades, DISCORD_RISK, DISCORD_PPT, DISCORD_STARTING_BALANCE);
+        const ecfsEdgeR = ecfsAllK.evActualR;
+        const ecfsDays = (() => {
+            const days = ecfsAllK.tradingDays;
+            if (days.length < 2) return 30;
+            const sorted = [...days].sort((a, b) => new Date(a) - new Date(b));
+            return Math.max(1, (new Date(sorted[sorted.length - 1]) - new Date(sorted[0])) / 86400000);
+        })();
+        const ecfsTPM = ecfsAllK.totalTrades / ecfsDays * 30;
+        const ecfsAnnualR = (ecfsEdgeR / 100) * ecfsTPM * 12;
+        const ecfsAvgWin = ecfsAllK.avgWinDollar;
+        const ecfsAvgLoss = Math.abs(ecfsAllK.avgLossDollar);
+        const ecfsRR = ecfsAvgLoss > 0 ? ecfsAvgWin / ecfsAvgLoss : 0;
+        const ecfsKelly = (ecfsRR > 0 && ecfsAllK.winRate > 0) ? ((ecfsAllK.winRate / 100) - ((1 - ecfsAllK.winRate / 100) / ecfsRR)) * 100 / 2 : 0;
+        benchmarks.push({
+            name: 'ECFS Predisposal (ES)',
+            edge: `${ecfsEdgeR >= 0 ? '+' : ''}${ecfsEdgeR.toFixed(1)}%R`,
+            trades: `≈${Math.round(ecfsTPM)}`,
+            annualR: ecfsAnnualR,
+            annualRLabel: `≈${ecfsAnnualR.toFixed(0)} R`,
+            kelly: ecfsKelly > 0 ? `${ecfsKelly.toFixed(1)}%` : 'N/A',
+            kellyNote: `${ecfsAllK.totalTrades} trades`,
+            isYou: false,
+            isECFS: true
+        });
+    }
+
     // Sort by Annual R descending (highest at top)
     benchmarks.sort((a, b) => b.annualR - a.annualR);
 
@@ -1798,6 +1863,15 @@ function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, pe
                 <td style="color: ${accentColor}" class="font-bold text-right px-3 py-2.5 border-b border-gray-700/20">${b.trades}</td>
                 <td style="color: ${accentColor}" class="font-bold text-right px-3 py-2.5 border-b border-gray-700/20">${b.annualRLabel}</td>
                 <td style="color: ${accentColor}" class="font-bold text-right px-3 py-2.5 border-b border-gray-700/20">${b.kelly} <span class="text-[9px] font-normal block" style="color: #9ca3af">${b.kellyNote}</span></td>
+            </tr>`;
+        } else if (b.isECFS) {
+            // ECFS reference row — subtle blue highlight
+            html += `<tr style="border: 1px solid #60a5fa44; background: #60a5fa0a;">
+                <td class="font-semibold px-3 py-2 border-b border-gray-700/20" style="color: #60a5fa"><i class="fas fa-comments mr-1"></i>${b.name}</td>
+                <td class="font-semibold text-right px-3 py-2 border-b border-gray-700/20" style="color: #60a5fa">${b.edge}</td>
+                <td class="font-semibold text-right px-3 py-2 border-b border-gray-700/20" style="color: #60a5fa">${b.trades}</td>
+                <td class="font-semibold text-right px-3 py-2 border-b border-gray-700/20" style="color: #60a5fa">${b.annualRLabel}</td>
+                <td class="font-semibold text-right px-3 py-2 border-b border-gray-700/20" style="color: #60a5fa">${b.kelly} <span style="color:#6b7280;font-size:9px;" class="block">${b.kellyNote}</span></td>
             </tr>`;
         } else {
             const edgeColor = b.annualR >= 0 ? '#4ade80' : '#f87171';
@@ -1837,7 +1911,8 @@ function renderFoodChainChart(containerId, k, method) {
     chartInstances[containerId] = chart;
 
     const edgeR = k.evActualR;
-    const accentColor = method === 'active' ? '#d4af37' : '#60a5fa';
+    const accentColor = method === 'active' ? '#d4af37' : method === 'options' ? '#a855f7' : '#60a5fa';
+    const stratLabel = method === 'active' ? 'ECFS Active' : method === 'options' ? 'Options Strategy' : 'ECFS Predisposal';
 
     // Benchmark data for the horizontal bar chart
     const benchmarks = [
@@ -1846,8 +1921,14 @@ function renderFoodChainChart(containerId, k, method) {
         { name: 'Stat-Arb', edge: 1.25, color: '#6b7280' },
         { name: 'Trend-Following CTAs', edge: 0.75, color: '#6b7280' },
         { name: 'Casino Roulette', edge: 5.26, color: '#9ca3af' },
-        { name: method === 'active' ? 'ECFS Active' : 'ECFS Predisposal', edge: edgeR, color: accentColor }
+        { name: stratLabel, edge: edgeR, color: accentColor }
     ];
+
+    // Add ECFS Predisposal reference when viewing Options
+    if (method === 'options' && state.discord && state.discord.allTrades && state.discord.allTrades.length > 0) {
+        const ecfsK = calculateKPIs(state.discord.allTrades, DISCORD_RISK, DISCORD_PPT, DISCORD_STARTING_BALANCE);
+        benchmarks.push({ name: 'ECFS Predisposal', edge: ecfsK.evActualR, color: '#60a5fa' });
+    }
 
     // Sort by edge
     benchmarks.sort((a, b) => a.edge - b.edge);
@@ -1881,11 +1962,13 @@ function renderFoodChainChart(containerId, k, method) {
                 color: '#d1d5db',
                 fontSize: 10,
                 formatter: name => {
-                    const isYou = name.includes('ECFS');
-                    return isYou ? `{highlight|${name}}` : name;
+                    if (name === stratLabel) return `{highlight|${name}}`;
+                    if (name.includes('ECFS')) return `{ecfs|${name}}`;
+                    return name;
                 },
                 rich: {
-                    highlight: { color: accentColor, fontWeight: 'bold', fontSize: 11 }
+                    highlight: { color: accentColor, fontWeight: 'bold', fontSize: 11 },
+                    ecfs: { color: '#60a5fa', fontWeight: 'bold', fontSize: 10 }
                 }
             }
         },
@@ -3769,6 +3852,39 @@ function switchPanel(panel) {
         if (navDiscord) { navDiscord.classList.remove('text-gray-500'); navDiscord.classList.add('text-blue-400'); }
         if (navOptions) { navOptions.classList.remove('text-purple-400'); navOptions.classList.add('text-gray-500'); }
     }
+    updateHeroBadgesForPanel(panel);
+}
+
+function updateHeroBadgesForPanel(panel) {
+    const badgeReturn = document.getElementById('hero-badge-return');
+    const badgeDD = document.getElementById('hero-badge-dd');
+    const badgeMonths = document.getElementById('hero-badge-months');
+
+    const method = panel === 'options' ? 'options' : 'discord';
+    const allTrades = state[method] && state[method].allTrades;
+    if (!allTrades || allTrades.length === 0) return;
+
+    const risk = method === 'options' ? OPTIONS_RISK : DISCORD_RISK;
+    const ppt = method === 'options' ? OPTIONS_PPT : DISCORD_PPT;
+    const startBal = method === 'options' ? OPTIONS_STARTING_BALANCE : DISCORD_STARTING_BALANCE;
+    const allK = calculateKPIs(allTrades, risk, ppt, startBal);
+
+    if (badgeReturn) {
+        const retPct = allK.returnPct || 0;
+        badgeReturn.textContent = `${retPct >= 0 ? '+' : ''}${retPct.toFixed(1)}%`;
+        badgeReturn.className = `text-2xl font-bold ${retPct >= 0 ? 'text-green-400' : 'text-red-400'}`;
+    }
+    if (badgeDD) {
+        badgeDD.textContent = `-${(allK.maxDDPct || 0).toFixed(1)}%`;
+    }
+    if (badgeMonths) {
+        const monthSet = new Set();
+        allTrades.forEach(t => {
+            const d = t.date ? new Date(t.date) : null;
+            if (d && !isNaN(d)) monthSet.add(d.getFullYear() + '-' + d.getMonth());
+        });
+        badgeMonths.textContent = monthSet.size || '—';
+    }
 }
 
 function renderOptions(k, trades, allK, allTrades) {
@@ -3808,6 +3924,12 @@ function renderOptions(k, trades, allK, allTrades) {
     // Trade Log
     renderOptionsTradeLog('options-trades-body', trades);
     document.getElementById('options-trade-count').textContent = `${trades.length} trades`;
+
+    // Edge %R by Week Trend Chart
+    renderEdgeTrendByWeek('chart-edge-trend-options', allTrades, OPTIONS_RISK, OPTIONS_PPT, 'options', allK.evActualR);
+
+    // Food Chain / Understanding the Edge
+    renderFoodChain('options', k, allK, allTrades);
 }
 
 function renderOptionsTradeLog(tbodyId, trades) {
