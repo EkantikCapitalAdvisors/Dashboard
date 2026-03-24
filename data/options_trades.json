@@ -1,1 +1,19 @@
-[]
+[
+  {
+    "datetime": "3/24/2026 10:50",
+    "trade_num": "O8",
+    "ticker": "SPX",
+    "option_type": "PUT",
+    "strike": 5555,
+    "expiry": "0DTE",
+    "direction": "Buy",
+    "entry_price": 5,
+    "stop_price": 3,
+    "notes": "0-DTE",
+    "dollar_pl": 200,
+    "risk_dollars": 200,
+    "is_win": true,
+    "outcome": "Win",
+    "trade_date": "3/24/2026"
+  }
+]
