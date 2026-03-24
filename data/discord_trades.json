@@ -331,13 +331,13 @@
     "stop_price": 679,
     "trailing_profit": "—",
     "points_pl": 10,
-    "risk_points": 10,
+    "risk_points": 6214,
     "dollar_pl": 500,
-    "risk_dollars": 500,
+    "risk_dollars": 310700,
     "is_win": true,
     "outcome": "Win",
     "trade_date": "3/5/2026",
-    "upload_batch": "discord-sync-1774300016754"
+    "upload_batch": "discord-sync-1774315210867"
   },
   {
     "week_key": "03/02/2026",
