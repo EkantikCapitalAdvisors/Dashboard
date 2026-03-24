@@ -3316,6 +3316,31 @@ document.addEventListener('DOMContentLoaded', async function () {
             } catch (e) { console.error('Error loading Options from DB:', e); }
         }
 
+        // Auto-load Options trades from JSON file so all visitors see historical data
+        if (!optionsLoaded) {
+            try {
+                const resp = await fetch('data/options_trades.json');
+                if (resp.ok) {
+                    const rawTrades = await resp.json();
+                    if (rawTrades.length > 0) {
+                        const trades = rawTrades.map(t => {
+                            const mapped = (t.trade_num !== undefined) ? dbRowToOptionsTrade(t) : t;
+                            mapped._isSample = true;
+                            return mapped;
+                        });
+                        state.options.allTrades = trades;
+                        state.options.isSampleData = true;
+                        const weeks = getWeeksList(trades);
+                        state.options.selectedWeek = weeks[0];
+                        populateWeekSelector('options', weeks);
+                        refreshDashboard('options');
+                        optionsLoaded = true;
+                        showSampleDataBanner('options', trades.length);
+                    }
+                }
+            } catch (e) { console.error('Error loading Options JSON:', e); }
+        }
+
         // Background DB sync for options trades
         if (optionsLoaded && state.options.allTrades.length > 0) {
             (async () => {
