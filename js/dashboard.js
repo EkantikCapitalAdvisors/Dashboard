@@ -3206,7 +3206,9 @@ document.addEventListener('DOMContentLoaded', async function () {
                 }
             } catch (e) {
                 console.warn('[DB sync] Discord background sync failed:', e);
-                showUploadWarning('discord', 'Background sync failed — trades saved locally only.');
+                if (localStorage.getItem('gh-token')) {
+                    showUploadWarning('discord', 'Background sync failed — trades saved locally only.');
+                }
             }
         })();
     }
@@ -3335,7 +3337,9 @@ document.addEventListener('DOMContentLoaded', async function () {
                     }
                 } catch (e) {
                     console.warn('[DB sync] Options background sync failed:', e);
-                    showUploadWarning('options', 'Background sync failed — trades saved locally only.');
+                    if (localStorage.getItem('gh-token')) {
+                        showUploadWarning('options', 'Background sync failed — trades saved locally only.');
+                    }
                 }
             })();
         }
