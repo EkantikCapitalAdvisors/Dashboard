@@ -3884,7 +3884,7 @@ function livePreviewOptions() {
         _optionsParsedTrades = trades;
 
         if (trades.length === 0) {
-            previewEl.innerHTML = '<p class="text-gray-500 text-xs text-center mt-8">No complete trades found yet…<br><span class="text-[10px] text-gray-600">Need setup (ticker, type, strike, expiry, price) and result (+/- dollars)</span></p>';
+            previewEl.innerHTML = '<p class="text-gray-500 text-xs text-center mt-8">No complete trades found yet…<br><span class="text-[10px] text-gray-600">Need at minimum: ID, Entry, and Result</span></p>';
             if (uploadBtn) uploadBtn.disabled = true;
             return;
         }
