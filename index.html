@@ -938,12 +938,28 @@
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
                             <div class="mb-3 md:mb-0">
                                 <h2 class="font-playfair text-2xl sm:text-3xl font-bold text-white mb-1">Options Strategy</h2>
-                                <p class="text-gray-400 text-sm">SPX index options — premium-based, directional conviction trades</p>
-                                <p class="text-purple-400 text-xs mt-1"><i class="fas fa-chart-pie mr-1"></i>SPX Options | Raw $ P&L | Starting: $10,000</p>
+                                <p class="text-gray-400 text-sm">Premium-based, directional conviction options trades — SPX, SPY, and stock options</p>
+                                <p class="text-purple-400 text-xs mt-1"><i class="fas fa-chart-pie mr-1"></i>Index &amp; Equity Options | Raw $ P&L | Starting: $10,000</p>
                             </div>
                             <div class="bg-purple-500/10 border border-purple-400/30 rounded-lg px-4 py-2 text-center">
                                 <p class="text-purple-400 font-semibold text-xs"><i class="fas fa-shield-alt mr-1"></i>Risk: $500/day (5%)</p>
                                 <p class="text-gray-500 text-[9px] mt-0.5">daily risk limit</p>
+                            </div>
+                        </div>
+                        <!-- Discord + Data Transparency -->
+                        <div class="flex flex-col sm:flex-row items-center gap-3 pt-4 border-t border-purple-400/10">
+                            <a href="https://discord.gg/GprT4S8Vrj" target="_blank" rel="noopener"
+                               class="inline-flex items-center gap-2.5 bg-[#5865F2]/15 border border-[#5865F2]/40 hover:bg-[#5865F2]/25 rounded-lg px-5 py-2.5 transition-all group flex-shrink-0">
+                                <i class="fab fa-discord text-[#5865F2] text-base group-hover:scale-110 transition-transform"></i>
+                                <div>
+                                    <p class="text-white text-sm font-semibold leading-tight">Join Discord Channel</p>
+                                    <p class="text-[#5865F2]/70 text-[10px]">Follow trades in real time</p>
+                                </div>
+                            </a>
+                            <div class="text-gray-500 text-[10px] leading-relaxed">
+                                <i class="fas fa-database text-purple-400/50 mr-1"></i>
+                                All performance data on this dashboard is calculated from <strong class="text-gray-300">documented Discord trades</strong> — posted in the channel before or at execution.
+                                Full trade history can be <strong class="text-gray-300">exported as JSON</strong> below for independent verification.
                             </div>
                         </div>
                     </div>
@@ -1019,9 +1035,9 @@
                                 <p class="text-[9px] text-gray-500">5% of portfolio</p>
                             </div>
                             <div class="bg-[#0a1628] border border-purple-400/15 rounded-lg p-3 text-center">
-                                <p class="text-[9px] text-purple-400 font-bold uppercase tracking-wider">Instrument</p>
-                                <p class="text-lg font-bold text-white">SPX</p>
-                                <p class="text-[9px] text-gray-500">index options</p>
+                                <p class="text-[9px] text-purple-400 font-bold uppercase tracking-wider">Instruments</p>
+                                <p class="text-lg font-bold text-white">SPX/SPY</p>
+                                <p class="text-[9px] text-gray-500">index &amp; equity options</p>
                             </div>
                             <div class="bg-[#0a1628] border border-purple-400/15 rounded-lg p-3 text-center">
                                 <p class="text-[9px] text-purple-400 font-bold uppercase tracking-wider">Default Stop</p>
@@ -1344,6 +1360,9 @@
                                     </button>
                                     <button onclick="clearData('options')" class="px-4 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all" title="Clear all trades">
                                         <i class="fas fa-trash"></i>
+                                    </button>
+                                    <button onclick="showGitHubSettings()" class="gh-sync-btn px-3 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all flex items-center gap-1.5" title="GitHub Sync settings">
+                                        <i class="fab fa-github"></i><span class="text-yellow-400 text-xs">&#9881;</span>
                                     </button>
                                 </div>
                             </div>
