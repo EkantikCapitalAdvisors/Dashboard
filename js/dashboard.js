@@ -3347,7 +3347,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                 try {
                     const lsTrades = state.options.allTrades.filter(t => !t._isSample);
                     if (lsTrades.length === 0) return;
-                    const dbRows = await DB.loadTrades('options_trades');
+                    // Use _readFresh to avoid CDN cache lag that could cause data loss during sync
+                    const dbRows = await DB._readFresh('options_trades');
                     const dbByNum = new Map(dbRows.map(r => [r.trade_num, r]));
                     const needsSync = lsTrades.filter(t => {
                         const db = dbByNum.get(t.tradeNum);
@@ -4112,7 +4113,8 @@ async function _handleOptionsParseUpload(newTrades) {
     }
     if (existingTrades.length === 0) {
         try {
-            const dbTrades = await DB.loadTrades('options_trades');
+            // Use _readFresh to avoid CDN cache lag — ensures we don't lose previous trades
+            const dbTrades = await DB._readFresh('options_trades');
             if (dbTrades.length > 0) {
                 const seen = new Set();
                 existingTrades = dbTrades

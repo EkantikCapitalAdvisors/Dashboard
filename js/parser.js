@@ -33,6 +33,7 @@ const DB = {
     _token() { return localStorage.getItem('gh-token') || ''; },
 
     // Fetch a data file from the repo — no auth needed (public repo, CDN)
+    // NOTE: raw.githubusercontent.com can lag up to 5 min behind actual repo state
     async _read(filename) {
         const url = `https://raw.githubusercontent.com/${DB.OWNER}/${DB.REPO}/${DB.BRANCH}/data/${filename}.json?cb=${Date.now()}`;
         const res = await fetch(url);
@@ -40,6 +41,25 @@ const DB = {
         if (!res.ok) throw new Error(`Read ${filename}: HTTP ${res.status}`);
         const data = await res.json();
         return Array.isArray(data) ? data : [];
+    },
+
+    // Fetch via GitHub API — always returns latest data (no CDN cache lag)
+    // Requires auth token; falls back to CDN _read if no token available
+    async _readFresh(filename) {
+        const token = DB._token();
+        if (!token) return DB._read(filename);
+        const apiUrl = `https://api.github.com/repos/${DB.OWNER}/${DB.REPO}/contents/data/${filename}.json?ref=${DB.BRANCH}`;
+        const res = await fetch(apiUrl, {
+            headers: {
+                Authorization: `token ${token}`,
+                Accept: 'application/vnd.github.v3+json'
+            }
+        });
+        if (res.status === 404) return [];
+        if (!res.ok) throw new Error(`Read ${filename}: HTTP ${res.status}`);
+        const json = await res.json();
+        const content = JSON.parse(decodeURIComponent(escape(atob(json.content))));
+        return Array.isArray(content) ? content : [];
     },
 
     // Write a data file to the repo via GitHub Contents API
@@ -99,7 +119,8 @@ const DB = {
     },
 
     async saveTrades(tableName, trades, batchId) {
-        const existing = await DB._read(tableName);
+        // Use _readFresh (GitHub API) to avoid CDN cache lag that can cause data loss
+        const existing = await DB._readFresh(tableName);
         const norm = v => Math.round(parseFloat(v) * 10000) / 10000;
         let merged;
 
