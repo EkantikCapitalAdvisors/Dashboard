@@ -3186,8 +3186,9 @@ document.addEventListener('DOMContentLoaded', async function () {
         } catch (e) { console.error('Error loading Discord JSON:', e); }
     }
 
-    // ===== OPTIONS PANEL (only if ?options=1 is in URL) =====
-    const optionsEnabled = new URLSearchParams(window.location.search).has('options');
+    // ===== OPTIONS PANEL (only if ?options or ?option is in URL) =====
+    const _urlParams = new URLSearchParams(window.location.search);
+    const optionsEnabled = _urlParams.has('options') || _urlParams.has('option');
     if (optionsEnabled) {
         document.getElementById('nav-options').classList.remove('hidden');
         document.getElementById('panel-options').style.display = 'none'; // start hidden, user clicks tab
@@ -3883,7 +3884,7 @@ function livePreviewOptions() {
         _optionsParsedTrades = trades;
 
         if (trades.length === 0) {
-            previewEl.innerHTML = '<p class="text-gray-500 text-xs text-center mt-8">No complete trades found yet…<br><span class="text-[10px] text-gray-600">Need setup (ticker, type, strike, expiry, price) and result (+/- dollars)</span></p>';
+            previewEl.innerHTML = '<p class="text-gray-500 text-xs text-center mt-8">No complete trades found yet…<br><span class="text-[10px] text-gray-600">Need at minimum: ID, Entry, and Result</span></p>';
             if (uploadBtn) uploadBtn.disabled = true;
             return;
         }

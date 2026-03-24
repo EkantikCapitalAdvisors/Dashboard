@@ -869,9 +869,25 @@ function getMonthsList(trades) {
 }
 
 // ===== OPTIONS TRADE PARSER =====
-// Two-step entry format:
-// Step 1 (setup): "O2: SPX PUT 6730 Oct10 3" → ID, ticker, type, strike, expiry, entry premium
-// Step 2 (outcome): "O2: +200" → profit in raw dollars
+// Supports two input formats:
+//
+// FORMAT A — Labeled block (copy-paste friendly):
+//   ID: O2
+//   Ticker: SPY
+//   Type: buy calls
+//   Strike: 6886
+//   Expiry: feb 27
+//   Entry: 3.35
+//   Result: +200
+//   Stop: 1.35          ← optional (default: entry − 2)
+//   Notes: 1-DTE        ← optional (default: 0-DTE)
+//
+// FORMAT B — Compact one-liners (original):
+//   O1: SPX PUT 6730 Oct10 3
+//   O1: +200
+//
+// Multiple trades can be separated by blank lines.
+
 function parseOptionsAlerts(text, datetimeLocal) {
     let datetimeStr = '';
     let dateStr = '';
@@ -883,76 +899,188 @@ function parseOptionsAlerts(text, datetimeLocal) {
         dateStr = `${mo}/${dy}/${yr}`;
     }
 
+    // Detect format: if any line starts with "ID:" it's block format
+    const hasLabeledFields = /^\s*ID\s*:/im.test(text);
+
     const tradesMap = {};
     const tradeOrder = [];
 
     const lines = text.split('\n').map(l => l.trim()).filter(l => l);
 
-    for (const line of lines) {
-        // Match "O2: <content>" — case-insensitive trade ID
-        const m = line.match(/^(O\d+):\s*(.+)$/i);
-        if (!m) continue;
+    if (hasLabeledFields) {
+        // ── FORMAT A: Labeled block ──
+        // Each "ID:" line starts a new trade; subsequent key:value lines fill it
+        let current = null;
 
-        const tradeId = m[1].toUpperCase();
-        const content = m[2].trim();
+        for (const line of lines) {
+            // "ID: O2" or "ID : O2" — starts a new trade block
+            const idM = line.match(/^ID\s*:\s*(.+)$/i);
+            if (idM) {
+                const rawId = idM[1].trim().toUpperCase();
+                // Ensure it starts with O — accept "O2", "2", "#2"
+                const tradeId = rawId.startsWith('O') ? rawId : 'O' + rawId.replace(/^#/, '');
+                if (!tradesMap[tradeId]) {
+                    tradesMap[tradeId] = { tradeNum: tradeId };
+                    tradeOrder.push(tradeId);
+                }
+                current = tradesMap[tradeId];
+                continue;
+            }
+            if (!current) continue;
 
-        if (!tradesMap[tradeId]) {
-            tradesMap[tradeId] = { tradeNum: tradeId };
-            tradeOrder.push(tradeId);
+            // Ticker: SPY / SPX
+            const tickerM = line.match(/^ticker\s*:\s*(.+)$/i);
+            if (tickerM) { current.ticker = tickerM[1].trim().toUpperCase(); continue; }
+
+            // Type: "buy calls", "sell puts", "calls", "puts", "call", "put"
+            const typeM = line.match(/^type\s*:\s*(.+)$/i);
+            if (typeM) {
+                const raw = typeM[1].toLowerCase().trim();
+                // Extract direction and option type
+                if (raw.includes('call')) {
+                    current.optionType = 'CALL';
+                    current.direction = raw.includes('sell') || raw.includes('short') ? 'Sell' : 'Buy';
+                } else if (raw.includes('put')) {
+                    current.optionType = 'PUT';
+                    current.direction = raw.includes('sell') || raw.includes('short') ? 'Sell' : 'Buy';
+                } else if (raw.includes('buy')) {
+                    current.direction = 'Buy';
+                } else if (raw.includes('sell') || raw.includes('short')) {
+                    current.direction = 'Sell';
+                }
+                continue;
+            }
+
+            // Strike: 6886
+            const strikeM = line.match(/^strike\s*:\s*([\d.]+)/i);
+            if (strikeM) { current.strike = parseFloat(strikeM[1]); continue; }
+
+            // Expiry: feb 27, Feb27, 2/27, etc.
+            const expiryM = line.match(/^expir[yie]?\s*:\s*(.+)$/i);
+            if (expiryM) { current.expiry = expiryM[1].trim(); continue; }
+
+            // Entry: 3.35 — also accept "Entry price:", "Premium:"
+            const entryM = line.match(/^(?:entry|entry\s*price|premium)\s*:\s*\$?\s*([\d.]+)/i);
+            if (entryM) { current.entryPrice = parseFloat(entryM[1]); continue; }
+
+            // Stop: 1.35 — also accept "Stop price:", "SL:", "Stop loss:"
+            // Accept direct value like "1.35" or formula hint like "- 2 points default ..."
+            const stopM = line.match(/^(?:stop|stop\s*price|stop\s*loss|sl)\s*:\s*(.+)$/i);
+            if (stopM) {
+                const stopVal = stopM[1].trim();
+                // Direct number: "1.35" or "$1.35"
+                const directNum = stopVal.match(/^\$?\s*([\d.]+)$/);
+                if (directNum) {
+                    current.stopPrice = parseFloat(directNum[1]);
+                } else {
+                    // Pattern: "- 2 points" or "-2" → means entry minus N
+                    const deltaM = stopVal.match(/^-\s*([\d.]+)/);
+                    if (deltaM) {
+                        current.stopDelta = parseFloat(deltaM[1]);
+                    }
+                    // Otherwise ignore (user typed description like "default")
+                }
+                continue;
+            }
+
+            // Notes: 1-DTE, 0-DTE, weekly, etc.
+            const notesM = line.match(/^notes?\s*:\s*(.+)$/i);
+            if (notesM) {
+                const raw = notesM[1].trim();
+                // Extract the DTE or label, ignore parenthetical explanations
+                const dteM = raw.match(/(\d+\s*-?\s*DTE)/i);
+                if (dteM) {
+                    current.notes = dteM[1].replace(/\s+/g, '');
+                } else {
+                    // Use everything before a parenthetical, or the whole string
+                    current.notes = raw.replace(/\s*\(.*\)\s*$/, '').trim() || raw;
+                }
+                continue;
+            }
+
+            // Result: +200, -150, +$200
+            const resultM = line.match(/^result\s*:\s*([+-])\s*\$?\s*([\d.]+)/i);
+            if (resultM) {
+                current.dollarPL = (resultM[1] === '+' ? 1 : -1) * parseFloat(resultM[2]);
+                continue;
+            }
         }
-        const t = tradesMap[tradeId];
+    } else {
+        // ── FORMAT B: Compact one-liners ──
+        for (const line of lines) {
+            const m = line.match(/^(O\d+):\s*(.+)$/i);
+            if (!m) continue;
 
-        // Setup line — "SPX PUT 6730 Oct10 3" or "SPX CALL 6800 Oct10 5.5"
-        const setupM = content.match(/^(\w+)\s+(PUT|CALL)\s+([\d.]+)\s+(\S+)\s+([\d.]+)$/i);
-        if (setupM) {
-            t.ticker = setupM[1].toUpperCase();
-            t.optionType = setupM[2].toUpperCase();
-            t.strike = parseFloat(setupM[3]);
-            t.expiry = setupM[4];
-            t.entryPrice = parseFloat(setupM[5]);
-            t.notes = '0-DTE'; // default
-            continue;
-        }
+            const tradeId = m[1].toUpperCase();
+            const content = m[2].trim();
 
-        // Notes override — "note: weekly" or "notes: 1-DTE"
-        const noteM = content.match(/^notes?:\s*(.+)$/i);
-        if (noteM) { t.notes = noteM[1].trim(); continue; }
+            if (!tradesMap[tradeId]) {
+                tradesMap[tradeId] = { tradeNum: tradeId };
+                tradeOrder.push(tradeId);
+            }
+            const t = tradesMap[tradeId];
 
-        // Stop override — "sl 1.5" or "stop 1.5"
-        const slM = content.match(/^(?:sl|stop)\s*([\d.]+)$/i);
-        if (slM) { t.stopPrice = parseFloat(slM[1]); continue; }
+            // Setup line — "SPX PUT 6730 Oct10 3"
+            const setupM = content.match(/^(\w+)\s+(PUT|CALL)\s+([\d.]+)\s+(\S+)\s+([\d.]+)$/i);
+            if (setupM) {
+                t.ticker = setupM[1].toUpperCase();
+                t.optionType = setupM[2].toUpperCase();
+                t.strike = parseFloat(setupM[3]);
+                t.expiry = setupM[4];
+                t.entryPrice = parseFloat(setupM[5]);
+                t.notes = '0-DTE';
+                continue;
+            }
 
-        // Result — "+200", "+ 200", "-150", "- 150" (raw dollars)
-        const resM = content.match(/^([+-])\s*([\d.]+)$/);
-        if (resM) {
-            t.dollarPL = (resM[1] === '+' ? 1 : -1) * parseFloat(resM[2]);
-            continue;
+            // Notes — "note: weekly"
+            const noteM = content.match(/^notes?:\s*(.+)$/i);
+            if (noteM) { t.notes = noteM[1].trim(); continue; }
+
+            // Stop — "sl 1.5" or "stop 1.5"
+            const slM = content.match(/^(?:sl|stop)\s*([\d.]+)$/i);
+            if (slM) { t.stopPrice = parseFloat(slM[1]); continue; }
+
+            // Result — "+200", "+ 200", "-150"
+            const resM = content.match(/^([+-])\s*([\d.]+)$/);
+            if (resM) {
+                t.dollarPL = (resM[1] === '+' ? 1 : -1) * parseFloat(resM[2]);
+                continue;
+            }
         }
     }
 
+    // ── Build output trades ──
     const result = [];
     for (const id of tradeOrder) {
         const t = tradesMap[id];
         // Need at least entry price and dollar result
         if (t.entryPrice === undefined || t.dollarPL === undefined) continue;
 
-        // Default stop: entry - 2 points (×100 SPX multiplier = $200 risk)
-        const stopPrice = t.stopPrice != null ? t.stopPrice : Math.max(0, t.entryPrice - 2);
+        // Stop price: explicit > delta from entry > default (entry − 2)
+        let stopPrice;
+        if (t.stopPrice != null) {
+            stopPrice = t.stopPrice;
+        } else if (t.stopDelta != null) {
+            stopPrice = Math.max(0, t.entryPrice - t.stopDelta);
+        } else {
+            stopPrice = Math.max(0, t.entryPrice - 2);
+        }
         const riskDollars = Math.abs(t.entryPrice - stopPrice) * 100 || OPTIONS_DEFAULT_RISK;
         const isWin = t.dollarPL > 0;
+        const optType = t.optionType || 'CALL';
 
         result.push({
             datetime:     datetimeStr,
             tradeNum:     t.tradeNum,
             ticker:       t.ticker || 'SPX',
-            optionType:   t.optionType || 'PUT',
+            optionType:   optType,
             strike:       t.strike || 0,
             expiry:       t.expiry || '',
-            direction:    t.optionType === 'CALL' ? 'Buy' : 'Sell',
+            direction:    t.direction || (optType === 'CALL' ? 'Buy' : 'Sell'),
             entryPrice:   t.entryPrice,
             stopPrice:    stopPrice,
             notes:        t.notes || '0-DTE',
-            pointsPL:     t.dollarPL, // raw dollars = "points" with PPT=1
+            pointsPL:     t.dollarPL,
             riskPoints:   riskDollars,
             dollarPL:     t.dollarPL,
             riskDollars:  riskDollars,
