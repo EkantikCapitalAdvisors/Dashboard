@@ -7,6 +7,10 @@ const ECFS_RISK = 100;       // $100 per trade (2% of $5k)
 const ECFS_PPT = 5;          // $5 per point (MES)
 const DISCORD_RISK = 500;    // $500/day (2.5% daily risk on $20k)
 const DISCORD_PPT = 50;      // $50 per point (ES)
+const OPTIONS_RISK = 500;    // $500/day (5% daily risk on $10k)
+const OPTIONS_PPT = 1;       // Raw dollars — no multiplier
+const OPTIONS_STARTING_BALANCE = 10000; // $10,000 portfolio for Options strategy
+const OPTIONS_DEFAULT_RISK = 200; // Default risk per trade ($2 premium × 100 multiplier)
 const DEFAULT_STOP_POINTS = 10; // Default stop distance when no stop is specified
 const STARTING_BALANCE = 5000;  // $5,000 portfolio for ECFS Active (2% risk per trade)
 const DISCORD_STARTING_BALANCE = 20000; // $20,000 portfolio for ECFS Predisposal (2.5% daily risk)
@@ -124,6 +128,34 @@ const DB = {
                     upload_batch: batchId
                 }));
             merged = [...existing, ...newRows];
+        } else if (tableName === 'options_trades') {
+            // options_trades — upsert by trade_num
+            const existingByNum = new Map(existing.map(r => [r.trade_num, r]));
+            trades.forEach(t => {
+                // Accept both camelCase (from parser) and snake_case (pre-converted)
+                const row = t.trade_num !== undefined ? t : {
+                    week_key:     getWeekKey(t.date),
+                    datetime:     t.datetime     || '',
+                    trade_num:    t.tradeNum     || '',
+                    ticker:       t.ticker       || 'SPX',
+                    option_type:  t.optionType   || 'PUT',
+                    strike:       t.strike       || 0,
+                    expiry:       t.expiry       || '',
+                    direction:    t.direction    || '',
+                    entry_price:  t.entryPrice   || 0,
+                    stop_price:   t.stopPrice    || 0,
+                    notes:        t.notes        || '0-DTE',
+                    dollar_pl:    t.dollarPL     || 0,
+                    risk_dollars: t.riskDollars  || 0,
+                    is_win:       t.isWin,
+                    outcome:      t.outcome      || '',
+                    trade_date:   t.date,
+                    upload_batch: batchId
+                };
+                existingByNum.set(row.trade_num, row);
+            });
+            merged = Array.from(existingByNum.values())
+                .sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
         } else {
             // discord_trades — upsert by trade_num: new upload overwrites existing records
             // so corrected data (e.g. fixed dollar amounts) always replaces stale DB rows
@@ -834,4 +866,144 @@ function getMonthsList(trades) {
     const months = new Set();
     trades.forEach(t => months.add(getMonthKey(t.date)));
     return [...months].sort().reverse();
+}
+
+// ===== OPTIONS TRADE PARSER =====
+// Two-step entry format:
+// Step 1 (setup): "O2: SPX PUT 6730 Oct10 3" → ID, ticker, type, strike, expiry, entry premium
+// Step 2 (outcome): "O2: +200" → profit in raw dollars
+function parseOptionsAlerts(text, datetimeLocal) {
+    let datetimeStr = '';
+    let dateStr = '';
+    if (datetimeLocal) {
+        const [datePart, timePart] = datetimeLocal.split('T');
+        const [yr, mo, dy] = datePart.split('-').map(Number);
+        const [hh, mm] = (timePart || '00:00').split(':').map(Number);
+        datetimeStr = `${mo}/${dy}/${yr} ${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+        dateStr = `${mo}/${dy}/${yr}`;
+    }
+
+    const tradesMap = {};
+    const tradeOrder = [];
+
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+
+    for (const line of lines) {
+        // Match "O2: <content>" — case-insensitive trade ID
+        const m = line.match(/^(O\d+):\s*(.+)$/i);
+        if (!m) continue;
+
+        const tradeId = m[1].toUpperCase();
+        const content = m[2].trim();
+
+        if (!tradesMap[tradeId]) {
+            tradesMap[tradeId] = { tradeNum: tradeId };
+            tradeOrder.push(tradeId);
+        }
+        const t = tradesMap[tradeId];
+
+        // Setup line — "SPX PUT 6730 Oct10 3" or "SPX CALL 6800 Oct10 5.5"
+        const setupM = content.match(/^(\w+)\s+(PUT|CALL)\s+([\d.]+)\s+(\S+)\s+([\d.]+)$/i);
+        if (setupM) {
+            t.ticker = setupM[1].toUpperCase();
+            t.optionType = setupM[2].toUpperCase();
+            t.strike = parseFloat(setupM[3]);
+            t.expiry = setupM[4];
+            t.entryPrice = parseFloat(setupM[5]);
+            t.notes = '0-DTE'; // default
+            continue;
+        }
+
+        // Notes override — "note: weekly" or "notes: 1-DTE"
+        const noteM = content.match(/^notes?:\s*(.+)$/i);
+        if (noteM) { t.notes = noteM[1].trim(); continue; }
+
+        // Stop override — "sl 1.5" or "stop 1.5"
+        const slM = content.match(/^(?:sl|stop)\s*([\d.]+)$/i);
+        if (slM) { t.stopPrice = parseFloat(slM[1]); continue; }
+
+        // Result — "+200", "+ 200", "-150", "- 150" (raw dollars)
+        const resM = content.match(/^([+-])\s*([\d.]+)$/);
+        if (resM) {
+            t.dollarPL = (resM[1] === '+' ? 1 : -1) * parseFloat(resM[2]);
+            continue;
+        }
+    }
+
+    const result = [];
+    for (const id of tradeOrder) {
+        const t = tradesMap[id];
+        // Need at least entry price and dollar result
+        if (t.entryPrice === undefined || t.dollarPL === undefined) continue;
+
+        // Default stop: entry - 2 points (×100 SPX multiplier = $200 risk)
+        const stopPrice = t.stopPrice != null ? t.stopPrice : Math.max(0, t.entryPrice - 2);
+        const riskDollars = Math.abs(t.entryPrice - stopPrice) * 100 || OPTIONS_DEFAULT_RISK;
+        const isWin = t.dollarPL > 0;
+
+        result.push({
+            datetime:     datetimeStr,
+            tradeNum:     t.tradeNum,
+            ticker:       t.ticker || 'SPX',
+            optionType:   t.optionType || 'PUT',
+            strike:       t.strike || 0,
+            expiry:       t.expiry || '',
+            direction:    t.optionType === 'CALL' ? 'Buy' : 'Sell',
+            entryPrice:   t.entryPrice,
+            stopPrice:    stopPrice,
+            notes:        t.notes || '0-DTE',
+            pointsPL:     t.dollarPL, // raw dollars = "points" with PPT=1
+            riskPoints:   riskDollars,
+            dollarPL:     t.dollarPL,
+            riskDollars:  riskDollars,
+            isWin,
+            outcome:      isWin ? 'Win' : 'Loss',
+            date:         dateStr
+        });
+    }
+    return result;
+}
+
+function dbRowToOptionsTrade(row) {
+    let riskDlr = row.risk_dollars || OPTIONS_DEFAULT_RISK;
+    return {
+        datetime:     row.datetime,
+        tradeNum:     row.trade_num,
+        ticker:       row.ticker || 'SPX',
+        optionType:   row.option_type || 'PUT',
+        strike:       row.strike || 0,
+        expiry:       row.expiry || '',
+        direction:    row.direction,
+        entryPrice:   row.entry_price,
+        stopPrice:    row.stop_price,
+        notes:        row.notes || '0-DTE',
+        pointsPL:     row.dollar_pl, // raw dollars
+        riskPoints:   riskDlr,
+        dollarPL:     row.dollar_pl,
+        riskDollars:  riskDlr,
+        isWin:        row.is_win,
+        outcome:      row.outcome,
+        date:         row.trade_date,
+        uploadBatch:  row.upload_batch
+    };
+}
+
+function optionsTradeToDbRow(t) {
+    return {
+        datetime:      t.datetime,
+        trade_num:     t.tradeNum,
+        ticker:        t.ticker,
+        option_type:   t.optionType,
+        strike:        t.strike,
+        expiry:        t.expiry,
+        direction:     t.direction,
+        entry_price:   t.entryPrice,
+        stop_price:    t.stopPrice,
+        notes:         t.notes,
+        dollar_pl:     t.dollarPL,
+        risk_dollars:  t.riskDollars,
+        is_win:        t.isWin,
+        outcome:       t.outcome,
+        trade_date:    t.date
+    };
 }

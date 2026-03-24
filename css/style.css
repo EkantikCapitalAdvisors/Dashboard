@@ -217,6 +217,12 @@
     border-color: transparent !important;
     font-weight: 700;
 }
+.trade-filter-active-purple {
+    background: linear-gradient(135deg, #9333ea 0%, #a855f7 100%) !important;
+    color: #0a1628 !important;
+    border-color: transparent !important;
+    font-weight: 700;
+}
 
 /* ===== TRADE LOG SORT HEADERS ===== */
 .sortable-th { cursor: pointer; user-select: none; }
