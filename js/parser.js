@@ -14,6 +14,8 @@ const OPTIONS_DEFAULT_RISK = 200; // Default risk per trade ($2 premium × 100 m
 const DEFAULT_STOP_POINTS = 10; // Default stop distance when no stop is specified
 const STARTING_BALANCE = 5000;  // $5,000 portfolio for ECFS Active (2% risk per trade)
 const DISCORD_STARTING_BALANCE = 20000; // $20,000 portfolio for ECFS Predisposal (2.5% daily risk)
+const CORE_PPT = 50;            // $50 per point (ES) — used only for Tradovate parsing normalization
+const CORE_RISK_POINTS = 5;     // Default risk in points when no stop found
 
 // ===== DATABASE API — GitHub-backed persistence =====
 // Reads: raw.githubusercontent.com (public CDN, no auth, cache-busted)
@@ -426,6 +428,135 @@ function buildRoundTrip(entryOrders, exitOrder, contracts, stopOrders, allOrders
         rewardRisk,
         isWin: dp > 0,
         date: normalizeDate(entryOrders[0].fillTime.split(' ')[0])
+    };
+}
+
+// ===== EKANTIK CORE PARSER (Tradovate CSV → 1-contract normalized points) =====
+// Re-uses parseTradovateCSV() but normalizes every trade to 1 contract,
+// stripping dollar amounts and keeping only points.
+function parseTradovateForCore(csvText) {
+    const rawTrips = parseTradovateCSV(csvText);
+    return rawTrips.map(t => ({
+        entryTime: t.entryTime,
+        exitTime: t.exitTime,
+        direction: t.direction,
+        entryPrice: t.entryPrice,
+        exitPrice: t.exitPrice,
+        stopPrice: t.stopPrice,
+        contracts: t.contracts,              // original for display
+        pointsPL: t.pointsPL,                // already per-contract from buildRoundTrip
+        riskPoints: t.riskPoints || CORE_RISK_POINTS,
+        rewardRisk: t.rewardRisk,
+        isWin: t.pointsPL > 0,
+        date: t.date
+    }));
+}
+
+// Points-only KPI calculator (no dollar amounts, no portfolio, no starting balance)
+function calculatePointsKPIs(trades) {
+    if (!trades || trades.length === 0) return null;
+
+    trades.forEach(t => {
+        if (!t.riskPoints || t.riskPoints === 0) t.riskPoints = CORE_RISK_POINTS;
+    });
+
+    const totalTrades = trades.length;
+    const wins = trades.filter(t => t.isWin);
+    const losses = trades.filter(t => !t.isWin);
+    const winCount = wins.length;
+    const lossCount = losses.length;
+
+    const netPoints = trades.reduce((s, t) => s + t.pointsPL, 0);
+    const grossWinPts = wins.reduce((s, t) => s + t.pointsPL, 0);
+    const grossLossPts = Math.abs(losses.reduce((s, t) => s + t.pointsPL, 0));
+
+    const winRate = (winCount / totalTrades * 100);
+    const profitFactor = grossLossPts > 0 ? grossWinPts / grossLossPts : Infinity;
+
+    const avgPtsPerTrade = netPoints / totalTrades;
+    const avgWinPts = winCount > 0 ? grossWinPts / winCount : 0;
+    const avgLossPts = lossCount > 0 ? -(grossLossPts / lossCount) : 0;
+    const wlRatio = Math.abs(avgLossPts) > 0 ? avgWinPts / Math.abs(avgLossPts) : Infinity;
+    const expectancyR = (winRate / 100 * wlRatio) - (lossCount / totalTrades);
+
+    // Risk metrics in points
+    const tradesWithRisk = trades.filter(t => t.riskPoints > 0);
+    const avgRiskPts = tradesWithRisk.length > 0 ? tradesWithRisk.reduce((s, t) => s + t.riskPoints, 0) / tradesWithRisk.length : CORE_RISK_POINTS;
+
+    // R:R
+    const winsWithRR = wins.filter(t => t.rewardRisk !== null && t.rewardRisk !== undefined);
+    const lossesWithRR = losses.filter(t => t.rewardRisk !== null && t.rewardRisk !== undefined);
+    const avgRRWins = winsWithRR.length > 0 ? winsWithRR.reduce((s, t) => s + t.rewardRisk, 0) / winsWithRR.length : 0;
+    const avgRRLosses = lossesWithRR.length > 0 ? lossesWithRR.reduce((s, t) => s + t.rewardRisk, 0) / lossesWithRR.length : 0;
+
+    // Drawdown in points
+    let cumPts = 0, peak = 0, maxDD = 0, currentDD = 0;
+    const equityCurve = [];
+    const drawdownCurve = [];
+    trades.forEach(t => {
+        cumPts += t.pointsPL;
+        if (cumPts > peak) peak = cumPts;
+        const dd = peak - cumPts;
+        if (dd > maxDD) maxDD = dd;
+        equityCurve.push({ time: t.exitTime || t.entryTime, cumPL: cumPts, balance: cumPts });
+        drawdownCurve.push({ time: t.exitTime || t.entryTime, dd: -(peak - cumPts) });
+    });
+    currentDD = peak - cumPts;
+
+    // Streaks
+    let maxCW = 0, maxCL = 0, cw = 0, cl = 0, streak = 0;
+    trades.forEach(t => {
+        if (t.isWin) { cw++; cl = 0; if (cw > maxCW) maxCW = cw; }
+        else { cl++; cw = 0; if (cl > maxCL) maxCL = cl; }
+    });
+    for (let i = trades.length - 1; i >= 0; i--) {
+        if (i === trades.length - 1) streak = trades[i].isWin ? 1 : -1;
+        else if (trades[i].isWin && streak > 0) streak++;
+        else if (!trades[i].isWin && streak < 0) streak--;
+        else break;
+    }
+
+    // Daily P&L in points
+    const dailyPL = {};
+    trades.forEach(t => {
+        const d = t.date;
+        if (!dailyPL[d]) dailyPL[d] = { pl: 0, trades: 0, wins: 0 };
+        dailyPL[d].pl += t.pointsPL;
+        dailyPL[d].trades++;
+        if (t.isWin) dailyPL[d].wins++;
+    });
+    const tradingDays = Object.keys(dailyPL).sort((a, b) => new Date(a) - new Date(b));
+    const profitableDays = tradingDays.filter(d => dailyPL[d].pl > 0).length;
+
+    // Weekly P&L in points
+    const weeklyPL = {};
+    trades.forEach(t => {
+        const wk = getWeekKey(t.date);
+        if (!weeklyPL[wk]) weeklyPL[wk] = { pl: 0, trades: [], startDate: t.date, wins: 0, losses: 0 };
+        weeklyPL[wk].pl += t.pointsPL;
+        weeklyPL[wk].trades.push(t);
+        if (t.isWin) weeklyPL[wk].wins++;
+        else weeklyPL[wk].losses++;
+    });
+
+    const longs = trades.filter(t => t.direction === 'Long');
+    const shorts = trades.filter(t => t.direction === 'Short');
+
+    const plDistribution = trades.map(t => t.pointsPL);
+
+    return {
+        totalTrades, winCount, lossCount, winRate,
+        netPoints, grossWinPts, grossLossPts, profitFactor,
+        avgPtsPerTrade, avgWinPts, avgLossPts, wlRatio, expectancyR,
+        avgRiskPts, avgRRWins, avgRRLosses,
+        maxDD, currentDD,
+        maxCW, maxCL, streak,
+        equityCurve, drawdownCurve, dailyPL, weeklyPL, tradingDays, profitableDays,
+        longs, shorts, plDistribution,
+        bestTrade: Math.max(...trades.map(t => t.pointsPL)),
+        worstTrade: Math.min(...trades.map(t => t.pointsPL)),
+        ptsPerDay: netPoints / (tradingDays.length || 1),
+        tradesPerDay: totalTrades / (tradingDays.length || 1)
     };
 }
 
