@@ -3400,6 +3400,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                 }
             } catch (e) { console.error('Error loading Core data:', e); }
         }
+        // Auto-switch to Core panel when ?core is in URL
+        switchPanel('core');
     }
 
     // Load weekly snapshots for historical charts
@@ -3932,7 +3934,14 @@ function updateHeroBadgesForPanel(panel) {
 
     const method = panel === 'core' ? 'core' : panel === 'options' ? 'options' : 'discord';
     const allTrades = state[method] && state[method].allTrades;
-    if (!allTrades || allTrades.length === 0) return;
+    if (!allTrades || allTrades.length === 0) {
+        // Clear badges so stale data from another panel doesn't show
+        if (badgeReturn) { badgeReturn.textContent = '—'; badgeReturn.className = 'text-2xl font-bold text-gray-500'; }
+        if (badgeDD) badgeDD.textContent = '—';
+        if (badgeMonths) badgeMonths.textContent = '—';
+        if (badgeReturnLabel) badgeReturnLabel.textContent = method === 'core' ? 'NET POINTS' : 'NET RETURN';
+        return;
+    }
 
     if (method === 'core') {
         const allK = calculatePointsKPIs(allTrades);
