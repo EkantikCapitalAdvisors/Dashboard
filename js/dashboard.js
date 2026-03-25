@@ -3924,6 +3924,11 @@ function switchPanel(panel) {
         else if (panel === 'core') disclaimerAmt.textContent = 'points-only (no portfolio)';
         else disclaimerAmt.textContent = '$20,000 starting portfolio';
     }
+    // Hide Deep Dive / Compounding section for Core (not relevant)
+    const deepDiveToggle = document.getElementById('deep-dive-section');
+    const deepDiveMath = document.getElementById('deep-dive-math');
+    if (deepDiveToggle) deepDiveToggle.style.display = panel === 'core' ? 'none' : '';
+    if (deepDiveMath && panel === 'core') deepDiveMath.style.display = 'none';
 }
 
 function updateHeroBadgesForPanel(panel) {
