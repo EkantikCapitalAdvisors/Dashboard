@@ -7,7 +7,8 @@
 const state = {
     active: { allTrades: [], currentPeriod: 'alltime', selectedWeek: null, kpis: null, snapshots: [], edgePeriod: 'alltime' },
     discord: { allTrades: [], currentPeriod: 'alltime', selectedWeek: null, kpis: null, snapshots: [], edgePeriod: 'alltime' },
-    options: { allTrades: [], currentPeriod: 'alltime', selectedWeek: null, kpis: null, snapshots: [], edgePeriod: 'alltime' }
+    options: { allTrades: [], currentPeriod: 'alltime', selectedWeek: null, kpis: null, snapshots: [], edgePeriod: 'alltime' },
+    core: { allTrades: [], currentPeriod: 'alltime', selectedWeek: null, kpis: null, snapshots: [], edgePeriod: 'alltime' }
 };
 
 const chartInstances = {};
@@ -344,7 +345,7 @@ function showUploadWarning(method, msg) {
 
 function clearData(method) {
     if (!confirm('Clear all uploaded data? This will remove it from this browser only. Database records are preserved.')) return;
-    const keyPrefix = method === 'active' ? 'ecfs' : method === 'options' ? 'options' : 'discord';
+    const keyPrefix = method === 'active' ? 'ecfs' : method === 'options' ? 'options' : method === 'core' ? 'core' : 'discord';
     localStorage.removeItem(`${keyPrefix}-trades`);
     localStorage.removeItem(`${keyPrefix}-filename`);
     localStorage.removeItem(`${keyPrefix}-upload-time`);
@@ -807,14 +808,18 @@ function refreshDashboard(method) {
 
     state[method].periodTrades = trades; // saved for trade log filter/sort
 
-    const risk = method === 'options' ? OPTIONS_RISK : method === 'active' ? ECFS_RISK : DISCORD_RISK;
-    const ppt = method === 'options' ? OPTIONS_PPT : method === 'active' ? ECFS_PPT : DISCORD_PPT;
-    const startBal = method === 'options' ? OPTIONS_STARTING_BALANCE : method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
-    const kpis = calculateKPIs(trades, risk, ppt, startBal);
+    let kpis, allTimeKPIs;
+    if (method === 'core') {
+        kpis = calculatePointsKPIs(trades);
+        allTimeKPIs = calculatePointsKPIs(allTrades);
+    } else {
+        const risk = method === 'options' ? OPTIONS_RISK : method === 'active' ? ECFS_RISK : DISCORD_RISK;
+        const ppt = method === 'options' ? OPTIONS_PPT : method === 'active' ? ECFS_PPT : DISCORD_PPT;
+        const startBal = method === 'options' ? OPTIONS_STARTING_BALANCE : method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
+        kpis = calculateKPIs(trades, risk, ppt, startBal);
+        allTimeKPIs = calculateKPIs(allTrades, risk, ppt, startBal);
+    }
     state[method].kpis = kpis;
-
-    // Also calculate all-time KPIs for cumulative metrics
-    const allTimeKPIs = calculateKPIs(allTrades, risk, ppt, startBal);
 
     const rangeEl = document.getElementById(`period-range-${method}`);
     if (rangeEl) {
@@ -843,9 +848,10 @@ function refreshDashboard(method) {
 
     if (method === 'discord') renderDiscord(kpis, trades, allTimeKPIs, allTrades);
     if (method === 'options') renderOptions(kpis, trades, allTimeKPIs, allTrades);
+    if (method === 'core') renderCore(kpis, trades, allTimeKPIs, allTrades);
 
     // Update edge section with its own independent timeframe filter
-    updateEdgeSection(method);
+    if (method !== 'core') updateEdgeSection(method);
 }
 
 function updateLastUpdated(trades) {
@@ -2347,6 +2353,7 @@ function renderEquityCurve(containerId, equityCurve, drawdownCurve, color) {
     const chart = echarts.init(container, 'dark');
     chartInstances[containerId] = chart;
 
+    const isCoreCh = containerId.includes('core');
     const labels = equityCurve.map((_, i) => `T${i + 1}`);
     const balanceData = equityCurve.map(p => p.balance);
     const ddData = drawdownCurve.map(p => p.dd);
@@ -2355,7 +2362,7 @@ function renderEquityCurve(containerId, equityCurve, drawdownCurve, color) {
     const minBalance = Math.min(...balanceData);
     const maxBalance = Math.max(...balanceData);
     const balanceRange = maxBalance - minBalance;
-    const yMin = Math.max(0, minBalance - balanceRange * 0.1);
+    const yMin = isCoreCh ? (minBalance - balanceRange * 0.1) : Math.max(0, minBalance - balanceRange * 0.1);
     const yMax = maxBalance + balanceRange * 0.1;
 
     // Drawdown axis: max is 0 (no drawdown), min proportional to max DD
@@ -2371,11 +2378,11 @@ function renderEquityCurve(containerId, equityCurve, drawdownCurve, color) {
             borderColor: color,
             textStyle: { color: '#fff', fontSize: 11 },
             formatter: params => {
-                const eq = params.find(p => p.seriesName === 'Balance');
+                const eq = params.find(p => p.seriesName === (isCoreCh ? 'Points' : 'Balance'));
                 const dd = params.find(p => p.seriesName === 'Drawdown');
                 let html = `<strong>${eq ? eq.name : ''}</strong>`;
-                if (eq) html += `<br/>Balance: <span style="color:${color};font-weight:bold">$${eq.value.toLocaleString()}</span>`;
-                if (dd && dd.value < 0) html += `<br/>Drawdown: <span style="color:#ef4444;font-weight:bold">$${dd.value.toFixed(2)}</span>`;
+                if (eq) html += `<br/>${isCoreCh ? 'Points' : 'Balance'}: <span style="color:${color};font-weight:bold">${isCoreCh ? eq.value.toFixed(2) + ' pts' : '$' + eq.value.toLocaleString()}</span>`;
+                if (dd && dd.value < 0) html += `<br/>Drawdown: <span style="color:#ef4444;font-weight:bold">${isCoreCh ? dd.value.toFixed(2) + ' pts' : '$' + dd.value.toFixed(2)}</span>`;
                 return html;
             }
         },
@@ -2387,7 +2394,7 @@ function renderEquityCurve(containerId, equityCurve, drawdownCurve, color) {
                 type: 'value',
                 min: yMin,
                 max: yMax,
-                axisLabel: { color: '#888', fontSize: 10, formatter: val => `$${val.toLocaleString()}` },
+                axisLabel: { color: '#888', fontSize: 10, formatter: val => isCoreCh ? `${val.toFixed(1)}` : `$${val.toLocaleString()}` },
                 splitLine: { lineStyle: { color: '#1a2a40' } },
                 axisLine: { show: false }
             },
@@ -2402,7 +2409,7 @@ function renderEquityCurve(containerId, equityCurve, drawdownCurve, color) {
         ],
         series: [
             {
-                name: 'Balance', type: 'line', data: balanceData,
+                name: isCoreCh ? 'Points' : 'Balance', type: 'line', data: balanceData,
                 lineStyle: { color, width: 2 }, itemStyle: { color },
                 areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: color + '40' }, { offset: 1, color: color + '05' }] } },
                 symbol: 'none', smooth: true
@@ -2425,6 +2432,7 @@ function renderDailyPL(containerId, dailyPL, tradingDays) {
     const chart = echarts.init(container, 'dark');
     chartInstances[containerId] = chart;
 
+    const isDailyCore = containerId.includes('core');
     const values = tradingDays.map(d => dailyPL[d].pl);
     const labels = tradingDays.map(d => {
         const parts = d.split('/');
@@ -2436,13 +2444,13 @@ function renderDailyPL(containerId, dailyPL, tradingDays) {
         tooltip: {
             trigger: 'axis',
             backgroundColor: '#0d1d35',
-            borderColor: '#d4af37',
+            borderColor: isDailyCore ? '#34d399' : '#d4af37',
             textStyle: { color: '#fff', fontSize: 11 },
-            formatter: params => `${params[0].axisValue}<br/>P&L: <strong style="color:${params[0].value >= 0 ? '#4ade80' : '#f87171'}">$${params[0].value.toFixed(2)}</strong>`
+            formatter: params => `${params[0].axisValue}<br/>P&L: <strong style="color:${params[0].value >= 0 ? '#4ade80' : '#f87171'}">${isDailyCore ? params[0].value.toFixed(2) + ' pts' : '$' + params[0].value.toFixed(2)}</strong>`
         },
         grid: { left: 50, right: 15, top: 15, bottom: 30 },
         xAxis: { type: 'category', data: labels, axisLabel: { color: '#888', fontSize: 10, rotate: 30 }, axisLine: { lineStyle: { color: '#333' } } },
-        yAxis: { type: 'value', axisLabel: { color: '#888', fontSize: 10, formatter: '${value}' }, splitLine: { lineStyle: { color: '#1a2a40' } }, axisLine: { show: false } },
+        yAxis: { type: 'value', axisLabel: { color: '#888', fontSize: 10, formatter: isDailyCore ? '{value}' : '${value}' }, splitLine: { lineStyle: { color: '#1a2a40' } }, axisLine: { show: false } },
         series: [{
             type: 'bar', data: values.map(v => ({
                 value: v,
@@ -2464,11 +2472,12 @@ function renderPLDistribution(containerId, plData, color) {
     const chart = echarts.init(container, 'dark');
     chartInstances[containerId] = chart;
 
+    const isDistCore = containerId.includes('core');
     // Create histogram buckets
     const min = Math.min(...plData);
     const max = Math.max(...plData);
     const range = max - min;
-    const bucketSize = Math.max(Math.ceil(range / 12), 10);
+    const bucketSize = isDistCore ? Math.max(Math.ceil(range / 12), 1) : Math.max(Math.ceil(range / 12), 10);
     const bucketStart = Math.floor(min / bucketSize) * bucketSize;
 
     const buckets = {};
@@ -2481,7 +2490,9 @@ function renderPLDistribution(containerId, plData, color) {
         else buckets[bucket] = 1;
     });
 
-    const labels = Object.keys(buckets).map(k => `$${parseInt(k)}`);
+    const prefix = isDistCore ? '' : '$';
+    const suffix = isDistCore ? ' pts' : '';
+    const labels = Object.keys(buckets).map(k => `${prefix}${parseInt(k)}${suffix}`);
     const values = Object.values(buckets);
     const keys = Object.keys(buckets).map(k => parseInt(k));
 
@@ -2496,7 +2507,7 @@ function renderPLDistribution(containerId, plData, color) {
                 const idx = params[0].dataIndex;
                 const lo = keys[idx];
                 const hi = lo + bucketSize;
-                return `$${lo} to $${hi}<br/><strong>${params[0].value}</strong> trades`;
+                return `${prefix}${lo}${suffix} to ${prefix}${hi}${suffix}<br/><strong>${params[0].value}</strong> trades`;
             }
         },
         grid: { left: 40, right: 15, top: 15, bottom: 35 },
@@ -2524,7 +2535,9 @@ function renderWeeklyTrend(containerId, weeklyPL, method) {
     chartInstances[containerId] = chart;
 
     const weeks = Object.keys(weeklyPL).sort((a, b) => parseWeekKey(a) - parseWeekKey(b));
-    const color = method === 'active' ? '#d4af37' : '#60a5fa';
+    const color = method === 'active' ? '#d4af37' : method === 'core' ? '#34d399' : '#60a5fa';
+    const isCore = method === 'core';
+    const fmtVal = v => isCore ? `${v.toFixed(2)} pts` : `$${v.toFixed(2)}`;
 
     let cumPL = 0;
     const cumData = weeks.map(wk => {
@@ -2548,9 +2561,9 @@ function renderWeeklyTrend(containerId, weeklyPL, method) {
                 let result = `<strong>Week of ${getWeekRange(weeks[params[0].dataIndex])}</strong><br/>`;
                 params.forEach(p => {
                     if (p.seriesName === 'Weekly P&L') {
-                        result += `Weekly: <span style="color:${p.value >= 0 ? '#4ade80' : '#f87171'};font-weight:bold">$${p.value.toFixed(2)}</span><br/>`;
+                        result += `Weekly: <span style="color:${p.value >= 0 ? '#4ade80' : '#f87171'};font-weight:bold">${fmtVal(p.value)}</span><br/>`;
                     } else {
-                        result += `Cumulative: <span style="color:${color};font-weight:bold">$${p.value.toFixed(2)}</span>`;
+                        result += `Cumulative: <span style="color:${color};font-weight:bold">${fmtVal(p.value)}</span>`;
                     }
                 });
                 return result;
@@ -2564,8 +2577,8 @@ function renderWeeklyTrend(containerId, weeklyPL, method) {
         grid: { left: 55, right: 55, top: 30, bottom: 30 },
         xAxis: { type: 'category', data: labels, axisLabel: { color: '#888', fontSize: 10 }, axisLine: { lineStyle: { color: '#333' } } },
         yAxis: [
-            { type: 'value', name: 'Weekly', nameTextStyle: { color: '#666', fontSize: 9 }, axisLabel: { color: '#888', fontSize: 10, formatter: '${value}' }, splitLine: { lineStyle: { color: '#1a2a40' } }, axisLine: { show: false } },
-            { type: 'value', name: 'Cumul.', nameTextStyle: { color: '#666', fontSize: 9 }, axisLabel: { color: '#888', fontSize: 10, formatter: '${value}' }, splitLine: { show: false }, axisLine: { show: false } }
+            { type: 'value', name: 'Weekly', nameTextStyle: { color: '#666', fontSize: 9 }, axisLabel: { color: '#888', fontSize: 10, formatter: isCore ? '{value}' : '${value}' }, splitLine: { lineStyle: { color: '#1a2a40' } }, axisLine: { show: false } },
+            { type: 'value', name: 'Cumul.', nameTextStyle: { color: '#666', fontSize: 9 }, axisLabel: { color: '#888', fontSize: 10, formatter: isCore ? '{value}' : '${value}' }, splitLine: { show: false }, axisLine: { show: false } }
         ],
         series: [
             {
@@ -3271,13 +3284,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         } catch (e) { console.error('Error loading Discord JSON:', e); }
     }
 
-    // ===== OPTIONS PANEL (only if ?options or ?option is in URL) =====
-    const _urlParams = new URLSearchParams(window.location.search);
-    const optionsEnabled = _urlParams.has('options') || _urlParams.has('option');
-    if (optionsEnabled) {
-        document.getElementById('nav-options').classList.remove('hidden');
-        document.getElementById('panel-options').style.display = 'none'; // start hidden, user clicks tab
-
+    // ===== OPTIONS PANEL (always loaded) =====
+    {
         let optionsLoaded = false;
         const savedOptions = localStorage.getItem('options-trades');
         if (savedOptions) {
@@ -3368,6 +3376,29 @@ document.addEventListener('DOMContentLoaded', async function () {
                     }
                 }
             })();
+        }
+    }
+
+    // ===== EKANTIK CORE PANEL (only if ?core is in URL) =====
+    const _coreParams = new URLSearchParams(window.location.search);
+    const coreEnabled = _coreParams.has('core');
+    if (coreEnabled) {
+        document.getElementById('nav-core').classList.remove('hidden');
+
+        let coreLoaded = false;
+        const savedCore = localStorage.getItem('core-trades');
+        if (savedCore) {
+            try {
+                state.core.allTrades = JSON.parse(savedCore);
+                if (state.core.allTrades.length > 0) {
+                    const weeks = getWeeksList(state.core.allTrades);
+                    state.core.selectedWeek = weeks[0];
+                    populateWeekSelector('core', weeks);
+                    refreshDashboard('core');
+                    coreLoaded = true;
+                    showExportButton('core');
+                }
+            } catch (e) { console.error('Error loading Core data:', e); }
         }
     }
 
@@ -3542,13 +3573,14 @@ function showExportToast(msg) {
 const tradeLogState = {
     active:  { filter: 'all', sortCol: null, sortDir: 1 },
     discord: { filter: 'all', sortCol: null, sortDir: 1 },
-    options: { filter: 'all', sortCol: null, sortDir: 1 }
+    options: { filter: 'all', sortCol: null, sortDir: 1 },
+    core:    { filter: 'all', sortCol: null, sortDir: 1 }
 };
 
 function filterTradeLog(method, filter) {
     tradeLogState[method].filter = filter;
     // Active style class depends on method
-    const activeClass = method === 'discord' ? 'trade-filter-active-blue' : method === 'options' ? 'trade-filter-active-purple' : 'trade-filter-active';
+    const activeClass = method === 'discord' ? 'trade-filter-active-blue' : method === 'options' ? 'trade-filter-active-purple' : method === 'core' ? 'trade-filter-active-emerald' : 'trade-filter-active';
     ['all', 'win', 'loss', 'long', 'short'].forEach(f => {
         const btn = document.getElementById(`${method}-filter-${f}`);
         if (!btn) return;
@@ -3630,6 +3662,8 @@ function _rerenderTradeLog(method) {
         renderTradeLog('active-trades-body', sorted, ECFS_RISK);
     } else if (method === 'options') {
         renderOptionsTradeLog('options-trades-body', sorted);
+    } else if (method === 'core') {
+        renderCoreTradeLog('core-trades-body', sorted);
     } else {
         renderDiscordTradeLog('discord-trades-body', sorted);
     }
@@ -3644,7 +3678,7 @@ function resetTradeLogFilter(method) {
         const btn = document.getElementById(`${method}-filter-${f}`);
         if (!btn) return;
         const isAll = f === 'all';
-        const activeClass = method === 'discord' ? 'trade-filter-active-blue' : method === 'options' ? 'trade-filter-active-purple' : 'trade-filter-active';
+        const activeClass = method === 'discord' ? 'trade-filter-active-blue' : method === 'options' ? 'trade-filter-active-purple' : method === 'core' ? 'trade-filter-active-emerald' : 'trade-filter-active';
         btn.className = isAll
             ? `trade-filter-btn ${activeClass} px-2.5 py-1 rounded text-[10px] border border-transparent`
             : 'trade-filter-btn px-2.5 py-1 rounded text-[10px] font-semibold bg-[#0d1d35] text-gray-400 border border-gray-700';
@@ -3866,48 +3900,62 @@ async function _handleDiscordParseUpload(newTrades) {
 // ===== OPTIONS STRATEGY PANEL =====
 
 function switchPanel(panel) {
-    const discordPanel = document.getElementById('panel-discord');
-    const optionsPanel = document.getElementById('panel-options');
-    const navDiscord = document.getElementById('nav-discord');
-    const navOptions = document.getElementById('nav-options');
+    const panels = { discord: 'panel-discord', options: 'panel-options', core: 'panel-core' };
+    const navs = { discord: 'nav-discord', options: 'nav-options', core: 'nav-core' };
+    const activeColors = { discord: 'text-blue-400', options: 'text-purple-400', core: 'text-emerald-400' };
 
-    if (panel === 'options') {
-        if (discordPanel) discordPanel.style.display = 'none';
-        if (optionsPanel) optionsPanel.style.display = '';
-        if (navDiscord) { navDiscord.classList.remove('text-blue-400'); navDiscord.classList.add('text-gray-500'); }
-        if (navOptions) { navOptions.classList.remove('text-gray-500'); navOptions.classList.add('text-purple-400'); }
-    } else {
-        if (discordPanel) discordPanel.style.display = '';
-        if (optionsPanel) optionsPanel.style.display = 'none';
-        if (navDiscord) { navDiscord.classList.remove('text-gray-500'); navDiscord.classList.add('text-blue-400'); }
-        if (navOptions) { navOptions.classList.remove('text-purple-400'); navOptions.classList.add('text-gray-500'); }
-    }
+    Object.entries(panels).forEach(([key, id]) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = key === panel ? '' : 'none';
+    });
+    Object.entries(navs).forEach(([key, id]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.remove('text-blue-400', 'text-purple-400', 'text-emerald-400', 'text-gray-500');
+        el.classList.add(key === panel ? activeColors[key] : 'text-gray-500');
+    });
+
     updateHeroBadgesForPanel(panel);
     const disclaimerAmt = document.getElementById('disclaimer-portfolio-amount');
-    if (disclaimerAmt) disclaimerAmt.textContent = panel === 'options' ? '$10,000 starting portfolio' : '$20,000 starting portfolio';
+    if (disclaimerAmt) {
+        if (panel === 'options') disclaimerAmt.textContent = '$10,000 starting portfolio';
+        else if (panel === 'core') disclaimerAmt.textContent = 'points-only (no portfolio)';
+        else disclaimerAmt.textContent = '$20,000 starting portfolio';
+    }
 }
 
 function updateHeroBadgesForPanel(panel) {
     const badgeReturn = document.getElementById('hero-badge-return');
     const badgeDD = document.getElementById('hero-badge-dd');
     const badgeMonths = document.getElementById('hero-badge-months');
+    const badgeReturnLabel = document.getElementById('hero-badge-return-label');
 
-    const method = panel === 'options' ? 'options' : 'discord';
+    const method = panel === 'core' ? 'core' : panel === 'options' ? 'options' : 'discord';
     const allTrades = state[method] && state[method].allTrades;
     if (!allTrades || allTrades.length === 0) return;
 
-    const risk = method === 'options' ? OPTIONS_RISK : DISCORD_RISK;
-    const ppt = method === 'options' ? OPTIONS_PPT : DISCORD_PPT;
-    const startBal = method === 'options' ? OPTIONS_STARTING_BALANCE : DISCORD_STARTING_BALANCE;
-    const allK = calculateKPIs(allTrades, risk, ppt, startBal);
+    if (method === 'core') {
+        const allK = calculatePointsKPIs(allTrades);
+        if (badgeReturn) {
+            const pts = allK.netPoints || 0;
+            badgeReturn.textContent = `${pts >= 0 ? '+' : ''}${pts.toFixed(1)} pts`;
+            badgeReturn.className = `text-2xl font-bold ${pts >= 0 ? 'text-green-400' : 'text-red-400'}`;
+        }
+        if (badgeReturnLabel) badgeReturnLabel.textContent = 'NET POINTS';
+        if (badgeDD) badgeDD.textContent = `-${(allK.maxDD || 0).toFixed(1)} pts`;
+    } else {
+        const risk = method === 'options' ? OPTIONS_RISK : DISCORD_RISK;
+        const ppt = method === 'options' ? OPTIONS_PPT : DISCORD_PPT;
+        const startBal = method === 'options' ? OPTIONS_STARTING_BALANCE : DISCORD_STARTING_BALANCE;
+        const allK = calculateKPIs(allTrades, risk, ppt, startBal);
 
-    if (badgeReturn) {
-        const retPct = allK.returnPct || 0;
-        badgeReturn.textContent = `${retPct >= 0 ? '+' : ''}${retPct.toFixed(1)}%`;
-        badgeReturn.className = `text-2xl font-bold ${retPct >= 0 ? 'text-green-400' : 'text-red-400'}`;
-    }
-    if (badgeDD) {
-        badgeDD.textContent = `-${(allK.maxDDPct || 0).toFixed(1)}%`;
+        if (badgeReturn) {
+            const retPct = allK.returnPct || 0;
+            badgeReturn.textContent = `${retPct >= 0 ? '+' : ''}${retPct.toFixed(1)}%`;
+            badgeReturn.className = `text-2xl font-bold ${retPct >= 0 ? 'text-green-400' : 'text-red-400'}`;
+        }
+        if (badgeReturnLabel) badgeReturnLabel.textContent = 'NET RETURN';
+        if (badgeDD) badgeDD.textContent = `-${(allK.maxDDPct || 0).toFixed(1)}%`;
     }
     if (badgeMonths) {
         const monthSet = new Set();
@@ -4000,6 +4048,177 @@ function renderOptionsTradeLog(tbodyId, trades) {
             ${adminBtns}
         </tr>`;
     }).join('');
+}
+
+// ===== EKANTIK CORE — Render & Upload =====
+
+function fmtPts(v) { return `${v >= 0 ? '+' : ''}${v.toFixed(2)}`; }
+
+function renderCore(k, trades, allK, allTrades) {
+    const tradeCountEl = document.getElementById('core-live-trade-count');
+    if (tradeCountEl) tradeCountEl.textContent = `${allTrades.length} trades (All-Time)`;
+    const lastUpdEl = document.getElementById('core-live-last-updated');
+    if (lastUpdEl) {
+        const uploadTime = parseInt(localStorage.getItem('core-upload-time') || '0');
+        if (uploadTime > 0) {
+            lastUpdEl.textContent = new Date(uploadTime).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        } else {
+            lastUpdEl.textContent = getLastTradeDate(allTrades) || '—';
+        }
+    }
+
+    // Hero stats — all in points
+    setColor('core-hero-pts', fmtPts(k.netPoints), k.netPoints);
+    document.getElementById('core-hero-pts-sub').textContent = `${k.totalTrades} trade${k.totalTrades !== 1 ? 's' : ''}`;
+    setColor('core-hero-avg', fmtPts(k.avgPtsPerTrade), k.avgPtsPerTrade);
+    document.getElementById('core-hero-wr').textContent = `${k.winRate.toFixed(1)}%`;
+    document.getElementById('core-hero-wr-sub').textContent = `${k.winCount}W / ${k.lossCount}L`;
+    document.getElementById('core-hero-pf').textContent = k.profitFactor === Infinity ? '∞' : k.profitFactor.toFixed(2);
+    document.getElementById('core-hero-pf-sub').textContent = `${fmtPts(k.grossWinPts)} / ${fmtPts(-k.grossLossPts)}`;
+    setColor('core-hero-dd', `-${k.maxDD.toFixed(2)} pts`, k.maxDD > 0 ? -1 : 0);
+    document.getElementById('core-hero-dd-sub').textContent = `current: -${k.currentDD.toFixed(2)} pts`;
+    setColor('core-hero-ppd', fmtPts(k.ptsPerDay), k.ptsPerDay);
+    document.getElementById('core-hero-ppd-sub').textContent = `${k.tradingDays.length} trading days`;
+
+    // Charts — reuse existing chart renderers but with points data
+    // Equity curve uses points as "balance"
+    renderEquityCurve('chart-equity-core', k.equityCurve, k.drawdownCurve, '#34d399');
+    renderDailyPL('chart-daily-core', k.dailyPL, k.tradingDays);
+    renderPLDistribution('chart-pldist-core', k.plDistribution, '#34d399');
+    renderWeeklyTrend('chart-weekly-trend-core', allK.weeklyPL, 'core');
+
+    // Monthly summary in points
+    renderMonthlyPointsSummary('monthly-summary-core', allTrades);
+
+    // Trade Log
+    renderCoreTradeLog('core-trades-body', trades);
+    document.getElementById('core-trade-count').textContent = `${trades.length} trades`;
+}
+
+function renderMonthlyPointsSummary(containerId, trades) {
+    const el = document.getElementById(containerId);
+    if (!el || !trades || trades.length === 0) { if (el) el.innerHTML = '<p class="text-gray-600 text-xs text-center">No data yet</p>'; return; }
+
+    const months = {};
+    trades.forEach(t => {
+        const d = new Date(t.date);
+        if (isNaN(d)) return;
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        if (!months[key]) months[key] = { pts: 0, trades: 0, wins: 0 };
+        months[key].pts += t.pointsPL;
+        months[key].trades++;
+        if (t.isWin) months[key].wins++;
+    });
+
+    const sortedKeys = Object.keys(months).sort();
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    el.innerHTML = `<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">${sortedKeys.map(k => {
+        const m = months[k];
+        const [y, mo] = k.split('-');
+        const label = `${monthNames[parseInt(mo)-1]} ${y}`;
+        const color = m.pts >= 0 ? 'text-green-400' : 'text-red-400';
+        const wr = m.trades > 0 ? (m.wins / m.trades * 100).toFixed(0) : 0;
+        return `<div class="bg-[#0a1628] border border-emerald-400/10 rounded-lg p-3 text-center">
+            <p class="text-[9px] text-gray-500 font-bold">${label}</p>
+            <p class="text-lg font-bold ${color}">${fmtPts(m.pts)}</p>
+            <p class="text-[9px] text-gray-600">${m.trades} trades · ${wr}% WR</p>
+        </div>`;
+    }).join('')}</div>`;
+}
+
+function renderCoreTradeLog(tbodyId, trades) {
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+    tbody.innerHTML = trades.map(t => {
+        const dirColor = t.direction === 'Long' ? 'text-blue-400' : 'text-red-400';
+        const plColor = t.pointsPL > 0 ? 'text-green-400' : t.pointsPL < 0 ? 'text-red-400' : 'text-gray-400';
+        const badge = t.isWin ? '<span class="bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded text-[10px] font-bold">W</span>' : '<span class="bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded text-[10px] font-bold">L</span>';
+        const rr = t.rewardRisk != null ? t.rewardRisk.toFixed(2) : '—';
+        const contractNote = t.contracts > 1 ? ` <span class="text-gray-600 text-[9px]">(${t.contracts}ct)</span>` : '';
+        return `<tr class="hover:bg-emerald-500/5 transition-colors">
+            <td class="text-gray-300 text-[11px]">${t.exitTime || t.entryTime}</td>
+            <td class="${dirColor} text-[11px] font-semibold">${t.direction}</td>
+            <td class="text-gray-300 text-[11px]">${t.entryPrice.toFixed(2)}</td>
+            <td class="text-gray-300 text-[11px]">${t.exitPrice.toFixed(2)}</td>
+            <td class="text-gray-300 text-[11px]">${t.stopPrice ? t.stopPrice.toFixed(2) : '—'}</td>
+            <td class="${plColor} text-[11px] font-semibold">${fmtPts(t.pointsPL)}${contractNote}</td>
+            <td class="text-gray-300 text-[11px]">${t.riskPoints ? t.riskPoints.toFixed(2) : '—'}</td>
+            <td class="text-gray-300 text-[11px]">${rr}</td>
+            <td>${badge}</td>
+        </tr>`;
+    }).join('');
+}
+
+async function handleCoreCSVUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const csvText = e.target.result;
+            const newTrades = parseTradovateForCore(csvText);
+
+            // Merge with existing
+            let existingTrades = state.core.allTrades.filter(t => !t._isSample);
+            if (existingTrades.length === 0) {
+                try {
+                    const lsJson = localStorage.getItem('core-trades');
+                    if (lsJson) {
+                        const lsTrades = JSON.parse(lsJson);
+                        if (Array.isArray(lsTrades) && lsTrades.length > 0) existingTrades = lsTrades.filter(t => !t._isSample);
+                    }
+                } catch (e) { /* continue */ }
+            }
+
+            const existingKeys = new Set(existingTrades.map(t => `${t.entryTime}|${t.exitTime}|${t.direction}|${t.pointsPL}`));
+            const uniqueNew = newTrades.filter(t => !existingKeys.has(`${t.entryTime}|${t.exitTime}|${t.direction}|${t.pointsPL}`));
+            const trades = [...existingTrades, ...uniqueNew].sort((a, b) => new Date(a.entryTime || a.date) - new Date(b.entryTime || b.date));
+
+            state.core.allTrades = trades;
+            state.core.isSampleData = false;
+            localStorage.setItem('core-trades', JSON.stringify(trades));
+            localStorage.setItem('core-upload-time', Date.now().toString());
+
+            const weeks = getWeeksList(trades);
+            state.core.selectedWeek = weeks[0];
+            populateWeekSelector('core', weeks);
+            refreshDashboard('core');
+            showExportButton('core');
+
+            const statusEl = document.getElementById('upload-status-core');
+            const statusText = document.getElementById('upload-status-core-text');
+            if (statusEl && statusText) {
+                statusEl.classList.remove('hidden');
+                statusText.className = 'text-xs text-green-400';
+                statusText.textContent = `✓ ${trades.length} trades loaded (${uniqueNew.length} new)`;
+            }
+        } catch (err) {
+            console.error('Error parsing Core CSV:', err);
+            const statusEl = document.getElementById('upload-status-core');
+            const statusText = document.getElementById('upload-status-core-text');
+            if (statusEl && statusText) {
+                statusEl.classList.remove('hidden');
+                statusText.className = 'text-xs text-red-400';
+                statusText.textContent = `Error: ${err.message}`;
+            }
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+}
+
+function exportCoreData() {
+    const trades = state.core.allTrades;
+    if (!trades || trades.length === 0) return;
+    const blob = new Blob([JSON.stringify(trades, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ekantik-core-trades-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
 }
 
 // Options parser functions
