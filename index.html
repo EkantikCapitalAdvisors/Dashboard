@@ -1410,14 +1410,6 @@
                             </div>
                         </div>
                         <div class="flex flex-col sm:flex-row items-center gap-3 pt-4 border-t border-emerald-400/10">
-                            <a href="https://discord.gg/GprT4S8Vrj" target="_blank" rel="noopener"
-                               class="inline-flex items-center gap-2.5 bg-[#5865F2]/15 border border-[#5865F2]/40 hover:bg-[#5865F2]/25 rounded-lg px-5 py-2.5 transition-all group flex-shrink-0">
-                                <i class="fab fa-discord text-[#5865F2] text-base group-hover:scale-110 transition-transform"></i>
-                                <div>
-                                    <p class="text-white text-sm font-semibold leading-tight">Join Discord Channel</p>
-                                    <p class="text-[#5865F2]/70 text-[10px]">Follow trades in real time</p>
-                                </div>
-                            </a>
                             <div class="text-gray-500 text-[10px] leading-relaxed">
                                 <i class="fas fa-database text-emerald-400/50 mr-1"></i>
                                 All performance data is calculated from <strong class="text-gray-300">Tradovate execution reports</strong>.
@@ -1563,7 +1555,7 @@
                                         <th class="text-gray-400 text-[10px]">Entry</th>
                                         <th class="text-gray-400 text-[10px]">Exit</th>
                                         <th class="text-gray-400 text-[10px]">Stop</th>
-                                        <th class="text-gray-400 text-[10px] sortable-th" onclick="sortTradeLog('core','pts')">Points <span id="core-sort-pts"></span></th>
+                                        <th class="text-gray-400 text-[10px] sortable-th" onclick="sortTradeLog('core','pts')" title="Net of $3.50/contract commission">Pts (net) <span id="core-sort-pts"></span></th>
                                         <th class="text-gray-400 text-[10px]">Risk (pts)</th>
                                         <th class="text-gray-400 text-[10px]">R:R</th>
                                         <th class="text-gray-400 text-[10px]">Result</th>
@@ -1606,7 +1598,7 @@
     </section>
 
     <!-- Deep Dive Toggle -->
-    <div class="text-center py-8 bg-[#0a1628]">
+    <div id="deep-dive-section" class="text-center py-8 bg-[#0a1628]">
         <button onclick="const s=document.getElementById('deep-dive-math');s.style.display=s.style.display==='none'?'':'none';this.querySelector('.fa-chevron-down,.fa-chevron-up').classList.toggle('fa-chevron-down');this.querySelector('.fa-chevron-down,.fa-chevron-up').classList.toggle('fa-chevron-up');"
             class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-[#d4af37]/20 to-[#d4af37]/5 border-2 border-[#d4af37]/40 text-white font-bold text-sm rounded-xl hover:border-[#d4af37]/80 hover:shadow-lg hover:shadow-[#d4af37]/20 transition-all">
             <i class="fas fa-atom mr-2 text-[#d4af37]"></i>Deep Dive: The Mathematics of Compounding

@@ -3390,6 +3390,17 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (savedCore) {
             try {
                 state.core.allTrades = JSON.parse(savedCore);
+                // Migrate: deduct commission from any trades saved before commission tracking
+                let needsResave = false;
+                state.core.allTrades = state.core.allTrades.map(t => {
+                    if (!t._commissionDeducted) {
+                        const netPL = t.pointsPL - CORE_COMMISSION_PTS;
+                        needsResave = true;
+                        return { ...t, pointsPL: netPL, isWin: netPL > 0, _commissionDeducted: true };
+                    }
+                    return t;
+                });
+                if (needsResave) localStorage.setItem('core-trades', JSON.stringify(state.core.allTrades));
                 if (state.core.allTrades.length > 0) {
                     const weeks = getWeeksList(state.core.allTrades);
                     state.core.selectedWeek = weeks[0];
@@ -3400,6 +3411,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                 }
             } catch (e) { console.error('Error loading Core data:', e); }
         }
+        // Auto-switch to Core panel when ?core is in URL
+        switchPanel('core');
     }
 
     // Load weekly snapshots for historical charts
@@ -3922,6 +3935,11 @@ function switchPanel(panel) {
         else if (panel === 'core') disclaimerAmt.textContent = 'points-only (no portfolio)';
         else disclaimerAmt.textContent = '$20,000 starting portfolio';
     }
+    // Hide Deep Dive / Compounding section for Core (not relevant)
+    const deepDiveToggle = document.getElementById('deep-dive-section');
+    const deepDiveMath = document.getElementById('deep-dive-math');
+    if (deepDiveToggle) deepDiveToggle.style.display = panel === 'core' ? 'none' : '';
+    if (deepDiveMath && panel === 'core') deepDiveMath.style.display = 'none';
 }
 
 function updateHeroBadgesForPanel(panel) {
@@ -3932,7 +3950,14 @@ function updateHeroBadgesForPanel(panel) {
 
     const method = panel === 'core' ? 'core' : panel === 'options' ? 'options' : 'discord';
     const allTrades = state[method] && state[method].allTrades;
-    if (!allTrades || allTrades.length === 0) return;
+    if (!allTrades || allTrades.length === 0) {
+        // Clear badges so stale data from another panel doesn't show
+        if (badgeReturn) { badgeReturn.textContent = '—'; badgeReturn.className = 'text-2xl font-bold text-gray-500'; }
+        if (badgeDD) badgeDD.textContent = '—';
+        if (badgeMonths) badgeMonths.textContent = '—';
+        if (badgeReturnLabel) badgeReturnLabel.textContent = method === 'core' ? 'NET POINTS' : 'NET RETURN';
+        return;
+    }
 
     if (method === 'core') {
         const allK = calculatePointsKPIs(allTrades);
