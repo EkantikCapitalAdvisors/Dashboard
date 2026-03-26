@@ -3390,6 +3390,17 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (savedCore) {
             try {
                 state.core.allTrades = JSON.parse(savedCore);
+                // Migrate: deduct commission from any trades saved before commission tracking
+                let needsResave = false;
+                state.core.allTrades = state.core.allTrades.map(t => {
+                    if (!t._commissionDeducted) {
+                        const netPL = t.pointsPL - CORE_COMMISSION_PTS;
+                        needsResave = true;
+                        return { ...t, pointsPL: netPL, isWin: netPL > 0, _commissionDeducted: true };
+                    }
+                    return t;
+                });
+                if (needsResave) localStorage.setItem('core-trades', JSON.stringify(state.core.allTrades));
                 if (state.core.allTrades.length > 0) {
                     const weeks = getWeeksList(state.core.allTrades);
                     state.core.selectedWeek = weeks[0];

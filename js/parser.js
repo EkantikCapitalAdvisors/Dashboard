@@ -16,6 +16,7 @@ const STARTING_BALANCE = 5000;  // $5,000 portfolio for ECFS Active (2% risk per
 const DISCORD_STARTING_BALANCE = 20000; // $20,000 portfolio for ECFS Predisposal (2.5% daily risk)
 const CORE_PPT = 50;            // $50 per point (ES) — used only for Tradovate parsing normalization
 const CORE_RISK_POINTS = 5;     // Default risk in points when no stop found
+const CORE_COMMISSION_PTS = 0.07; // $3.50 round-trip commission / $50 per point (ES) = 0.07 pts per contract
 
 // ===== DATABASE API — GitHub-backed persistence =====
 // Reads: raw.githubusercontent.com (public CDN, no auth, cache-busted)
@@ -444,10 +445,11 @@ function parseTradovateForCore(csvText) {
         exitPrice: t.exitPrice,
         stopPrice: t.stopPrice,
         contracts: t.contracts,              // original for display
-        pointsPL: t.pointsPL,                // already per-contract from buildRoundTrip
+        pointsPL: t.pointsPL - CORE_COMMISSION_PTS,  // net of $3.50/contract commission (0.07 pts)
         riskPoints: t.riskPoints || CORE_RISK_POINTS,
         rewardRisk: t.rewardRisk,
-        isWin: t.pointsPL > 0,
+        isWin: (t.pointsPL - CORE_COMMISSION_PTS) > 0,
+        _commissionDeducted: true,
         date: t.date
     }));
 }
