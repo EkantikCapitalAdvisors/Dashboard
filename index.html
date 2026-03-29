@@ -120,10 +120,7 @@
                         <i class="fas fa-comments mr-1.5 text-xs"></i><span class="hidden sm:inline">ECFS Predisposal</span><span class="sm:hidden">ECFS</span>
                     </a>
                     <a href="#" class="text-gray-500 font-semibold text-sm flex items-center transition-colors" id="nav-options" onclick="switchPanel('options');return false;">
-                        <i class="fas fa-chart-pie mr-1.5 text-xs"></i><span class="hidden sm:inline">Options Strategy</span><span class="sm:hidden">Options</span>
-                    </a>
-                    <a href="#" class="text-gray-500 font-semibold text-sm flex items-center transition-colors hidden" id="nav-core" onclick="switchPanel('core');return false;">
-                        <i class="fas fa-crosshairs mr-1.5 text-xs"></i><span class="hidden sm:inline">Ekantik Core</span><span class="sm:hidden">Core</span>
+                        <i class="fas fa-chart-pie mr-1.5 text-xs"></i><span class="hidden sm:inline">Ekantik 10x Strategy</span><span class="sm:hidden">10x</span>
                     </a>
                     <div class="hidden sm:block w-px h-5 bg-gray-700"></div>
                     <a href="https://discord.gg/GprT4S8Vrj" target="_blank" rel="noopener"
@@ -940,7 +937,7 @@
                     <div class="bg-gradient-to-br from-[#1a0d35] to-[#0a1628] border border-purple-400/30 rounded-2xl p-6 mb-6">
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
                             <div class="mb-3 md:mb-0">
-                                <h2 class="font-playfair text-2xl sm:text-3xl font-bold text-white mb-1">Options Strategy</h2>
+                                <h2 class="font-playfair text-2xl sm:text-3xl font-bold text-white mb-1">Ekantik 10x Strategy</h2>
                                 <p class="text-gray-400 text-sm">Premium-based, directional conviction options trades — SPX, SPY, and stock options</p>
                                 <p class="text-purple-400 text-xs mt-1"><i class="fas fa-chart-pie mr-1"></i>Index &amp; Equity Options | Raw $ P&L | Starting: $10,000</p>
                             </div>
@@ -1394,202 +1391,6 @@
 
                 </div><!-- /panel-options -->
 
-                <!-- ==================== EKANTIK CORE PANEL (hidden unless ?core=1) ==================== -->
-                <div id="panel-core" class="execution-panel" style="display:none;">
-                    <!-- Info Card -->
-                    <div class="bg-gradient-to-br from-[#0d2818] to-[#0a1628] border border-emerald-400/30 rounded-2xl p-6 mb-6">
-                        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
-                            <div class="mb-3 md:mb-0">
-                                <h2 class="font-playfair text-2xl sm:text-3xl font-bold text-white mb-1">Ekantik Core</h2>
-                                <p class="text-gray-400 text-sm">Systematic futures execution — all metrics normalized to 1-contract ES points</p>
-                                <p class="text-emerald-400 text-xs mt-1"><i class="fas fa-crosshairs mr-1"></i>E-mini S&P 500 (ES) Futures | Points Only | 1 Contract Normalized</p>
-                            </div>
-                            <div class="bg-emerald-500/10 border border-emerald-400/30 rounded-lg px-4 py-2 text-center">
-                                <p class="text-emerald-400 font-semibold text-xs"><i class="fas fa-ruler mr-1"></i>$50/point (ES)</p>
-                                <p class="text-gray-500 text-[9px] mt-0.5">all P&L in points</p>
-                            </div>
-                        </div>
-                        <div class="flex flex-col sm:flex-row items-center gap-3 pt-4 border-t border-emerald-400/10">
-                            <div class="text-gray-500 text-[10px] leading-relaxed">
-                                <i class="fas fa-database text-emerald-400/50 mr-1"></i>
-                                All performance data is calculated from <strong class="text-gray-300">Tradovate execution reports</strong>.
-                                Regardless of contracts traded, all metrics are normalized to <strong class="text-gray-300">1 ES contract</strong> for fair comparison.
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Live Update Banner (Core) -->
-                    <div class="bg-gradient-to-r from-emerald-900/20 to-[#0a1628] border border-emerald-500/20 rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                        <div class="flex items-center gap-3">
-                            <div class="relative flex-shrink-0">
-                                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
-                                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 absolute top-0 animate-ping"></div>
-                            </div>
-                            <div>
-                                <p class="text-white text-sm font-semibold">Live Edge — Updated Weekly</p>
-                                <p class="text-gray-400 text-[11px]">Every number below is calculated from <strong class="text-emerald-400" id="core-live-trade-count">—</strong> real futures trades.</p>
-                            </div>
-                        </div>
-                        <div class="bg-[#0a1628] border border-gray-700/40 rounded-lg px-3 py-1.5 flex-shrink-0">
-                            <p class="text-[10px] text-gray-500">Last updated</p>
-                            <p class="text-xs text-white font-semibold" id="core-live-last-updated">—</p>
-                        </div>
-                    </div>
-
-                    <!-- Hero Stats (Core) — All in points -->
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-                        <div class="stat-card bg-gradient-to-br from-green-900/20 to-green-950/40 border border-green-500/30 rounded-xl p-4">
-                            <div class="flex items-center justify-between mb-1"><span class="text-[10px] text-green-400 font-bold tracking-wider">NET POINTS</span></div>
-                            <p class="text-2xl font-bold text-white" id="core-hero-pts">—</p>
-                            <p class="text-[10px] text-gray-500 mt-0.5" id="core-hero-pts-sub"></p>
-                        </div>
-                        <div class="stat-card bg-gradient-to-br from-emerald-900/20 to-emerald-950/40 border border-emerald-500/30 rounded-xl p-4">
-                            <div class="flex items-center justify-between mb-1"><span class="text-[10px] text-emerald-400 font-bold tracking-wider">AVG PTS/TRADE</span></div>
-                            <p class="text-2xl font-bold text-white" id="core-hero-avg">—</p>
-                            <p class="text-[10px] text-gray-500 mt-0.5" id="core-hero-avg-sub">per trade</p>
-                        </div>
-                        <div class="stat-card bg-gradient-to-br from-emerald-900/20 to-emerald-950/40 border border-emerald-500/30 rounded-xl p-4">
-                            <div class="flex items-center justify-between mb-1"><span class="text-[10px] text-emerald-400 font-bold tracking-wider">WIN RATE</span></div>
-                            <p class="text-2xl font-bold text-white" id="core-hero-wr">—</p>
-                            <p class="text-[10px] text-gray-500 mt-0.5" id="core-hero-wr-sub"></p>
-                        </div>
-                        <div class="stat-card bg-gradient-to-br from-emerald-900/20 to-emerald-950/40 border border-emerald-500/30 rounded-xl p-4">
-                            <div class="flex items-center justify-between mb-1"><span class="text-[10px] text-emerald-400 font-bold tracking-wider">PROFIT FACTOR</span></div>
-                            <p class="text-2xl font-bold text-white" id="core-hero-pf">—</p>
-                            <p class="text-[10px] text-gray-500 mt-0.5" id="core-hero-pf-sub"></p>
-                        </div>
-                        <div class="stat-card bg-gradient-to-br from-red-900/20 to-red-950/40 border border-red-500/30 rounded-xl p-4">
-                            <div class="flex items-center justify-between mb-1"><span class="text-[10px] text-red-400 font-bold tracking-wider">MAX DD (PTS)</span></div>
-                            <p class="text-2xl font-bold text-white" id="core-hero-dd">—</p>
-                            <p class="text-[10px] text-gray-500 mt-0.5" id="core-hero-dd-sub"></p>
-                        </div>
-                        <div class="stat-card bg-gradient-to-br from-emerald-900/20 to-emerald-950/40 border border-emerald-500/30 rounded-xl p-4">
-                            <div class="flex items-center justify-between mb-1"><span class="text-[10px] text-emerald-400 font-bold tracking-wider">PTS/DAY</span></div>
-                            <p class="text-2xl font-bold text-white" id="core-hero-ppd">—</p>
-                            <p class="text-[10px] text-gray-500 mt-0.5" id="core-hero-ppd-sub">avg per trading day</p>
-                        </div>
-                    </div>
-                    <p class="text-gray-600 text-[10px] -mt-4 mb-6 text-center">All metrics normalized to 1 ES contract. Individual results will vary.</p>
-
-                    <!-- Monthly Points Summary (Core) -->
-                    <div class="bg-gradient-to-br from-[#0d2818] to-[#0a1628] border border-emerald-400/15 rounded-2xl p-6 mb-6">
-                        <h3 class="text-sm font-bold text-white mb-3 flex items-center"><i class="fas fa-calendar-alt text-emerald-400 mr-2"></i>Monthly Points</h3>
-                        <div id="monthly-summary-core"></div>
-                    </div>
-
-                    <!-- Detailed Dashboard Toggle (Core) -->
-                    <div class="text-center mb-6">
-                        <button onclick="toggleDetailedDashboard('core')" id="btn-details-core" class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-emerald-500/20 to-emerald-500/5 border-2 border-emerald-400/40 text-white font-bold text-sm rounded-xl hover:border-emerald-400/80 hover:shadow-lg hover:shadow-emerald-400/20 transition-all">
-                            <i class="fas fa-table mr-2 text-emerald-400"></i>Detailed Charts, Trade Log & Period Analysis
-                            <i class="fas fa-chevron-down ml-3 text-emerald-400 text-xs transition-transform" id="icon-details-core"></i>
-                        </button>
-                    </div>
-
-                    <div id="detailed-dashboard-core" class="hidden">
-
-                    <!-- Period Toggle -->
-                    <div class="flex flex-col sm:flex-row items-center justify-between mb-6 gap-3">
-                        <div class="flex items-center gap-2">
-                            <button onclick="setPeriod('core','weekly')" id="period-core-weekly" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-emerald-400/50 transition-all">This Week</button>
-                            <button onclick="setPeriod('core','1week')" id="period-core-1week" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-emerald-400/50 transition-all">1 Week</button>
-                            <button onclick="setPeriod('core','monthly')" id="period-core-monthly" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-emerald-400/50 transition-all">This Month</button>
-                            <button onclick="setPeriod('core','3months')" id="period-core-3months" class="period-btn px-4 py-2 bg-[#0d1d35] text-gray-400 rounded-lg text-xs font-bold border border-gray-700 hover:border-emerald-400/50 transition-all">3 Months</button>
-                            <button onclick="setPeriod('core','alltime')" id="period-core-alltime" class="period-btn active-period px-4 py-2 rounded-lg text-xs font-bold transition-all">All-Time</button>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button onclick="prevPeriod('core')" class="week-nav-button px-3 py-1.5 bg-[#0d1d35] border border-gray-600 text-gray-300 rounded-lg text-xs font-semibold"><i class="fas fa-chevron-left"></i></button>
-                            <select id="week-selector-core" onchange="selectWeek('core')" class="px-4 py-1.5 bg-[#0d1d35] border border-emerald-400/30 text-white rounded-lg text-xs font-semibold"></select>
-                            <button onclick="nextPeriod('core')" class="week-nav-button px-3 py-1.5 bg-[#0d1d35] border border-gray-600 text-gray-300 rounded-lg text-xs font-semibold"><i class="fas fa-chevron-right"></i></button>
-                            <span class="text-gray-500 text-xs ml-2" id="period-range-core"></span>
-                        </div>
-                    </div>
-
-                    <!-- Charts -->
-                    <div class="grid md:grid-cols-2 gap-6 mb-8">
-                        <div class="bg-gradient-to-br from-[#0d2818] to-[#0a1628] border border-emerald-400/15 rounded-2xl p-6">
-                            <h3 class="text-sm font-bold text-white mb-3 flex items-center"><i class="fas fa-chart-area text-emerald-400 mr-2"></i>Points Equity Curve</h3>
-                            <div id="chart-equity-core" style="height: 280px; width: 100%;"></div>
-                        </div>
-                        <div class="bg-gradient-to-br from-[#0d2818] to-[#0a1628] border border-emerald-400/15 rounded-2xl p-6">
-                            <h3 class="text-sm font-bold text-white mb-3 flex items-center"><i class="fas fa-chart-line text-emerald-400 mr-2"></i>Weekly Points Trend</h3>
-                            <div id="chart-weekly-trend-core" style="height: 280px; width: 100%;"></div>
-                        </div>
-                    </div>
-
-                    <div class="grid md:grid-cols-2 gap-6 mb-8">
-                        <div class="bg-gradient-to-br from-[#0d2818] to-[#0a1628] border border-gray-700/30 rounded-2xl p-6">
-                            <h3 class="text-sm font-bold text-white mb-3 flex items-center"><i class="fas fa-chart-bar text-emerald-400 mr-2"></i>Points Distribution</h3>
-                            <div id="chart-pldist-core" style="height: 280px; width: 100%;"></div>
-                        </div>
-                        <div class="bg-gradient-to-br from-[#0d2818] to-[#0a1628] border border-gray-700/30 rounded-2xl p-6">
-                            <h3 class="text-sm font-bold text-white mb-3"><i class="fas fa-chart-bar text-emerald-400 mr-2"></i>Daily Points</h3>
-                            <div id="chart-daily-core" style="height: 280px; width: 100%;"></div>
-                        </div>
-                    </div>
-
-                    <!-- Trade Log (Core) -->
-                    <div class="bg-gradient-to-br from-[#0d2818] to-[#0a1628] border border-gray-700/30 rounded-2xl p-6 mb-8">
-                        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-                            <h3 class="text-sm font-bold text-white flex items-center"><i class="fas fa-list-alt text-emerald-400 mr-2"></i>Trade Log</h3>
-                            <span class="text-xs text-gray-500" id="core-trade-count"></span>
-                        </div>
-                        <div class="flex flex-wrap items-center gap-1.5 mb-3">
-                            <button onclick="filterTradeLog('core','all')" id="core-filter-all"
-                                class="trade-filter-btn trade-filter-active-emerald px-2.5 py-1 rounded text-[10px] border border-transparent">All</button>
-                            <button onclick="filterTradeLog('core','win')" id="core-filter-win"
-                                class="trade-filter-btn px-2.5 py-1 rounded text-[10px] font-semibold bg-[#0d1d35] text-gray-400 border border-gray-700">Wins</button>
-                            <button onclick="filterTradeLog('core','loss')" id="core-filter-loss"
-                                class="trade-filter-btn px-2.5 py-1 rounded text-[10px] font-semibold bg-[#0d1d35] text-gray-400 border border-gray-700">Losses</button>
-                            <button onclick="filterTradeLog('core','long')" id="core-filter-long"
-                                class="trade-filter-btn px-2.5 py-1 rounded text-[10px] font-semibold bg-[#0d1d35] text-gray-400 border border-gray-700">Longs</button>
-                            <button onclick="filterTradeLog('core','short')" id="core-filter-short"
-                                class="trade-filter-btn px-2.5 py-1 rounded text-[10px] font-semibold bg-[#0d1d35] text-gray-400 border border-gray-700">Shorts</button>
-                            <span class="text-[10px] text-gray-600 ml-auto italic" id="core-filter-label"></span>
-                        </div>
-                        <div class="trade-table">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th class="text-gray-400 text-[10px]">Date/Time</th>
-                                        <th class="text-gray-400 text-[10px]">Direction</th>
-                                        <th class="text-gray-400 text-[10px]">Entry</th>
-                                        <th class="text-gray-400 text-[10px]">Exit</th>
-                                        <th class="text-gray-400 text-[10px]">Stop</th>
-                                        <th class="text-gray-400 text-[10px] sortable-th" onclick="sortTradeLog('core','pts')" title="Net of $3.50/contract commission">Pts (net) <span id="core-sort-pts"></span></th>
-                                        <th class="text-gray-400 text-[10px]">Risk (pts)</th>
-                                        <th class="text-gray-400 text-[10px]">R:R</th>
-                                        <th class="text-gray-400 text-[10px]">Result</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="core-trades-body"></tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    </div><!-- /detailed-dashboard-core -->
-
-                    <!-- Upload Section (Core) -->
-                    <div class="bg-gradient-to-br from-[#0d2818] to-[#0a1628] border border-emerald-400/15 rounded-2xl p-6 mb-6">
-                        <h3 class="text-sm font-bold text-white mb-3 flex items-center"><i class="fas fa-upload text-emerald-400 mr-2"></i>Upload Tradovate Data</h3>
-                        <p class="text-gray-500 text-xs mb-3">Upload your Tradovate CSV order history. All trades are automatically normalized to 1-contract ES points.</p>
-                        <div class="flex gap-2">
-                            <label class="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm rounded-lg transition-all cursor-pointer text-center">
-                                <i class="fas fa-file-csv mr-2"></i>Upload Tradovate CSV
-                                <input type="file" accept=".csv" class="hidden" onchange="handleCoreCSVUpload(event)">
-                            </label>
-                            <button id="export-btn-core" onclick="exportCoreData()" class="hidden px-4 py-2.5 bg-emerald-600/80 hover:bg-emerald-500 text-white font-semibold text-sm rounded-lg transition-all inline-flex items-center" title="Export JSON">
-                                <i class="fas fa-download mr-1.5"></i>Export
-                            </button>
-                            <button onclick="clearData('core')" class="px-4 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold text-sm rounded-lg transition-all" title="Clear all trades">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                        <div id="upload-status-core" class="mt-2 hidden">
-                            <span id="upload-status-core-text" class="text-xs"></span>
-                        </div>
-                    </div>
-
-                </div><!-- /panel-core -->
 
                 <!-- ==================== COMPARE PANEL ==================== -->
 
