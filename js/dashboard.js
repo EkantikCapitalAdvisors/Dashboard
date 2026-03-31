@@ -1300,7 +1300,7 @@ function renderFoodChain(method, k, allK, allTrades) {
     setEl(`${prefix}-annual-r`, `≈${annualR.toFixed(0)} R`);
 
     // Summary callout: explicit math so the user knows exactly how Annual R was derived
-    const strategyLabel = method === 'options' ? 'Options Strategy (SPX)' : 'ECFS Predisposal (ES)';
+    const strategyLabel = method === 'options' ? 'Ekantik 10x Strategy (SPX)' : 'ECFS Predisposal (ES)';
     const riskLabel = `$${Math.round(riskBudget)}`;
     const dataAsOf = `<span style="color:#9ca3af;font-weight:normal;"><i class="fas fa-sync-alt" style="font-size:9px;margin-right:3px;"></i>Extrapolated from <strong>${allK.totalTrades} all-time trades</strong> as of ${lastTradeDate} · avg realized risk: ${riskLabel} · updated weekly</span>`;
     setHTML(`${prefix}-summary-text`,
@@ -1794,7 +1794,7 @@ function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, pe
     if (!tbody) return;
 
     const edgeSign = edgeR >= 0 ? '+' : '';
-    const strategyName = method === 'options' ? 'Options Strategy' : 'ECFS Predisposal';
+    const strategyName = method === 'options' ? 'Ekantik 10x Strategy' : 'ECFS Predisposal';
     const icon = method === 'options' ? 'fa-chart-pie' : 'fa-comments';
     const lastDate = getLastTradeDate(state[method].allTrades) || 'latest';
     const totalTrades = state[method].allTrades ? state[method].allTrades.length : 0;
@@ -1918,7 +1918,7 @@ function renderFoodChainChart(containerId, k, method) {
 
     const edgeR = k.evActualR;
     const accentColor = method === 'active' ? '#d4af37' : method === 'options' ? '#a855f7' : '#60a5fa';
-    const stratLabel = method === 'active' ? 'ECFS Active' : method === 'options' ? 'Options Strategy' : 'ECFS Predisposal';
+    const stratLabel = method === 'active' ? 'ECFS Active' : method === 'options' ? 'Ekantik 10x Strategy' : 'ECFS Predisposal';
 
     // Benchmark data for the horizontal bar chart
     const benchmarks = [
@@ -3379,42 +3379,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
     }
 
-    // ===== EKANTIK CORE PANEL (only if ?core is in URL) =====
-    const _coreParams = new URLSearchParams(window.location.search);
-    const coreEnabled = _coreParams.has('core');
-    if (coreEnabled) {
-        document.getElementById('nav-core').classList.remove('hidden');
-
-        let coreLoaded = false;
-        const savedCore = localStorage.getItem('core-trades');
-        if (savedCore) {
-            try {
-                state.core.allTrades = JSON.parse(savedCore);
-                // Migrate: deduct commission from any trades saved before commission tracking
-                let needsResave = false;
-                state.core.allTrades = state.core.allTrades.map(t => {
-                    if (!t._commissionDeducted) {
-                        const netPL = t.pointsPL - CORE_COMMISSION_PTS;
-                        needsResave = true;
-                        return { ...t, pointsPL: netPL, isWin: netPL > 0, _commissionDeducted: true };
-                    }
-                    return t;
-                });
-                if (needsResave) localStorage.setItem('core-trades', JSON.stringify(state.core.allTrades));
-                if (state.core.allTrades.length > 0) {
-                    const weeks = getWeeksList(state.core.allTrades);
-                    state.core.selectedWeek = weeks[0];
-                    populateWeekSelector('core', weeks);
-                    refreshDashboard('core');
-                    coreLoaded = true;
-                    showExportButton('core');
-                }
-            } catch (e) { console.error('Error loading Core data:', e); }
-        }
-        // Auto-switch to Core panel when ?core is in URL
-        switchPanel('core');
-    }
-
     // Load weekly snapshots for historical charts
     // Priority: localStorage → REST API DB → regenerate from trade data
     const tryLoadSnapshotsFromStorage = (storageKey) => {
@@ -3913,9 +3877,9 @@ async function _handleDiscordParseUpload(newTrades) {
 // ===== OPTIONS STRATEGY PANEL =====
 
 function switchPanel(panel) {
-    const panels = { discord: 'panel-discord', options: 'panel-options', core: 'panel-core' };
-    const navs = { discord: 'nav-discord', options: 'nav-options', core: 'nav-core' };
-    const activeColors = { discord: 'text-blue-400', options: 'text-purple-400', core: 'text-emerald-400' };
+    const panels = { discord: 'panel-discord', options: 'panel-options' };
+    const navs = { discord: 'nav-discord', options: 'nav-options' };
+    const activeColors = { discord: 'text-blue-400', options: 'text-purple-400' };
 
     Object.entries(panels).forEach(([key, id]) => {
         const el = document.getElementById(id);
@@ -3932,14 +3896,8 @@ function switchPanel(panel) {
     const disclaimerAmt = document.getElementById('disclaimer-portfolio-amount');
     if (disclaimerAmt) {
         if (panel === 'options') disclaimerAmt.textContent = '$10,000 starting portfolio';
-        else if (panel === 'core') disclaimerAmt.textContent = 'points-only (no portfolio)';
         else disclaimerAmt.textContent = '$20,000 starting portfolio';
     }
-    // Hide Deep Dive / Compounding section for Core (not relevant)
-    const deepDiveToggle = document.getElementById('deep-dive-section');
-    const deepDiveMath = document.getElementById('deep-dive-math');
-    if (deepDiveToggle) deepDiveToggle.style.display = panel === 'core' ? 'none' : '';
-    if (deepDiveMath && panel === 'core') deepDiveMath.style.display = 'none';
 }
 
 function updateHeroBadgesForPanel(panel) {
