@@ -26,8 +26,8 @@ const EkantikAuth = (() => {
         }
 
         try {
-            clerkInstance = new window.Clerk(CLERK_PUB_KEY);
-            await clerkInstance.load();
+            // Wait for Clerk SDK to be ready
+            await waitForClerk();
 
             if (clerkInstance.user) {
                 onAuthenticated();
@@ -38,6 +38,32 @@ const EkantikAuth = (() => {
             console.error('[Auth] Clerk init failed:', err);
             showSignInGate('Authentication service unavailable. Please try again later.');
         }
+    }
+
+    // Wait for the Clerk CDN script to load and initialize
+    function waitForClerk() {
+        return new Promise((resolve, reject) => {
+            const maxWait = 15000;
+            const start = Date.now();
+
+            function check() {
+                // The CDN script sets window.Clerk as the loaded instance (not a constructor)
+                if (window.Clerk && window.Clerk.loaded) {
+                    clerkInstance = window.Clerk;
+                    resolve();
+                } else if (window.Clerk && typeof window.Clerk.load === 'function') {
+                    // Clerk object exists but hasn't loaded yet
+                    clerkInstance = window.Clerk;
+                    clerkInstance.load().then(resolve).catch(reject);
+                } else if (Date.now() - start > maxWait) {
+                    reject(new Error('Clerk SDK failed to load'));
+                } else {
+                    setTimeout(check, 200);
+                }
+            }
+
+            check();
+        });
     }
 
     // ── Authenticated ──
