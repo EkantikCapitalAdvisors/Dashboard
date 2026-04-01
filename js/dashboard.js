@@ -8,6 +8,7 @@ const state = {
     active: { allTrades: [], currentPeriod: 'alltime', selectedWeek: null, kpis: null, snapshots: [], edgePeriod: 'alltime' },
     discord: { allTrades: [], currentPeriod: 'alltime', selectedWeek: null, kpis: null, snapshots: [], edgePeriod: 'alltime' },
     options: { allTrades: [], currentPeriod: 'alltime', selectedWeek: null, kpis: null, snapshots: [], edgePeriod: 'alltime' },
+    tenx: { allTrades: [], currentPeriod: 'alltime', selectedWeek: null, kpis: null, snapshots: [], edgePeriod: 'alltime' },
     core: { allTrades: [], currentPeriod: 'alltime', selectedWeek: null, kpis: null, snapshots: [], edgePeriod: 'alltime' }
 };
 
@@ -194,6 +195,123 @@ async function handleCSVUpload(event, method) {
     reader.readAsText(file);
 }
 
+async function handleTenxCSVUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    showUploadProgress('tenx', 'Parsing CSV...');
+
+    const reader = new FileReader();
+    reader.onload = async function (e) {
+        try {
+            const csvText = e.target.result;
+            const newTrades = parseTradovateCSV(csvText);
+
+            let existingTrades = state.tenx.allTrades.filter(t => !t._isSample);
+
+            if (existingTrades.length === 0) {
+                try {
+                    const lsJson = localStorage.getItem('tenx-trades');
+                    if (lsJson) {
+                        const lsTrades = JSON.parse(lsJson);
+                        if (Array.isArray(lsTrades) && lsTrades.length > 0) {
+                            existingTrades = lsTrades.filter(t => !t._isSample);
+                        }
+                    }
+                } catch (e) { /* corrupted localStorage */ }
+            }
+
+            if (existingTrades.length === 0) {
+                try {
+                    const dbTrades = await DB.loadTrades('tenx_trades');
+                    if (dbTrades.length > 0) {
+                        const seenKeys = new Set();
+                        existingTrades = dbTrades
+                            .filter(r => {
+                                const k = `${r.entry_time}|${r.exit_time}|${r.direction}|${r.dollar_pl}`;
+                                if (seenKeys.has(k)) return false;
+                                seenKeys.add(k);
+                                return true;
+                            })
+                            .map(dbRowToECFSTrade);
+                    }
+                } catch (e) { console.warn('Could not pre-load DB trades before merge:', e); }
+            }
+
+            const existingKeys = new Set(existingTrades.map(t => `${t.entryTime}|${t.exitTime}|${t.direction}|${t.dollarPL}`));
+            const uniqueNew = newTrades.filter(t => !existingKeys.has(`${t.entryTime}|${t.exitTime}|${t.direction}|${t.dollarPL}`));
+            const trades = [...existingTrades, ...uniqueNew].sort((a, b) => {
+                const da = new Date(a.entryTime || a.date), db = new Date(b.entryTime || b.date);
+                return da - db;
+            });
+
+            state.tenx.allTrades = trades;
+            state.tenx.isSampleData = false;
+
+            const weeks = getWeeksList(trades);
+            state.tenx.selectedWeek = weeks[0];
+            populateWeekSelector('tenx', weeks);
+            setPeriod('tenx', 'alltime');
+
+            let lsSaveOk = false;
+            try {
+                localStorage.setItem('tenx-trades', JSON.stringify(trades));
+                localStorage.setItem('tenx-filename', file.name);
+                lsSaveOk = true;
+            } catch (e) {
+                try {
+                    localStorage.removeItem('tenx-raw-csv');
+                    localStorage.setItem('tenx-trades', JSON.stringify(trades));
+                    localStorage.setItem('tenx-filename', file.name);
+                    lsSaveOk = true;
+                } catch (e2) { console.warn('localStorage trade save failed (quota):', e2); }
+            }
+            try { localStorage.setItem('tenx-upload-time', Date.now().toString()); } catch (e) {}
+            try { if (lsSaveOk) localStorage.setItem('tenx-raw-csv', csvText); }
+            catch (e) { console.warn('Could not cache raw CSV (storage quota):', e); }
+
+            const addedMsg = uniqueNew.length < newTrades.length
+                ? ` (${uniqueNew.length} new, ${newTrades.length - uniqueNew.length} duplicates skipped)`
+                : '';
+            showUploadSuccess('tenx', `${file.name} — ${trades.length} total trades${addedMsg}`);
+
+            const snapshots = generateWeeklySnapshots(trades, 'tenx', TENX_RISK, TENX_PPT, TENX_STARTING_BALANCE);
+            state.tenx.snapshots = snapshots;
+            try { localStorage.setItem('tenx-snapshots', JSON.stringify(snapshots)); } catch (e) {}
+
+            showUploadProgress('tenx', 'Syncing to database...');
+            try {
+                const batchId = `tenx-${Date.now()}`;
+                const currentDbRows = await DB.loadTrades('tenx_trades');
+                const norm = v => Math.round(parseFloat(v) * 10000) / 10000;
+                const dbKeys = new Set(currentDbRows.map(r =>
+                    `${r.entry_time}|${r.exit_time}|${r.direction}|${norm(r.dollar_pl)}`
+                ));
+                const missingFromDb = trades.filter(t =>
+                    !dbKeys.has(`${t.entryTime}|${t.exitTime}|${t.direction}|${norm(t.dollarPL)}`)
+                );
+                if (missingFromDb.length > 0) {
+                    await DB.saveTrades('tenx_trades', missingFromDb, batchId);
+                }
+                await DB.saveAllWeeklySnapshots('tenx', snapshots);
+                showUploadSuccess('tenx', `${trades.length} total trades saved (${uniqueNew.length} new from ${file.name})`);
+                recordSyncTime('tenx');
+            } catch (e) {
+                const hint = e.message.includes('token')
+                    ? 'No GitHub token — click ⚙ GitHub Sync to add your token. Trades are saved locally only.'
+                    : `Database error: ${e.message} — trades saved locally only, other devices will not see them.`;
+                showUploadWarning('tenx', hint);
+                console.error('[DB sync] Tenx save failed:', e);
+            }
+            showExportButton('tenx');
+        } catch (err) {
+            showUploadError('tenx', 'Error parsing CSV: ' + err.message);
+            console.error(err);
+        }
+    };
+    reader.readAsText(file);
+}
+
 async function handleExcelUpload(event, method) {
     const file = event.target.files[0];
     if (!file) return;
@@ -345,12 +463,12 @@ function showUploadWarning(method, msg) {
 
 function clearData(method) {
     if (!confirm('Clear all uploaded data? This will remove it from this browser only. Database records are preserved.')) return;
-    const keyPrefix = method === 'active' ? 'ecfs' : method === 'options' ? 'options' : method === 'core' ? 'core' : 'discord';
+    const keyPrefix = method === 'active' ? 'ecfs' : method === 'options' ? 'options' : method === 'core' ? 'core' : method === 'tenx' ? 'tenx' : 'discord';
     localStorage.removeItem(`${keyPrefix}-trades`);
     localStorage.removeItem(`${keyPrefix}-filename`);
     localStorage.removeItem(`${keyPrefix}-upload-time`);
     localStorage.removeItem(`${keyPrefix}-snapshots`);
-    if (method === 'active') localStorage.removeItem('ecfs-raw-csv');
+    if (method === 'active' || method === 'tenx') localStorage.removeItem(`${keyPrefix}-raw-csv`);
     state[method].allTrades = [];
     state[method].kpis = null;
     state[method].snapshots = [];
@@ -439,7 +557,7 @@ function updateGitHubSyncIndicators() {
 
 // ===== TAB SWITCHING =====
 function switchExecution(method) {
-    // Only ECFS Predisposal (discord) exists — no-op for any other method
+    // Only Ekantik Futures (discord) exists — no-op for any other method
     if (method !== 'discord') return;
     // Resize charts after any call
     setTimeout(() => {
@@ -813,9 +931,9 @@ function refreshDashboard(method) {
         kpis = calculatePointsKPIs(trades);
         allTimeKPIs = calculatePointsKPIs(allTrades);
     } else {
-        const risk = method === 'options' ? OPTIONS_RISK : method === 'active' ? ECFS_RISK : DISCORD_RISK;
-        const ppt = method === 'options' ? OPTIONS_PPT : method === 'active' ? ECFS_PPT : DISCORD_PPT;
-        const startBal = method === 'options' ? OPTIONS_STARTING_BALANCE : method === 'active' ? STARTING_BALANCE : DISCORD_STARTING_BALANCE;
+        const risk = method === 'options' ? OPTIONS_RISK : method === 'active' ? ECFS_RISK : method === 'tenx' ? TENX_RISK : DISCORD_RISK;
+        const ppt = method === 'options' ? OPTIONS_PPT : method === 'active' ? ECFS_PPT : method === 'tenx' ? TENX_PPT : DISCORD_PPT;
+        const startBal = method === 'options' ? OPTIONS_STARTING_BALANCE : method === 'active' ? STARTING_BALANCE : method === 'tenx' ? TENX_STARTING_BALANCE : DISCORD_STARTING_BALANCE;
         kpis = calculateKPIs(trades, risk, ppt, startBal);
         allTimeKPIs = calculateKPIs(allTrades, risk, ppt, startBal);
     }
@@ -848,6 +966,7 @@ function refreshDashboard(method) {
 
     if (method === 'discord') renderDiscord(kpis, trades, allTimeKPIs, allTrades);
     if (method === 'options') renderOptions(kpis, trades, allTimeKPIs, allTrades);
+    if (method === 'tenx') renderTenx(kpis, trades, allTimeKPIs, allTrades);
     if (method === 'core') renderCore(kpis, trades, allTimeKPIs, allTrades);
 
     // Update edge section with its own independent timeframe filter
@@ -1222,10 +1341,83 @@ function renderDiscord(k, trades, allK, allTrades) {
     renderGrowthComparisonFromState('chart-growth-comparison-discord', 'discord');
 }
 
+function renderTenx(k, trades, allK, allTrades) {
+    // Live Update Banner
+    const tenxTradeCountEl = document.getElementById('tenx-live-trade-count');
+    if (tenxTradeCountEl) tenxTradeCountEl.textContent = `${allTrades.length} trades (All-Time)`;
+    const tenxLastUpdEl = document.getElementById('tenx-live-last-updated');
+    if (tenxLastUpdEl) {
+        const uploadTime = parseInt(localStorage.getItem('tenx-upload-time') || '0');
+        if (uploadTime > 0) {
+            tenxLastUpdEl.textContent = new Date(uploadTime).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        } else {
+            tenxLastUpdEl.textContent = getLastTradeDate(allTrades) || '—';
+        }
+    }
+
+    // Hero Stats
+    setColor('tenx-hero-pnl', fmtDollar(k.netPL), k.netPL);
+    document.getElementById('tenx-hero-pnl-sub').textContent = `${k.totalTrades} trade${k.totalTrades !== 1 ? 's' : ''}`;
+    setColor('tenx-hero-return', fmtPct(k.returnPct), k.returnPct);
+    setColor('tenx-hero-ev', `${fmtPct(k.evActualR)}R`, k.evActualR);
+    document.getElementById('tenx-hero-ev-sub').textContent = `${fmtDollar(k.evPerTrade)}/trade`;
+    document.getElementById('tenx-hero-wr').textContent = `${k.winRate.toFixed(1)}%`;
+    document.getElementById('tenx-hero-wr-sub').textContent = `${k.winCount}W / ${k.lossCount}L`;
+    document.getElementById('tenx-hero-pf').textContent = k.profitFactor === Infinity ? '∞' : k.profitFactor.toFixed(2);
+    document.getElementById('tenx-hero-pf-sub').textContent = `${fmtDollar(k.grossWins)} / ${fmtDollar(k.grossLosses)}`;
+    setColor('tenx-hero-dd', `-${fmtDollar(k.maxDD)}`, k.maxDD > 0 ? -1 : 0);
+    document.getElementById('tenx-hero-dd-sub').textContent = `-${k.maxDDPct.toFixed(2)}%`;
+    setColor('tenx-hero-mespts', `${k.netPoints >= 0 ? '+' : ''}${k.netPoints.toFixed(2)}`, k.netPoints);
+    document.getElementById('tenx-hero-mespts-sub').textContent = `${k.avgWinPts.toFixed(1)} avg win · ${k.avgLossPts.toFixed(1)} avg loss`;
+
+    // Edge
+    document.getElementById('tenx-ev-hero-big').textContent = `${k.evActualR >= 0 ? '+' : ''}${k.evActualR.toFixed(1)}%R`;
+    document.getElementById('tenx-ev-hero-sub').textContent = `${fmtDollar(k.evPerTrade)} per trade (avg risk: ${fmtDollar(k.avgRiskDollars)})`;
+    document.getElementById('tenx-ev-actual-risk').innerHTML = `<strong>Avg realized risk:</strong> ${fmtDollar(k.avgRiskDollars)}/trade (${(k.avgRiskDollars / TENX_STARTING_BALANCE * 100).toFixed(1)}%)`;
+
+    setColor('tenx-edge-avgwin', fmtDollar(k.avgWinDollar), 1);
+    document.getElementById('tenx-edge-avgwin-pts').textContent = `+${k.avgWinPts.toFixed(2)} pts`;
+    setColor('tenx-edge-avgloss', fmtDollar(k.avgLossDollar), -1);
+    document.getElementById('tenx-edge-avgloss-pts').textContent = `${k.avgLossPts.toFixed(2)} pts`;
+    document.getElementById('tenx-edge-wr').textContent = `${k.winRate.toFixed(1)}% (${k.winCount}W / ${k.lossCount}L)`;
+
+    document.getElementById('tenx-edge-explanation').textContent = buildEdgeExplanation(k);
+
+    document.getElementById('tenx-detail-grosswins').textContent = fmtDollar(k.grossWins);
+    document.getElementById('tenx-detail-grosslosses').textContent = `-${fmtDollar(k.grossLosses)}`;
+    document.getElementById('tenx-detail-wlratio').textContent = (k.wlRatio === Infinity ? '∞' : k.wlRatio.toFixed(2));
+    document.getElementById('tenx-detail-netpts').textContent = `${k.netPoints >= 0 ? '+' : ''}${k.netPoints.toFixed(2)}`;
+
+    // Charts
+    renderEquityCurve('chart-equity-tenx', k.equityCurve, k.drawdownCurve, '#34d399');
+    renderDailyPL('chart-daily-tenx', k.dailyPL, k.tradingDays);
+    renderPLDistribution('chart-pldist-tenx', k.plDistribution, '#34d399');
+    renderWeeklyTrend('chart-weekly-trend-tenx', allK.weeklyPL, 'tenx');
+
+    // Monthly Summary
+    renderMonthlySummary('monthly-summary-tenx', allTrades, TENX_RISK, TENX_PPT, TENX_STARTING_BALANCE);
+
+    // Trade Log — reuse renderDiscordTradeLog format since it's the same Tradovate structure
+    renderDiscordTradeLog('tenx-trades-body', trades);
+    document.getElementById('tenx-trade-count').textContent = `${trades.length} trades`;
+
+    // Inception Summary
+    renderInceptionSummary('tenx', allK);
+
+    // Edge %R by Week Trend Chart
+    renderEdgeTrendByWeek('chart-edge-trend-tenx', allTrades, TENX_RISK, TENX_PPT, 'tenx', allK.evActualR);
+
+    // Food Chain
+    renderFoodChain('tenx', k, allK, allTrades);
+
+    // Growth Comparison Chart
+    renderGrowthComparisonFromState('chart-growth-comparison-tenx', 'tenx');
+}
+
 // ===== EDGE ON THE FOOD CHAIN (Dynamic) =====
 function renderFoodChain(method, k, allK, allTrades) {
-    const prefix = method === 'active' ? 'fc' : method === 'options' ? 'ofc' : 'dfc';
-    const containerId = method === 'active' ? 'foodchain-active' : method === 'options' ? 'foodchain-options' : 'foodchain-discord';
+    const prefix = method === 'active' ? 'fc' : method === 'options' ? 'ofc' : method === 'tenx' ? 'txfc' : 'dfc';
+    const containerId = method === 'active' ? 'foodchain-active' : method === 'options' ? 'foodchain-options' : method === 'tenx' ? 'foodchain-tenx' : 'foodchain-discord';
     const container = document.getElementById(containerId);
     if (!container || !k || k.totalTrades < 1) {
         if (container) container.classList.add('hidden');
@@ -1236,9 +1428,9 @@ function renderFoodChain(method, k, allK, allTrades) {
     container.classList.remove('hidden');
 
     // Constants
-    const plannedRisk = method === 'active' ? ECFS_RISK : method === 'options' ? OPTIONS_RISK : DISCORD_RISK;
-    const ppt = method === 'active' ? ECFS_PPT : method === 'options' ? OPTIONS_PPT : DISCORD_PPT;
-    const instrument = method === 'active' ? 'MES' : method === 'options' ? 'SPX Options' : 'ES';
+    const plannedRisk = method === 'active' ? ECFS_RISK : method === 'options' ? OPTIONS_RISK : method === 'tenx' ? TENX_RISK : DISCORD_RISK;
+    const ppt = method === 'active' ? ECFS_PPT : method === 'options' ? OPTIONS_PPT : method === 'tenx' ? TENX_PPT : DISCORD_PPT;
+    const instrument = method === 'active' ? 'MES' : method === 'options' ? 'SPX Options' : method === 'tenx' ? 'MES' : 'ES';
     const accentColor = method === 'active' ? '#d4af37' : method === 'options' ? '#a855f7' : '#60a5fa';
 
     // Use dynamic average realized risk instead of static budget
@@ -1291,16 +1483,16 @@ function renderFoodChain(method, k, allK, allTrades) {
     // --- Your Strategy Row ---
     const edgeSign = edgeR >= 0 ? '+' : '';
 
-    // Build sorted food chain table (ECFS Active has table, ECFS Predisposal has stat boxes)
+    // Build sorted food chain table (ECFS Active has table, Ekantik Futures has stat boxes)
     renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, periodLabel, accentColor, winRate, rr);
 
-    // Also set standalone stat elements (used by ECFS Predisposal simplified layout)
+    // Also set standalone stat elements (used by Ekantik Futures simplified layout)
     setEl(`${prefix}-edge-per-trade`, `${edgeSign}${edgeR.toFixed(1)}%R`);
     setEl(`${prefix}-trades-month`, `≈${Math.round(tradesPerMonth)}`);
     setEl(`${prefix}-annual-r`, `≈${annualR.toFixed(0)} R`);
 
     // Summary callout: explicit math so the user knows exactly how Annual R was derived
-    const strategyLabel = method === 'options' ? 'Ekantik 10x Strategy (SPX)' : 'ECFS Predisposal (ES)';
+    const strategyLabel = method === 'options' ? 'Ekantik Options (SPX)' : 'Ekantik Futures (ES)';
     const riskLabel = `$${Math.round(riskBudget)}`;
     const dataAsOf = `<span style="color:#9ca3af;font-weight:normal;"><i class="fas fa-sync-alt" style="font-size:9px;margin-right:3px;"></i>Extrapolated from <strong>${allK.totalTrades} all-time trades</strong> as of ${lastTradeDate} · avg realized risk: ${riskLabel} · updated weekly</span>`;
     setHTML(`${prefix}-summary-text`,
@@ -1575,7 +1767,7 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
         chart.setOption({
             backgroundColor: 'transparent',
             graphic: [{ type: 'text', left: 'center', top: 'middle',
-                style: { text: 'Upload ECFS Predisposal data to see actual account performance', fill: '#6b7280', fontSize: 13 }
+                style: { text: 'Upload Ekantik Futures data to see actual account performance', fill: '#6b7280', fontSize: 13 }
             }]
         });
         return;
@@ -1722,7 +1914,7 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
             }
         },
         legend: {
-            data: ['S&P 500 (same period)', 'ECFS Predisposal (actual)'],
+            data: ['S&P 500 (same period)', 'Ekantik Futures (actual)'],
             top: 0,
             textStyle: { color: '#9ca3af', fontSize: 10 },
             itemWidth: 12, itemHeight: 8
@@ -1761,7 +1953,7 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
                 areaStyle: null
             },
             {
-                name: 'ECFS Predisposal (actual)',
+                name: 'Ekantik Futures (actual)',
                 type: 'line',
                 data: equityValues,
                 smooth: false,
@@ -1794,7 +1986,7 @@ function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, pe
     if (!tbody) return;
 
     const edgeSign = edgeR >= 0 ? '+' : '';
-    const strategyName = method === 'options' ? 'Ekantik 10x Strategy' : 'ECFS Predisposal';
+    const strategyName = method === 'options' ? 'Ekantik Options' : 'Ekantik Futures';
     const icon = method === 'options' ? 'fa-chart-pie' : 'fa-comments';
     const lastDate = getLastTradeDate(state[method].allTrades) || 'latest';
     const totalTrades = state[method].allTrades ? state[method].allTrades.length : 0;
@@ -1827,7 +2019,7 @@ function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, pe
         }
     ];
 
-    // When viewing Options, add ECFS Predisposal as a reference row
+    // When viewing Options, add Ekantik Futures as a reference row
     if (method === 'options' && state.discord && state.discord.allTrades && state.discord.allTrades.length > 0) {
         const ecfsAllK = calculateKPIs(state.discord.allTrades, DISCORD_RISK, DISCORD_PPT, DISCORD_STARTING_BALANCE);
         const ecfsEdgeR = ecfsAllK.evActualR;
@@ -1844,7 +2036,7 @@ function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, pe
         const ecfsRR = ecfsAvgLoss > 0 ? ecfsAvgWin / ecfsAvgLoss : 0;
         const ecfsKelly = (ecfsRR > 0 && ecfsAllK.winRate > 0) ? ((ecfsAllK.winRate / 100) - ((1 - ecfsAllK.winRate / 100) / ecfsRR)) * 100 / 2 : 0;
         benchmarks.push({
-            name: 'ECFS Predisposal (ES)',
+            name: 'Ekantik Futures (ES)',
             edge: `${ecfsEdgeR >= 0 ? '+' : ''}${ecfsEdgeR.toFixed(1)}%R`,
             trades: `≈${Math.round(ecfsTPM)}`,
             annualR: ecfsAnnualR,
@@ -1918,7 +2110,7 @@ function renderFoodChainChart(containerId, k, method) {
 
     const edgeR = k.evActualR;
     const accentColor = method === 'active' ? '#d4af37' : method === 'options' ? '#a855f7' : '#60a5fa';
-    const stratLabel = method === 'active' ? 'ECFS Active' : method === 'options' ? 'Ekantik 10x Strategy' : 'ECFS Predisposal';
+    const stratLabel = method === 'active' ? 'ECFS Active' : method === 'options' ? 'Ekantik Options' : 'Ekantik Futures';
 
     // Benchmark data for the horizontal bar chart
     const benchmarks = [
@@ -1930,10 +2122,10 @@ function renderFoodChainChart(containerId, k, method) {
         { name: stratLabel, edge: edgeR, color: accentColor }
     ];
 
-    // Add ECFS Predisposal reference when viewing Options
+    // Add Ekantik Futures reference when viewing Options
     if (method === 'options' && state.discord && state.discord.allTrades && state.discord.allTrades.length > 0) {
         const ecfsK = calculateKPIs(state.discord.allTrades, DISCORD_RISK, DISCORD_PPT, DISCORD_STARTING_BALANCE);
-        benchmarks.push({ name: 'ECFS Predisposal', edge: ecfsK.evActualR, color: '#60a5fa' });
+        benchmarks.push({ name: 'Ekantik Futures', edge: ecfsK.evActualR, color: '#60a5fa' });
     }
 
     // Sort by edge
@@ -2237,7 +2429,7 @@ function renderCompareRTable(ak, dk) {
             <tr>
                 <th class="text-left text-gray-400 font-bold px-3 py-2 border-b-2 border-[#d4af37]/20" style="background: rgba(212,175,55,0.05)">Metric</th>
                 <th class="text-right text-[#d4af37] font-bold px-3 py-2 border-b-2 border-[#d4af37]/20" style="background: rgba(212,175,55,0.05)"><i class="fas fa-bolt mr-1"></i>ECFS Active</th>
-                <th class="text-right text-blue-400 font-bold px-3 py-2 border-b-2 border-[#d4af37]/20" style="background: rgba(212,175,55,0.05)"><i class="fas fa-comments mr-1"></i>ECFS Predisposal</th>
+                <th class="text-right text-blue-400 font-bold px-3 py-2 border-b-2 border-[#d4af37]/20" style="background: rgba(212,175,55,0.05)"><i class="fas fa-comments mr-1"></i>Ekantik Futures</th>
             </tr>
         </thead><tbody>`;
 
@@ -2257,7 +2449,7 @@ function renderCompareRTable(ak, dk) {
     html += `<div class="mt-3 flex items-center gap-3 text-[10px] text-gray-500 justify-center">
         <span><strong style="color:#d4af37">ECFS:</strong> 1R = $${Math.round(akRisk)} (avg realized)</span>
         <span>|</span>
-        <span><strong style="color:#60a5fa">ECFS Predisposal:</strong> 1R = $${Math.round(dkRisk)} (avg realized)</span>
+        <span><strong style="color:#60a5fa">Ekantik Futures:</strong> 1R = $${Math.round(dkRisk)} (avg realized)</span>
         <span>|</span>
         <span><i class="fas fa-trophy text-[#d4af37]"></i> = winner for that metric</span>
     </div>`;
@@ -2284,12 +2476,12 @@ function renderCompareInsights(ak, dk) {
         icon: 'fa-shield-alt',
         color: '#d4af37',
         title: 'Different Risk, Same Edge Framework',
-        text: `ECFS Active avg risk: $${Math.round(akAvgR)}/trade. ECFS Predisposal avg risk: $${Math.round(dkAvgR)}/trade. R-normalized metrics tell the real story.`
+        text: `ECFS Active avg risk: $${Math.round(akAvgR)}/trade. Ekantik Futures avg risk: $${Math.round(dkAvgR)}/trade. R-normalized metrics tell the real story.`
     });
 
     // 2. EV comparison in R
     if (ak.evActualR !== dk.evActualR) {
-        const better = ak.evActualR > dk.evActualR ? 'ECFS Active' : 'ECFS Predisposal';
+        const better = ak.evActualR > dk.evActualR ? 'ECFS Active' : 'Ekantik Futures';
         const bEV = Math.max(ak.evActualR, dk.evActualR);
         const wEV = Math.min(ak.evActualR, dk.evActualR);
         insights.push({
@@ -2302,7 +2494,7 @@ function renderCompareInsights(ak, dk) {
 
     // 3. Win rate
     if (Math.abs(ak.winRate - dk.winRate) >= 1) {
-        const better = ak.winRate > dk.winRate ? 'ECFS Active' : 'ECFS Predisposal';
+        const better = ak.winRate > dk.winRate ? 'ECFS Active' : 'Ekantik Futures';
         insights.push({
             icon: 'fa-trophy',
             color: '#4ade80',
@@ -2315,7 +2507,7 @@ function renderCompareInsights(ak, dk) {
     const akDDR = ak.maxDD / akAvgR;
     const dkDDR = dk.maxDD / dkAvgR;
     if (Math.abs(akDDR - dkDDR) > 0.5) {
-        const betterDD = akDDR < dkDDR ? 'ECFS Active' : 'ECFS Predisposal';
+        const betterDD = akDDR < dkDDR ? 'ECFS Active' : 'Ekantik Futures';
         insights.push({
             icon: 'fa-arrow-trend-down',
             color: '#f87171',
@@ -2325,7 +2517,7 @@ function renderCompareInsights(ak, dk) {
     }
 
     // 5. Data confidence
-    const moreData = ak.totalTrades > dk.totalTrades ? 'ECFS Active' : 'ECFS Predisposal';
+    const moreData = ak.totalTrades > dk.totalTrades ? 'ECFS Active' : 'Ekantik Futures';
     if (ak.totalTrades !== dk.totalTrades) {
         insights.push({
             icon: 'fa-database',
@@ -2814,7 +3006,7 @@ function renderRadarChart(ak, dk) {
     }
     if (dk) {
         series.push({
-            name: 'ECFS Predisposal',
+            name: 'Ekantik Futures',
             type: 'radar',
             data: [{
                 value: [
@@ -2825,7 +3017,7 @@ function renderRadarChart(ak, dk) {
                     dkWinR,
                     dk.tradingDays.length > 0 ? dk.profitableDays / dk.tradingDays.length * 100 : 0
                 ],
-                name: 'ECFS Predisposal',
+                name: 'Ekantik Futures',
                 lineStyle: { color: '#60a5fa', width: 2 },
                 areaStyle: { color: 'rgba(96, 165, 250, 0.15)' },
                 itemStyle: { color: '#60a5fa' }
@@ -2837,7 +3029,7 @@ function renderRadarChart(ak, dk) {
         backgroundColor: 'transparent',
         tooltip: { trigger: 'item' },
         legend: {
-            data: ['ECFS Active', 'ECFS Predisposal'].filter((_, i) => (i === 0 && ak) || (i === 1 && dk)),
+            data: ['ECFS Active', 'Ekantik Futures'].filter((_, i) => (i === 0 && ak) || (i === 1 && dk)),
             textStyle: { color: '#888', fontSize: 10 },
             bottom: 0
         },
@@ -3485,11 +3677,11 @@ function exportECFSData() {
     showExportToast('ECFS JSON exported — for best results, use the raw Tradovate CSV');
 }
 
-// Export ECFS Predisposal data as JSON (the canonical format for GitHub)
+// Export Ekantik Futures data as JSON (the canonical format for GitHub)
 function exportDiscordData() {
     const trades = state.discord.allTrades;
     if (!trades || trades.length === 0) {
-        alert('No ECFS Predisposal data to export. Upload an Excel file first.');
+        alert('No Ekantik Futures data to export. Upload an Excel file first.');
         return;
     }
 
@@ -3877,9 +4069,9 @@ async function _handleDiscordParseUpload(newTrades) {
 // ===== OPTIONS STRATEGY PANEL =====
 
 function switchPanel(panel) {
-    const panels = { discord: 'panel-discord', options: 'panel-options' };
-    const navs = { discord: 'nav-discord', options: 'nav-options' };
-    const activeColors = { discord: 'text-blue-400', options: 'text-purple-400' };
+    const panels = { discord: 'panel-discord', options: 'panel-options', tenx: 'panel-tenx' };
+    const navs = { discord: 'nav-discord', options: 'nav-options', tenx: 'nav-tenx' };
+    const activeColors = { discord: 'text-blue-400', options: 'text-purple-400', tenx: 'text-emerald-400' };
 
     Object.entries(panels).forEach(([key, id]) => {
         const el = document.getElementById(id);
@@ -3896,6 +4088,7 @@ function switchPanel(panel) {
     const disclaimerAmt = document.getElementById('disclaimer-portfolio-amount');
     if (disclaimerAmt) {
         if (panel === 'options') disclaimerAmt.textContent = '$10,000 starting portfolio';
+        else if (panel === 'tenx') disclaimerAmt.textContent = '$5,000 starting portfolio';
         else disclaimerAmt.textContent = '$20,000 starting portfolio';
     }
 }
@@ -3906,7 +4099,7 @@ function updateHeroBadgesForPanel(panel) {
     const badgeMonths = document.getElementById('hero-badge-months');
     const badgeReturnLabel = document.getElementById('hero-badge-return-label');
 
-    const method = panel === 'core' ? 'core' : panel === 'options' ? 'options' : 'discord';
+    const method = panel === 'core' ? 'core' : panel === 'options' ? 'options' : panel === 'tenx' ? 'tenx' : 'discord';
     const allTrades = state[method] && state[method].allTrades;
     if (!allTrades || allTrades.length === 0) {
         // Clear badges so stale data from another panel doesn't show
@@ -3927,9 +4120,9 @@ function updateHeroBadgesForPanel(panel) {
         if (badgeReturnLabel) badgeReturnLabel.textContent = 'NET POINTS';
         if (badgeDD) badgeDD.textContent = `-${(allK.maxDD || 0).toFixed(1)} pts`;
     } else {
-        const risk = method === 'options' ? OPTIONS_RISK : DISCORD_RISK;
-        const ppt = method === 'options' ? OPTIONS_PPT : DISCORD_PPT;
-        const startBal = method === 'options' ? OPTIONS_STARTING_BALANCE : DISCORD_STARTING_BALANCE;
+        const risk = method === 'options' ? OPTIONS_RISK : method === 'tenx' ? TENX_RISK : DISCORD_RISK;
+        const ppt = method === 'options' ? OPTIONS_PPT : method === 'tenx' ? TENX_PPT : DISCORD_PPT;
+        const startBal = method === 'options' ? OPTIONS_STARTING_BALANCE : method === 'tenx' ? TENX_STARTING_BALANCE : DISCORD_STARTING_BALANCE;
         const allK = calculateKPIs(allTrades, risk, ppt, startBal);
 
         if (badgeReturn) {
