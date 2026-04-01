@@ -439,7 +439,7 @@ function updateGitHubSyncIndicators() {
 
 // ===== TAB SWITCHING =====
 function switchExecution(method) {
-    // Only ECFS Predisposal (discord) exists — no-op for any other method
+    // Only Ekantik Futures (discord) exists — no-op for any other method
     if (method !== 'discord') return;
     // Resize charts after any call
     setTimeout(() => {
@@ -1291,16 +1291,16 @@ function renderFoodChain(method, k, allK, allTrades) {
     // --- Your Strategy Row ---
     const edgeSign = edgeR >= 0 ? '+' : '';
 
-    // Build sorted food chain table (ECFS Active has table, ECFS Predisposal has stat boxes)
+    // Build sorted food chain table (ECFS Active has table, Ekantik Futures has stat boxes)
     renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, periodLabel, accentColor, winRate, rr);
 
-    // Also set standalone stat elements (used by ECFS Predisposal simplified layout)
+    // Also set standalone stat elements (used by Ekantik Futures simplified layout)
     setEl(`${prefix}-edge-per-trade`, `${edgeSign}${edgeR.toFixed(1)}%R`);
     setEl(`${prefix}-trades-month`, `≈${Math.round(tradesPerMonth)}`);
     setEl(`${prefix}-annual-r`, `≈${annualR.toFixed(0)} R`);
 
     // Summary callout: explicit math so the user knows exactly how Annual R was derived
-    const strategyLabel = method === 'options' ? 'Ekantik 10x Strategy (SPX)' : 'ECFS Predisposal (ES)';
+    const strategyLabel = method === 'options' ? 'Ekantik Options (SPX)' : 'Ekantik Futures (ES)';
     const riskLabel = `$${Math.round(riskBudget)}`;
     const dataAsOf = `<span style="color:#9ca3af;font-weight:normal;"><i class="fas fa-sync-alt" style="font-size:9px;margin-right:3px;"></i>Extrapolated from <strong>${allK.totalTrades} all-time trades</strong> as of ${lastTradeDate} · avg realized risk: ${riskLabel} · updated weekly</span>`;
     setHTML(`${prefix}-summary-text`,
@@ -1575,7 +1575,7 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
         chart.setOption({
             backgroundColor: 'transparent',
             graphic: [{ type: 'text', left: 'center', top: 'middle',
-                style: { text: 'Upload ECFS Predisposal data to see actual account performance', fill: '#6b7280', fontSize: 13 }
+                style: { text: 'Upload Ekantik Futures data to see actual account performance', fill: '#6b7280', fontSize: 13 }
             }]
         });
         return;
@@ -1722,7 +1722,7 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
             }
         },
         legend: {
-            data: ['S&P 500 (same period)', 'ECFS Predisposal (actual)'],
+            data: ['S&P 500 (same period)', 'Ekantik Futures (actual)'],
             top: 0,
             textStyle: { color: '#9ca3af', fontSize: 10 },
             itemWidth: 12, itemHeight: 8
@@ -1761,7 +1761,7 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
                 areaStyle: null
             },
             {
-                name: 'ECFS Predisposal (actual)',
+                name: 'Ekantik Futures (actual)',
                 type: 'line',
                 data: equityValues,
                 smooth: false,
@@ -1794,7 +1794,7 @@ function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, pe
     if (!tbody) return;
 
     const edgeSign = edgeR >= 0 ? '+' : '';
-    const strategyName = method === 'options' ? 'Ekantik 10x Strategy' : 'ECFS Predisposal';
+    const strategyName = method === 'options' ? 'Ekantik Options' : 'Ekantik Futures';
     const icon = method === 'options' ? 'fa-chart-pie' : 'fa-comments';
     const lastDate = getLastTradeDate(state[method].allTrades) || 'latest';
     const totalTrades = state[method].allTrades ? state[method].allTrades.length : 0;
@@ -1827,7 +1827,7 @@ function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, pe
         }
     ];
 
-    // When viewing Options, add ECFS Predisposal as a reference row
+    // When viewing Options, add Ekantik Futures as a reference row
     if (method === 'options' && state.discord && state.discord.allTrades && state.discord.allTrades.length > 0) {
         const ecfsAllK = calculateKPIs(state.discord.allTrades, DISCORD_RISK, DISCORD_PPT, DISCORD_STARTING_BALANCE);
         const ecfsEdgeR = ecfsAllK.evActualR;
@@ -1844,7 +1844,7 @@ function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, pe
         const ecfsRR = ecfsAvgLoss > 0 ? ecfsAvgWin / ecfsAvgLoss : 0;
         const ecfsKelly = (ecfsRR > 0 && ecfsAllK.winRate > 0) ? ((ecfsAllK.winRate / 100) - ((1 - ecfsAllK.winRate / 100) / ecfsRR)) * 100 / 2 : 0;
         benchmarks.push({
-            name: 'ECFS Predisposal (ES)',
+            name: 'Ekantik Futures (ES)',
             edge: `${ecfsEdgeR >= 0 ? '+' : ''}${ecfsEdgeR.toFixed(1)}%R`,
             trades: `≈${Math.round(ecfsTPM)}`,
             annualR: ecfsAnnualR,
@@ -1918,7 +1918,7 @@ function renderFoodChainChart(containerId, k, method) {
 
     const edgeR = k.evActualR;
     const accentColor = method === 'active' ? '#d4af37' : method === 'options' ? '#a855f7' : '#60a5fa';
-    const stratLabel = method === 'active' ? 'ECFS Active' : method === 'options' ? 'Ekantik 10x Strategy' : 'ECFS Predisposal';
+    const stratLabel = method === 'active' ? 'ECFS Active' : method === 'options' ? 'Ekantik Options' : 'Ekantik Futures';
 
     // Benchmark data for the horizontal bar chart
     const benchmarks = [
@@ -1930,10 +1930,10 @@ function renderFoodChainChart(containerId, k, method) {
         { name: stratLabel, edge: edgeR, color: accentColor }
     ];
 
-    // Add ECFS Predisposal reference when viewing Options
+    // Add Ekantik Futures reference when viewing Options
     if (method === 'options' && state.discord && state.discord.allTrades && state.discord.allTrades.length > 0) {
         const ecfsK = calculateKPIs(state.discord.allTrades, DISCORD_RISK, DISCORD_PPT, DISCORD_STARTING_BALANCE);
-        benchmarks.push({ name: 'ECFS Predisposal', edge: ecfsK.evActualR, color: '#60a5fa' });
+        benchmarks.push({ name: 'Ekantik Futures', edge: ecfsK.evActualR, color: '#60a5fa' });
     }
 
     // Sort by edge
@@ -2237,7 +2237,7 @@ function renderCompareRTable(ak, dk) {
             <tr>
                 <th class="text-left text-gray-400 font-bold px-3 py-2 border-b-2 border-[#d4af37]/20" style="background: rgba(212,175,55,0.05)">Metric</th>
                 <th class="text-right text-[#d4af37] font-bold px-3 py-2 border-b-2 border-[#d4af37]/20" style="background: rgba(212,175,55,0.05)"><i class="fas fa-bolt mr-1"></i>ECFS Active</th>
-                <th class="text-right text-blue-400 font-bold px-3 py-2 border-b-2 border-[#d4af37]/20" style="background: rgba(212,175,55,0.05)"><i class="fas fa-comments mr-1"></i>ECFS Predisposal</th>
+                <th class="text-right text-blue-400 font-bold px-3 py-2 border-b-2 border-[#d4af37]/20" style="background: rgba(212,175,55,0.05)"><i class="fas fa-comments mr-1"></i>Ekantik Futures</th>
             </tr>
         </thead><tbody>`;
 
@@ -2257,7 +2257,7 @@ function renderCompareRTable(ak, dk) {
     html += `<div class="mt-3 flex items-center gap-3 text-[10px] text-gray-500 justify-center">
         <span><strong style="color:#d4af37">ECFS:</strong> 1R = $${Math.round(akRisk)} (avg realized)</span>
         <span>|</span>
-        <span><strong style="color:#60a5fa">ECFS Predisposal:</strong> 1R = $${Math.round(dkRisk)} (avg realized)</span>
+        <span><strong style="color:#60a5fa">Ekantik Futures:</strong> 1R = $${Math.round(dkRisk)} (avg realized)</span>
         <span>|</span>
         <span><i class="fas fa-trophy text-[#d4af37]"></i> = winner for that metric</span>
     </div>`;
@@ -2284,12 +2284,12 @@ function renderCompareInsights(ak, dk) {
         icon: 'fa-shield-alt',
         color: '#d4af37',
         title: 'Different Risk, Same Edge Framework',
-        text: `ECFS Active avg risk: $${Math.round(akAvgR)}/trade. ECFS Predisposal avg risk: $${Math.round(dkAvgR)}/trade. R-normalized metrics tell the real story.`
+        text: `ECFS Active avg risk: $${Math.round(akAvgR)}/trade. Ekantik Futures avg risk: $${Math.round(dkAvgR)}/trade. R-normalized metrics tell the real story.`
     });
 
     // 2. EV comparison in R
     if (ak.evActualR !== dk.evActualR) {
-        const better = ak.evActualR > dk.evActualR ? 'ECFS Active' : 'ECFS Predisposal';
+        const better = ak.evActualR > dk.evActualR ? 'ECFS Active' : 'Ekantik Futures';
         const bEV = Math.max(ak.evActualR, dk.evActualR);
         const wEV = Math.min(ak.evActualR, dk.evActualR);
         insights.push({
@@ -2302,7 +2302,7 @@ function renderCompareInsights(ak, dk) {
 
     // 3. Win rate
     if (Math.abs(ak.winRate - dk.winRate) >= 1) {
-        const better = ak.winRate > dk.winRate ? 'ECFS Active' : 'ECFS Predisposal';
+        const better = ak.winRate > dk.winRate ? 'ECFS Active' : 'Ekantik Futures';
         insights.push({
             icon: 'fa-trophy',
             color: '#4ade80',
@@ -2315,7 +2315,7 @@ function renderCompareInsights(ak, dk) {
     const akDDR = ak.maxDD / akAvgR;
     const dkDDR = dk.maxDD / dkAvgR;
     if (Math.abs(akDDR - dkDDR) > 0.5) {
-        const betterDD = akDDR < dkDDR ? 'ECFS Active' : 'ECFS Predisposal';
+        const betterDD = akDDR < dkDDR ? 'ECFS Active' : 'Ekantik Futures';
         insights.push({
             icon: 'fa-arrow-trend-down',
             color: '#f87171',
@@ -2325,7 +2325,7 @@ function renderCompareInsights(ak, dk) {
     }
 
     // 5. Data confidence
-    const moreData = ak.totalTrades > dk.totalTrades ? 'ECFS Active' : 'ECFS Predisposal';
+    const moreData = ak.totalTrades > dk.totalTrades ? 'ECFS Active' : 'Ekantik Futures';
     if (ak.totalTrades !== dk.totalTrades) {
         insights.push({
             icon: 'fa-database',
@@ -2814,7 +2814,7 @@ function renderRadarChart(ak, dk) {
     }
     if (dk) {
         series.push({
-            name: 'ECFS Predisposal',
+            name: 'Ekantik Futures',
             type: 'radar',
             data: [{
                 value: [
@@ -2825,7 +2825,7 @@ function renderRadarChart(ak, dk) {
                     dkWinR,
                     dk.tradingDays.length > 0 ? dk.profitableDays / dk.tradingDays.length * 100 : 0
                 ],
-                name: 'ECFS Predisposal',
+                name: 'Ekantik Futures',
                 lineStyle: { color: '#60a5fa', width: 2 },
                 areaStyle: { color: 'rgba(96, 165, 250, 0.15)' },
                 itemStyle: { color: '#60a5fa' }
@@ -2837,7 +2837,7 @@ function renderRadarChart(ak, dk) {
         backgroundColor: 'transparent',
         tooltip: { trigger: 'item' },
         legend: {
-            data: ['ECFS Active', 'ECFS Predisposal'].filter((_, i) => (i === 0 && ak) || (i === 1 && dk)),
+            data: ['ECFS Active', 'Ekantik Futures'].filter((_, i) => (i === 0 && ak) || (i === 1 && dk)),
             textStyle: { color: '#888', fontSize: 10 },
             bottom: 0
         },
@@ -3485,11 +3485,11 @@ function exportECFSData() {
     showExportToast('ECFS JSON exported — for best results, use the raw Tradovate CSV');
 }
 
-// Export ECFS Predisposal data as JSON (the canonical format for GitHub)
+// Export Ekantik Futures data as JSON (the canonical format for GitHub)
 function exportDiscordData() {
     const trades = state.discord.allTrades;
     if (!trades || trades.length === 0) {
-        alert('No ECFS Predisposal data to export. Upload an Excel file first.');
+        alert('No Ekantik Futures data to export. Upload an Excel file first.');
         return;
     }
 
