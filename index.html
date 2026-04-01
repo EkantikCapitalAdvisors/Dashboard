@@ -221,7 +221,6 @@
                        class="inline-flex items-center gap-1.5 text-[#5865F2] hover:text-white text-sm font-semibold transition-colors">
                         <i class="fab fa-discord"></i><span class="hidden sm:inline">Follow Trades</span>
                     </a>
-                    <template id="strategies-menu-disabled">
                     <div class="hidden sm:block w-px h-5 bg-gray-700"></div>
                     <div class="relative group">
                         <button class="inline-flex items-center px-4 py-2 sm:px-5 sm:py-2.5 gradient-gold text-[#0a1628] font-bold text-xs sm:text-sm rounded-lg hover:shadow-lg hover:shadow-[#d4af37]/50 transition-all">
@@ -243,7 +242,6 @@
                             </div>
                         </div>
                     </div>
-                    </template>
                 </nav>
             </div>
         </div>
@@ -391,7 +389,7 @@
                         <div class="stat-card bg-gradient-to-br from-emerald-900/20 to-emerald-950/40 border border-emerald-500/30 rounded-xl p-4">
                             <div class="flex items-center justify-between mb-1"><span class="text-[10px] text-emerald-400 font-bold tracking-wider">RETURN</span></div>
                             <p class="text-2xl font-bold text-white" id="discord-hero-return">—</p>
-                            <p class="text-[10px] text-gray-500 mt-0.5">on $20,000</p>
+                            <p class="text-[10px] text-gray-500 mt-0.5">on starting portfolio</p>
                         </div>
                         <div class="stat-card bg-gradient-to-br from-blue-900/20 to-blue-950/40 border border-blue-500/30 rounded-xl p-4">
                             <div class="flex items-center justify-between mb-1"><span class="text-[10px] text-blue-400 font-bold tracking-wider">EV / TRADE</span></div>
@@ -732,7 +730,7 @@
                                     <span class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white">3</span>
                                     <p class="text-white text-xs font-semibold">Compounding</p>
                                 </div>
-                                <p class="text-gray-400 text-[11px] leading-relaxed">With selective, high-conviction trades at 2.5% daily risk, fewer trades compound into outsized returns.</p>
+                                <p class="text-gray-400 text-[11px] leading-relaxed">With selective, high-conviction trades at current risk parameters, fewer trades compound into outsized returns.</p>
                             </div>
                         </div>
 
@@ -798,8 +796,8 @@
                             <h4 class="text-sm font-bold text-blue-400 mb-3"><i class="fas fa-info-circle mr-1.5"></i>What "<span id="dfc-annual-r-label">— R</span>" Means</h4>
                             <div class="space-y-2 text-xs">
                                 <div class="flex items-start gap-2"><i class="fas fa-gem text-blue-400 mt-0.5 text-[10px]"></i><p class="text-gray-300"><strong class="text-white">R</strong> = the fixed dollar amount risked per trade</p></div>
-                                <div class="flex items-start gap-2"><i class="fas fa-gem text-blue-400 mt-0.5 text-[10px]"></i><p class="text-gray-300" id="dfc-r-example1">For 2.5% daily risk on $20K account, R = $500/day</p></div>
-                                <div class="flex items-start gap-2"><i class="fas fa-gem text-blue-400 mt-0.5 text-[10px]"></i><p class="text-gray-300" id="dfc-r-example2">— R × $500 = —/year at 2.5% daily risk</p></div>
+                                <div class="flex items-start gap-2"><i class="fas fa-gem text-blue-400 mt-0.5 text-[10px]"></i><p class="text-gray-300" id="dfc-r-example1">At current risk parameters, R = daily risk budget</p></div>
+                                <div class="flex items-start gap-2"><i class="fas fa-gem text-blue-400 mt-0.5 text-[10px]"></i><p class="text-gray-300" id="dfc-r-example2">Annual R = R × trading days — scales with portfolio size</p></div>
                             </div>
                             <div class="mt-3 bg-blue-400/8 border border-blue-400/20 rounded-lg p-2.5">
                                 <p class="text-[10px] text-blue-400 text-center font-semibold" id="dfc-key-insight">Returns grow proportionally with risk taken if the edge is truly validated.</p>
@@ -1066,7 +1064,7 @@
                                 <div class="w-2.5 h-2.5 rounded-full bg-purple-400 absolute top-0 animate-ping"></div>
                             </div>
                             <div>
-                                <p class="text-white text-sm font-semibold">Live Edge — Updated Weekly</p>
+                                <p class="text-white text-sm font-semibold">Live Edge Verification</p>
                                 <p class="text-gray-400 text-[11px]">Every number below is calculated from <strong class="text-purple-400" id="options-live-trade-count">—</strong> real options trades.</p>
                             </div>
                         </div>
@@ -1640,7 +1638,7 @@
                                     <div class="w-5 h-5 rounded-full bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center flex-shrink-0 mt-0.5">
                                         <i class="fas fa-check text-emerald-400" style="font-size: 7px;"></i>
                                     </div>
-                                    <p class="text-gray-300 text-xs leading-relaxed"><strong class="text-white">Variance risk compressed</strong> by volume — more trades narrow the outcome band toward certainty.</p>
+                                    <p class="text-gray-300 text-xs leading-relaxed"><strong class="text-white">Variance risk compressed</strong> by volume — more trades narrow the outcome band toward statistical convergence.</p>
                                 </div>
                                 <div class="flex items-start gap-3">
                                     <div class="w-5 h-5 rounded-full bg-[#d4af37]/15 border border-[#d4af37]/25 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -1716,7 +1714,7 @@
                                 <!-- Title -->
                                 <text x="175" y="16" fill="#e5e7eb" font-size="9" text-anchor="middle" font-family="monospace" font-weight="bold">COMPOUNDING BY SIZING UP</text>
                             </svg>
-                            <p class="text-gray-600 text-[10px] text-center mt-2">As certainty over N grows, the only brake on growth is order-book depth — not the edge itself.</p>
+                            <p class="text-gray-600 text-[10px] text-center mt-2">As confidence over N grows, the only brake on growth is order-book depth — not the edge itself.</p>
                         </div>
                     </div>
                 </div>
@@ -1817,8 +1815,7 @@
         </div>
     </section>
 
-    <!-- EPIG PORTFOLIO CONTEXT + SPY COMPARISON (HIDDEN — performance-only page) -->
-    <template id="epig-portfolio-context-disabled">
+    <!-- EPIG PORTFOLIO CONTEXT + SPY COMPARISON -->
     <section class="py-16 relative overflow-hidden">
         <!-- Subtle background glow -->
         <div class="absolute inset-0 opacity-10">
@@ -1892,7 +1889,7 @@
 
                         <!-- One-liner Insight -->
                         <div class="max-w-4xl mx-auto">
-                            <p class="text-gray-500 text-[10px] text-center"><i class="fas fa-info-circle mr-1"></i>SPY: 15-year avg total return with dividends (2011–2025). ECFS drawdown: <span id="rtp-insight-mc-note">Monte Carlo simulation (5,000 runs, 95th percentile)</span>. Updated weekly.</p>
+                            <p class="text-gray-500 text-[10px] text-center"><i class="fas fa-info-circle mr-1"></i>SPY: 15-year avg total return with dividends (2011–2025). ECFS drawdown: <span id="rtp-insight-mc-note">Monte Carlo simulation (5,000 runs, 95th percentile)</span>.</p>
                         </div>
                     </div>
                 </div>
@@ -2086,14 +2083,13 @@
                         </div>
                         <h4 class="font-playfair text-xl font-bold text-white mb-3">EPIG — Enduring Principal Protection · Income & Growth</h4>
                         <p class="text-gray-400 text-sm leading-relaxed max-w-2xl mx-auto mb-4">The complete three-layer portfolio architecture is available exclusively to founding members. The dashboard above demonstrates the <strong class="text-amber-400">Tactical Income engine (Layer B)</strong> — the systematic edge that drives returns while the barbell structure keeps your principal protected.</p>
-                        <p class="text-gray-500 text-xs">Past performance is not indicative of future results. Portfolio allocation examples are illustrative. <a href="#compliance-footer" class="text-gray-400 underline hover:text-[#d4af37]">Full disclosure</a></p>
+                        <p class="text-gray-500 text-xs">Portfolio allocation examples are illustrative. <a href="#compliance-footer" class="text-gray-400 underline hover:text-[#d4af37]">Full disclosure</a></p>
                     </div>
                 </div>
 
             </div>
         </div>
     </section>
-    </template>
 
     <!-- Footer -->
     <footer id="compliance-footer" class="py-10 bg-[#0d1d35]/80 border-t border-[#d4af37]/20">
@@ -2112,7 +2108,7 @@
                     </div>
                     <p class="text-gray-500 text-xs mb-1">© 2026 Ekantik Capital Advisors LLC. All rights reserved.</p>
                     <p class="text-gray-400 text-xs mb-1"><i class="fas fa-envelope mr-1.5 text-[#d4af37] text-[10px]"></i><a href="mailto:info@ekantikcapital.com" class="hover:text-[#d4af37] transition-colors">info@ekantikcapital.com</a></p>
-                    <p class="text-gray-600 text-[10px]">Past performance is not indicative of future results. For informational purposes only.</p>
+                    <p class="text-gray-600 text-[10px]">For informational purposes only.</p>
                 </div>
 
                 <!-- Regulatory Disclosure — Collapsible -->
