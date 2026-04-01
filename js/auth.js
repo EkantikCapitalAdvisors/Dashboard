@@ -179,14 +179,23 @@ const EkantikAuth = (() => {
         }
 
         try {
-            // Try sign-in first (existing user)
+            // Try sign-in first (existing user), fall back to sign-up for new users
             let signInResult;
             try {
                 signInResult = await clerkInstance.client.signIn.create({ identifier: email });
             } catch (signInErr) {
                 // User doesn't exist — create account via sign-up, then sign in
-                if (signInErr.errors?.[0]?.code === 'form_identifier_not_found') {
-                    await clerkInstance.client.signUp.create({ emailAddress: email });
+                const errCode = signInErr.errors?.[0]?.code || '';
+                const isNotFound = errCode === 'form_identifier_not_found'
+                    || errCode === 'identifier_not_found'
+                    || errCode.includes('not_found');
+                if (isNotFound) {
+                    try {
+                        await clerkInstance.client.signUp.create({ emailAddress: email });
+                    } catch (signUpErr) {
+                        // If sign-up also fails (e.g. already exists race condition), try sign-in again
+                        console.warn('[Auth] Sign-up failed, retrying sign-in:', signUpErr);
+                    }
                     signInResult = await clerkInstance.client.signIn.create({ identifier: email });
                 } else {
                     throw signInErr;
