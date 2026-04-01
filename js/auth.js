@@ -29,6 +29,12 @@ const EkantikAuth = (() => {
             // Wait for Clerk SDK to be ready
             await waitForClerk();
 
+            // Handle magic link redirect: if the URL contains Clerk ticket params,
+            // process them before checking user state
+            if (hasMagicLinkParams()) {
+                await handleMagicLinkRedirect();
+            }
+
             if (clerkInstance.user) {
                 onAuthenticated();
             } else {
@@ -37,6 +43,39 @@ const EkantikAuth = (() => {
         } catch (err) {
             console.error('[Auth] Clerk init failed:', err);
             showSignInGate('Authentication service unavailable. Please try again later.');
+        }
+    }
+
+    function hasMagicLinkParams() {
+        const params = new URLSearchParams(window.location.search);
+        return params.has('__clerk_ticket') || params.has('__clerk_status');
+    }
+
+    async function handleMagicLinkRedirect() {
+        try {
+            console.log('[Auth] Processing magic link redirect...');
+            await clerkInstance.handleRedirectCallback();
+            // Clean up URL params after processing
+            const url = new URL(window.location.href);
+            url.searchParams.delete('__clerk_ticket');
+            url.searchParams.delete('__clerk_status');
+            url.searchParams.delete('__clerk_created_session');
+            window.history.replaceState({}, '', url.pathname + (url.search || ''));
+        } catch (err) {
+            console.error('[Auth] Magic link redirect handling failed:', err);
+            // If handleRedirectCallback fails, try manual verification
+            try {
+                const ticket = new URLSearchParams(window.location.search).get('__clerk_ticket');
+                if (ticket) {
+                    const signIn = clerkInstance.client.signIn;
+                    const result = await signIn.create({ strategy: 'ticket', ticket });
+                    if (result.status === 'complete') {
+                        await clerkInstance.setActive({ session: result.createdSessionId });
+                    }
+                }
+            } catch (fallbackErr) {
+                console.error('[Auth] Manual ticket verification also failed:', fallbackErr);
+            }
         }
     }
 
