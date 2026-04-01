@@ -67,10 +67,20 @@ const EkantikAuth = (() => {
             try {
                 const ticket = new URLSearchParams(window.location.search).get('__clerk_ticket');
                 if (ticket) {
-                    const signIn = clerkInstance.client.signIn;
-                    const result = await signIn.create({ strategy: 'ticket', ticket });
-                    if (result.status === 'complete') {
-                        await clerkInstance.setActive({ session: result.createdSessionId });
+                    // Try sign-in ticket first
+                    try {
+                        const signIn = clerkInstance.client.signIn;
+                        const result = await signIn.create({ strategy: 'ticket', ticket });
+                        if (result.status === 'complete') {
+                            await clerkInstance.setActive({ session: result.createdSessionId });
+                        }
+                    } catch (signInTicketErr) {
+                        // May be a sign-up verification ticket — try sign-up flow
+                        const signUp = clerkInstance.client.signUp;
+                        const result = await signUp.attemptEmailAddressVerification({ ticket });
+                        if (result.status === 'complete') {
+                            await clerkInstance.setActive({ session: result.createdSessionId });
+                        }
                     }
                 }
             } catch (fallbackErr) {
@@ -181,42 +191,49 @@ const EkantikAuth = (() => {
         try {
             // Try sign-in first (existing user), fall back to sign-up for new users
             let signInResult;
+            let isNewUser = false;
             try {
                 signInResult = await clerkInstance.client.signIn.create({ identifier: email });
             } catch (signInErr) {
-                // User doesn't exist — create account via sign-up, then sign in
+                // User doesn't exist — create account via sign-up
                 const errCode = signInErr.errors?.[0]?.code || '';
                 const isNotFound = errCode === 'form_identifier_not_found'
                     || errCode === 'identifier_not_found'
                     || errCode.includes('not_found');
                 if (isNotFound) {
-                    try {
-                        await clerkInstance.client.signUp.create({ emailAddress: email });
-                    } catch (signUpErr) {
-                        // If sign-up also fails (e.g. already exists race condition), try sign-in again
-                        console.warn('[Auth] Sign-up failed, retrying sign-in:', signUpErr);
-                    }
-                    signInResult = await clerkInstance.client.signIn.create({ identifier: email });
+                    isNewUser = true;
                 } else {
                     throw signInErr;
                 }
             }
 
-            // Send magic link
-            const { supportedFirstFactors } = signInResult;
-            const emailFactor = supportedFirstFactors.find(
-                f => f.strategy === 'email_link' && f.safeIdentifier === email
-            ) || supportedFirstFactors.find(f => f.strategy === 'email_link');
-
-            if (emailFactor) {
-                await signInResult.prepareFirstFactor({
+            if (isNewUser) {
+                // New user: create sign-up and send magic link via sign-up flow
+                const signUpResult = await clerkInstance.client.signUp.create({
+                    emailAddress: email,
+                });
+                await signUpResult.prepareEmailAddressVerification({
                     strategy: 'email_link',
-                    emailAddressId: emailFactor.emailAddressId,
                     redirectUrl: window.location.origin + window.location.pathname,
                 });
                 showMagicLinkSent(email);
             } else {
-                showAuthStatus('Unable to send access link. Please try again.', 'error');
+                // Existing user: send magic link via sign-in flow
+                const { supportedFirstFactors } = signInResult;
+                const emailFactor = supportedFirstFactors.find(
+                    f => f.strategy === 'email_link' && f.safeIdentifier === email
+                ) || supportedFirstFactors.find(f => f.strategy === 'email_link');
+
+                if (emailFactor) {
+                    await signInResult.prepareFirstFactor({
+                        strategy: 'email_link',
+                        emailAddressId: emailFactor.emailAddressId,
+                        redirectUrl: window.location.origin + window.location.pathname,
+                    });
+                    showMagicLinkSent(email);
+                } else {
+                    showAuthStatus('Unable to send access link. Please try again.', 'error');
+                }
             }
         } catch (err) {
             console.error('[Auth] Sign-in error:', err);
