@@ -52,30 +52,51 @@ const EkantikAuth = (() => {
     }
 
     async function handleMagicLinkRedirect() {
-        try {
-            console.log('[Auth] Processing magic link redirect...');
-            await clerkInstance.handleRedirectCallback();
-            // Clean up URL params after processing
+        const cleanUrl = () => {
             const url = new URL(window.location.href);
             url.searchParams.delete('__clerk_ticket');
             url.searchParams.delete('__clerk_status');
             url.searchParams.delete('__clerk_created_session');
             window.history.replaceState({}, '', url.pathname + (url.search || ''));
+        };
+
+        try {
+            console.log('[Auth] Processing magic link redirect...');
+            await clerkInstance.handleRedirectCallback();
+            cleanUrl();
         } catch (err) {
             console.error('[Auth] Magic link redirect handling failed:', err);
-            // If handleRedirectCallback fails, try manual verification
+            // If handleRedirectCallback fails, try manual ticket verification
+            const ticket = new URLSearchParams(window.location.search).get('__clerk_ticket');
+            if (!ticket) { cleanUrl(); return; }
+
+            // Try sign-in ticket first
             try {
-                const ticket = new URLSearchParams(window.location.search).get('__clerk_ticket');
-                if (ticket) {
-                    const signIn = clerkInstance.client.signIn;
-                    const result = await signIn.create({ strategy: 'ticket', ticket });
-                    if (result.status === 'complete') {
-                        await clerkInstance.setActive({ session: result.createdSessionId });
-                    }
+                const signIn = clerkInstance.client.signIn;
+                const result = await signIn.create({ strategy: 'ticket', ticket });
+                if (result.status === 'complete') {
+                    await clerkInstance.setActive({ session: result.createdSessionId });
+                    cleanUrl();
+                    return;
                 }
-            } catch (fallbackErr) {
-                console.error('[Auth] Manual ticket verification also failed:', fallbackErr);
+            } catch (signInErr) {
+                console.warn('[Auth] Sign-in ticket failed, trying sign-up verification:', signInErr);
             }
+
+            // Try sign-up verification (for new users who clicked the magic link)
+            try {
+                const signUp = clerkInstance.client.signUp;
+                const result = await signUp.attemptEmailAddressVerification({ strategy: 'ticket', ticket });
+                if (result.status === 'complete') {
+                    await clerkInstance.setActive({ session: result.createdSessionId });
+                    cleanUrl();
+                    return;
+                }
+            } catch (signUpErr) {
+                console.error('[Auth] Sign-up ticket verification also failed:', signUpErr);
+            }
+
+            cleanUrl();
         }
     }
 
@@ -181,42 +202,63 @@ const EkantikAuth = (() => {
         try {
             // Try sign-in first (existing user), fall back to sign-up for new users
             let signInResult;
+            let isNewUser = false;
             try {
                 signInResult = await clerkInstance.client.signIn.create({ identifier: email });
             } catch (signInErr) {
-                // User doesn't exist — create account via sign-up, then sign in
+                // User doesn't exist — use sign-up flow with magic link
                 const errCode = signInErr.errors?.[0]?.code || '';
+                const errMsg = (signInErr.errors?.[0]?.message || '').toLowerCase();
                 const isNotFound = errCode === 'form_identifier_not_found'
                     || errCode === 'identifier_not_found'
-                    || errCode.includes('not_found');
+                    || errCode.includes('not_found')
+                    || errMsg.includes("couldn't find")
+                    || errMsg.includes('not found');
                 if (isNotFound) {
-                    try {
-                        await clerkInstance.client.signUp.create({ emailAddress: email });
-                    } catch (signUpErr) {
-                        // If sign-up also fails (e.g. already exists race condition), try sign-in again
-                        console.warn('[Auth] Sign-up failed, retrying sign-in:', signUpErr);
-                    }
-                    signInResult = await clerkInstance.client.signIn.create({ identifier: email });
+                    isNewUser = true;
                 } else {
                     throw signInErr;
                 }
             }
 
-            // Send magic link
-            const { supportedFirstFactors } = signInResult;
-            const emailFactor = supportedFirstFactors.find(
-                f => f.strategy === 'email_link' && f.safeIdentifier === email
-            ) || supportedFirstFactors.find(f => f.strategy === 'email_link');
+            if (isNewUser) {
+                // New user: create account via sign-up and send magic link through sign-up flow
+                try {
+                    const signUpResult = await clerkInstance.client.signUp.create({ emailAddress: email });
+                    await signUpResult.prepareEmailAddressVerification({
+                        strategy: 'email_link',
+                        redirectUrl: window.location.origin + window.location.pathname,
+                    });
+                    showMagicLinkSent(email);
+                } catch (signUpErr) {
+                    // If sign-up fails because user already exists, retry sign-in
+                    const sCode = signUpErr.errors?.[0]?.code || '';
+                    if (sCode.includes('taken') || sCode.includes('exists') || sCode.includes('unique')) {
+                        signInResult = await clerkInstance.client.signIn.create({ identifier: email });
+                        // Fall through to the sign-in magic link flow below
+                    } else {
+                        throw signUpErr;
+                    }
+                }
+            }
 
-            if (emailFactor) {
-                await signInResult.prepareFirstFactor({
-                    strategy: 'email_link',
-                    emailAddressId: emailFactor.emailAddressId,
-                    redirectUrl: window.location.origin + window.location.pathname,
-                });
-                showMagicLinkSent(email);
-            } else {
-                showAuthStatus('Unable to send access link. Please try again.', 'error');
+            if (signInResult) {
+                // Existing user: send magic link through sign-in flow
+                const { supportedFirstFactors } = signInResult;
+                const emailFactor = supportedFirstFactors.find(
+                    f => f.strategy === 'email_link' && f.safeIdentifier === email
+                ) || supportedFirstFactors.find(f => f.strategy === 'email_link');
+
+                if (emailFactor) {
+                    await signInResult.prepareFirstFactor({
+                        strategy: 'email_link',
+                        emailAddressId: emailFactor.emailAddressId,
+                        redirectUrl: window.location.origin + window.location.pathname,
+                    });
+                    showMagicLinkSent(email);
+                } else {
+                    showAuthStatus('Unable to send access link. Please try again.', 'error');
+                }
             }
         } catch (err) {
             console.error('[Auth] Sign-in error:', err);
