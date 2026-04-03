@@ -3,7 +3,7 @@
 // Ekantik Capital Dashboard
 // =====================================================
 //
-// Auth method: magic link (open sign-up, no allowlist)
+// Auth method: magic link (invitation only — add users via dashboard.clerk.com)
 // Admin emails: hjdesai@gmail.com, hd@ekantikcapital.com
 // =====================================================
 
@@ -200,13 +200,12 @@ const EkantikAuth = (() => {
         }
 
         try {
-            // Try sign-in first (existing user), fall back to sign-up for new users
+            // Restricted access: only pre-registered users can sign in.
+            // Users must be added via Clerk dashboard (dashboard.clerk.com).
             let signInResult;
-            let isNewUser = false;
             try {
                 signInResult = await clerkInstance.client.signIn.create({ identifier: email });
             } catch (signInErr) {
-                // User doesn't exist — use sign-up flow with magic link
                 const errCode = signInErr.errors?.[0]?.code || '';
                 const errMsg = (signInErr.errors?.[0]?.message || '').toLowerCase();
                 const isNotFound = errCode === 'form_identifier_not_found'
@@ -215,50 +214,27 @@ const EkantikAuth = (() => {
                     || errMsg.includes("couldn't find")
                     || errMsg.includes('not found');
                 if (isNotFound) {
-                    isNewUser = true;
-                } else {
-                    throw signInErr;
+                    showAccessDenied(email);
+                    return;
                 }
+                throw signInErr;
             }
 
-            if (isNewUser) {
-                // New user: create account via sign-up and send magic link through sign-up flow
-                try {
-                    const signUpResult = await clerkInstance.client.signUp.create({ emailAddress: email });
-                    await signUpResult.prepareEmailAddressVerification({
-                        strategy: 'email_link',
-                        redirectUrl: window.location.origin + window.location.pathname,
-                    });
-                    showMagicLinkSent(email);
-                } catch (signUpErr) {
-                    // If sign-up fails because user already exists, retry sign-in
-                    const sCode = signUpErr.errors?.[0]?.code || '';
-                    if (sCode.includes('taken') || sCode.includes('exists') || sCode.includes('unique')) {
-                        signInResult = await clerkInstance.client.signIn.create({ identifier: email });
-                        // Fall through to the sign-in magic link flow below
-                    } else {
-                        throw signUpErr;
-                    }
-                }
-            }
+            // Send magic link to existing user
+            const { supportedFirstFactors } = signInResult;
+            const emailFactor = supportedFirstFactors.find(
+                f => f.strategy === 'email_link' && f.safeIdentifier === email
+            ) || supportedFirstFactors.find(f => f.strategy === 'email_link');
 
-            if (signInResult) {
-                // Existing user: send magic link through sign-in flow
-                const { supportedFirstFactors } = signInResult;
-                const emailFactor = supportedFirstFactors.find(
-                    f => f.strategy === 'email_link' && f.safeIdentifier === email
-                ) || supportedFirstFactors.find(f => f.strategy === 'email_link');
-
-                if (emailFactor) {
-                    await signInResult.prepareFirstFactor({
-                        strategy: 'email_link',
-                        emailAddressId: emailFactor.emailAddressId,
-                        redirectUrl: window.location.origin + window.location.pathname,
-                    });
-                    showMagicLinkSent(email);
-                } else {
-                    showAuthStatus('Unable to send access link. Please try again.', 'error');
-                }
+            if (emailFactor) {
+                await signInResult.prepareFirstFactor({
+                    strategy: 'email_link',
+                    emailAddressId: emailFactor.emailAddressId,
+                    redirectUrl: window.location.origin + window.location.pathname,
+                });
+                showMagicLinkSent(email);
+            } else {
+                showAuthStatus('Unable to send access link. Please try again.', 'error');
             }
         } catch (err) {
             console.error('[Auth] Sign-in error:', err);
@@ -269,6 +245,19 @@ const EkantikAuth = (() => {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>Send Access Link';
             }
+        }
+    }
+
+    function showAccessDenied(email) {
+        if ($('auth-sign-in-form')) $('auth-sign-in-form').classList.add('hidden');
+        if ($('auth-link-sent')) $('auth-link-sent').classList.add('hidden');
+        const denied = $('auth-access-denied');
+        if (denied) {
+            denied.classList.remove('hidden');
+            const emailEl = $('auth-denied-email');
+            if (emailEl) emailEl.textContent = email;
+        } else {
+            showAuthStatus('This email does not have access. Please contact Ekantik Capital to request an invitation.', 'error');
         }
     }
 
@@ -401,6 +390,7 @@ const EkantikAuth = (() => {
         backToSignIn: () => {
             if ($('auth-sign-in-form')) $('auth-sign-in-form').classList.remove('hidden');
             if ($('auth-link-sent')) $('auth-link-sent').classList.add('hidden');
+            if ($('auth-access-denied')) $('auth-access-denied').classList.add('hidden');
             if ($('auth-status')) $('auth-status').classList.add('hidden');
         },
         signOut,
