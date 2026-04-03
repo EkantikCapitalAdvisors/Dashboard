@@ -39,7 +39,8 @@ const EkantikAuth = (() => {
             if (clerkInstance.user) {
                 onAuthenticated();
             } else if (wasRedirect) {
-                // Magic link redirect processed but session may need a moment to sync
+                // Keep dashboard blocked while waiting for session to sync
+                showSignInGate();
                 let attempts = 0;
                 const checkSession = setInterval(async () => {
                     attempts++;
