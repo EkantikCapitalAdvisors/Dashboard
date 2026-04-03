@@ -1737,7 +1737,7 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
     const setH = (id, val) => { const e = document.getElementById(id); if (e) e.innerHTML = val; };
 
     const trades = state.discord.allTrades;
-    const startBalance = DISCORD_STARTING_BALANCE; // $20,000
+    const startBalance = DISCORD_STARTING_BALANCE; // $30,000
 
     // ===== RETURN-TO-PAIN DYNAMIC UPDATE (uses annualR from edge) =====
     const discordMC = monteCarloMaxDD('discord');
@@ -1839,7 +1839,7 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
     const spyRetSign = spyReturnPct >= 0 ? '+' : '';
     const spyRetColor = spyReturnPct >= 0 ? '#9ca3af' : '#f87171';
     setH(`growth-spy-${suffix}`,
-        `$20K → ${fmtBal(finalSpy)} <span style="color:${spyRetColor};font-size:9px;">(${spyRetSign}${spyReturnPct.toFixed(1)}%)</span>`);
+        `$${Math.round(startBalance/1000)}K → ${fmtBal(finalSpy)} <span style="color:${spyRetColor};font-size:9px;">(${spyRetSign}${spyReturnPct.toFixed(1)}%)</span>`);
 
     // Dynamic S&P 500 drawdown from real data
     const spyMaxDD = calcMaxDrawdownPct(spyValues);
@@ -1852,7 +1852,7 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
         }
     }
     setH(`growth-discord-${suffix}`,
-        `$20K → ${fmtBal(finalBalance)} <span style="${returnPct >= 0 ? 'color:#34d399' : 'color:#f87171'};font-size:9px;">(${returnPct >= 0 ? '+' : ''}${returnPct.toFixed(1)}%)</span>`);
+        `$${Math.round(startBalance/1000)}K → ${fmtBal(finalBalance)} <span style="${returnPct >= 0 ? 'color:#34d399' : 'color:#f87171'};font-size:9px;">(${returnPct >= 0 ? '+' : ''}${returnPct.toFixed(1)}%)</span>`);
 
     const ratioEl = document.getElementById(`growth-ratio-${suffix}`);
     if (ratioEl) {
@@ -1876,7 +1876,7 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
     const firstDateFmt = fmtDate(sorted[0].exitTime || sorted[0].datetime);
     const lastDateStr  = fmtDate(sorted[sorted.length - 1].exitTime || sorted[sorted.length - 1].datetime);
     setH(`growth-subtitle-${suffix}`,
-        `Actual realized P&L on <strong style="color:#60a5fa;">$20,000</strong> account · ` +
+        `Actual realized P&L on <strong style="color:#60a5fa;">$${startBalance.toLocaleString()}</strong> account · ` +
         `<strong style="color:#60a5fa;">${trades.length} trades</strong> · ` +
         `<strong style="color:#60a5fa;">${firstDateFmt}</strong> to <strong style="color:#60a5fa;">${lastDateStr}</strong>. ` +
         `S&P 500 shown as benchmark over the same period. No projections.`
@@ -1969,7 +1969,7 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
                     silent: true,
                     data: [{ yAxis: startBalance }],
                     lineStyle: { color: '#374151', type: 'dashed', width: 1 },
-                    label: { formatter: '$20K', color: '#6b7280', fontSize: 9, position: 'start' },
+                    label: { formatter: `$${Math.round(startBalance/1000)}K`, color: '#6b7280', fontSize: 9, position: 'start' },
                     symbol: 'none'
                 }
             }
@@ -4089,7 +4089,7 @@ function switchPanel(panel) {
     if (disclaimerAmt) {
         if (panel === 'options') disclaimerAmt.textContent = '$10,000 starting portfolio';
         else if (panel === 'tenx') disclaimerAmt.textContent = '$5,000 starting portfolio';
-        else disclaimerAmt.textContent = '$20,000 starting portfolio';
+        else disclaimerAmt.textContent = '$30,000 starting portfolio';
     }
 }
 
