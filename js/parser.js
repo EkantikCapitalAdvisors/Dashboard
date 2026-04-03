@@ -5,7 +5,7 @@
 
 const ECFS_RISK = 100;       // $100 per trade (2% of $5k)
 const ECFS_PPT = 5;          // $5 per point (MES)
-const DISCORD_RISK = 500;    // $500/day (2.5% daily risk on $20k)
+const DISCORD_RISK = 500;    // $500/day (1.67% daily risk on $30k)
 const DISCORD_PPT = 50;      // $50 per point (ES)
 const OPTIONS_RISK = 500;    // $500/day (5% daily risk on $10k)
 const OPTIONS_PPT = 1;       // Raw dollars — no multiplier
@@ -13,7 +13,7 @@ const OPTIONS_STARTING_BALANCE = 10000; // $10,000 portfolio for Options strateg
 const OPTIONS_DEFAULT_RISK = 200; // Default risk per trade ($2 premium × 100 multiplier)
 const DEFAULT_STOP_POINTS = 10; // Default stop distance when no stop is specified
 const STARTING_BALANCE = 5000;  // $5,000 portfolio for ECFS Active (2% risk per trade)
-const DISCORD_STARTING_BALANCE = 20000; // $20,000 portfolio for Ekantik Futures (2.5% daily risk)
+const DISCORD_STARTING_BALANCE = 30000; // $30,000 portfolio for Ekantik Futures
 const TENX_RISK = 500;           // $500 per day (10% of $5k)
 const TENX_PPT = 5;             // $5 per point (MES default — supports ES/MES mixed)
 const TENX_STARTING_BALANCE = 5000; // $5,000 portfolio for Ekantik 10x Strategy

@@ -31,12 +31,41 @@ const EkantikAuth = (() => {
 
             // Handle magic link redirect: if the URL contains Clerk ticket params,
             // process them before checking user state
-            if (hasMagicLinkParams()) {
+            const wasRedirect = hasMagicLinkParams();
+            if (wasRedirect) {
                 await handleMagicLinkRedirect();
             }
 
             if (clerkInstance.user) {
                 onAuthenticated();
+            } else if (wasRedirect) {
+                // Keep dashboard blocked while waiting for session to sync
+                showSignInGate();
+                let attempts = 0;
+                const checkSession = setInterval(async () => {
+                    attempts++;
+                    try {
+                        // Force refresh the client to pick up new sessions
+                        if (clerkInstance.client && typeof clerkInstance.client.fetch === 'function') {
+                            const client = await clerkInstance.client.fetch();
+                            if (client.sessions.length > 0) {
+                                clearInterval(checkSession);
+                                await clerkInstance.setActive({ session: client.sessions[0].id });
+                                onAuthenticated();
+                                return;
+                            }
+                        }
+                        if (clerkInstance.user) {
+                            clearInterval(checkSession);
+                            onAuthenticated();
+                            return;
+                        }
+                    } catch (e) { /* continue polling */ }
+                    if (attempts >= 10) {
+                        clearInterval(checkSession);
+                        showSignInGate('Your access link may have expired. Please request a new one.');
+                    }
+                }, 500);
             } else {
                 showSignInGate();
             }
@@ -48,56 +77,69 @@ const EkantikAuth = (() => {
 
     function hasMagicLinkParams() {
         const params = new URLSearchParams(window.location.search);
-        return params.has('__clerk_ticket') || params.has('__clerk_status');
+        return params.has('__clerk_ticket') || params.has('__clerk_status') || params.has('__clerk_created_session');
     }
 
     async function handleMagicLinkRedirect() {
+        const params = new URLSearchParams(window.location.search);
+        const ticket = params.get('__clerk_ticket');
+        const createdSession = params.get('__clerk_created_session');
+
         const cleanUrl = () => {
             const url = new URL(window.location.href);
-            url.searchParams.delete('__clerk_ticket');
-            url.searchParams.delete('__clerk_status');
-            url.searchParams.delete('__clerk_created_session');
+            ['__clerk_ticket', '__clerk_status', '__clerk_created_session', '__clerk_handshake'].forEach(p => url.searchParams.delete(p));
             window.history.replaceState({}, '', url.pathname + (url.search || ''));
         };
 
-        try {
-            console.log('[Auth] Processing magic link redirect...');
-            await clerkInstance.handleRedirectCallback();
-            cleanUrl();
-        } catch (err) {
-            console.error('[Auth] Magic link redirect handling failed:', err);
-            // If handleRedirectCallback fails, try manual ticket verification
-            const ticket = new URLSearchParams(window.location.search).get('__clerk_ticket');
-            if (!ticket) { cleanUrl(); return; }
-
-            // Try sign-in ticket first
+        // Case 1: session already created by Clerk (magic link was verified server-side)
+        if (createdSession) {
             try {
-                const signIn = clerkInstance.client.signIn;
-                const result = await signIn.create({ strategy: 'ticket', ticket });
+                await clerkInstance.setActive({ session: createdSession });
+                cleanUrl();
+                return;
+            } catch (e) {
+                console.warn('[Auth] Could not activate created session:', e);
+            }
+        }
+
+        // Case 2: we have a ticket — verify it manually
+        if (ticket) {
+            // Try sign-in verification first
+            try {
+                const result = await clerkInstance.client.signIn.create({ strategy: 'ticket', ticket });
                 if (result.status === 'complete') {
                     await clerkInstance.setActive({ session: result.createdSessionId });
                     cleanUrl();
                     return;
                 }
-            } catch (signInErr) {
-                console.warn('[Auth] Sign-in ticket failed, trying sign-up verification:', signInErr);
+            } catch (e) {
+                console.warn('[Auth] Sign-in ticket failed:', e);
             }
 
-            // Try sign-up verification (for new users who clicked the magic link)
+            // Try sign-up email verification (for users created via sign-up flow)
             try {
                 const signUp = clerkInstance.client.signUp;
-                const result = await signUp.attemptEmailAddressVerification({ strategy: 'ticket', ticket });
-                if (result.status === 'complete') {
-                    await clerkInstance.setActive({ session: result.createdSessionId });
-                    cleanUrl();
-                    return;
+                if (signUp?.id) {
+                    const result = await signUp.attemptEmailAddressVerification({ ticket });
+                    if (result.status === 'complete') {
+                        await clerkInstance.setActive({ session: result.createdSessionId });
+                        cleanUrl();
+                        return;
+                    }
                 }
-            } catch (signUpErr) {
-                console.error('[Auth] Sign-up ticket verification also failed:', signUpErr);
+            } catch (e) {
+                console.warn('[Auth] Sign-up ticket verification failed:', e);
             }
-
-            cleanUrl();
         }
+
+        // Case 3: try handleRedirectCallback as a last resort
+        try {
+            await clerkInstance.handleRedirectCallback();
+        } catch (e) {
+            console.warn('[Auth] handleRedirectCallback failed (expected for magic links):', e);
+        }
+
+        cleanUrl();
     }
 
     // Wait for the Clerk CDN script to load and initialize
