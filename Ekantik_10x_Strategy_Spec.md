@@ -13,17 +13,17 @@ A standalone dashboard page for the **Ekantik 10x Strategy** — an aggressive g
 | **Strategy Name** | Ekantik 10x Strategy |
 | **Instruments** | ES (E-mini S&P 500, $50/pt) and MES (Micro E-mini, $5/pt) — mixed |
 | **Default PPT** | $5/point (MES as baseline for KPI calculations) |
-| **Starting Balance** | $5,000 |
-| **Daily Risk** | $500 (10% of portfolio) |
-| **Risk Per Trade** | $500 |
-| **Goal** | 10x annual return ($5K → $50K) |
+| **Starting Balance** | $3,000 |
+| **Daily Risk** | $300 (10% of portfolio) |
+| **Risk Per Trade** | $300 |
+| **Goal** | 10x annual return ($3K → $30K) |
 
 ### JS Constants (already defined in `js/parser.js`)
 
 ```js
-const TENX_RISK = 500;              // $500 per day (10% of $5k)
+const TENX_RISK = 300;              // $300 per day (10% of $3k)
 const TENX_PPT = 5;                 // $5 per point (MES default)
-const TENX_STARTING_BALANCE = 5000; // $5,000 starting portfolio
+const TENX_STARTING_BALANCE = 3000; // $3,000 starting portfolio
 ```
 
 ---
@@ -49,9 +49,11 @@ const TENX_STARTING_BALANCE = 5000; // $5,000 starting portfolio
 
 - Title: **"Ekantik 10x Strategy"**
 - Subtitle: "Aggressive growth strategy — ES/MES futures with 10% daily risk targeting 10x annual returns"
-- Parameter badges: `ES/MES Futures | $5/point (MES) | 1 Contract | Starting: $5,000`
-- Risk badge: `Risk: $500/day (10%)`
-- Data transparency note (no Discord link — unlike the Futures panel)
+- Parameter badges: `ES/MES Futures | $5/point (MES) | 1 Contract | Starting: $3,000`
+- Risk badge: `Risk: $300/day (10%)`
+- Data transparency note
+- **No Discord link**
+- **No authentication** — this page is publicly accessible
 - Optional: link to main Ekantik Futures dashboard
 
 ### 3.2 Live Update Banner
@@ -72,7 +74,7 @@ A grid of 7 KPI cards, identical layout to the Futures panel but with emerald th
 | ID | Label | Subtitle ID | Notes |
 |---|---|---|---|
 | `tenx-hero-pnl` | NET P&L | `tenx-hero-pnl-sub` | Green gradient card |
-| `tenx-hero-return` | RETURN | — | Static subtitle: "on $5,000" |
+| `tenx-hero-return` | RETURN | — | Static subtitle: "on $3,000" |
 | `tenx-hero-ev` | EV / TRADE | `tenx-hero-ev-sub` | Shows $/trade |
 | `tenx-hero-wr` | WIN RATE | `tenx-hero-wr-sub` | Shows "XW / YL" |
 | `tenx-hero-pf` | PROFIT FACTOR | `tenx-hero-pf-sub` | Shows gross wins / losses |
@@ -82,8 +84,8 @@ A grid of 7 KPI cards, identical layout to the Futures panel but with emerald th
 ### 3.4 Portfolio Parameters Card
 
 4-column grid showing:
-- **Portfolio**: $5,000 (starting capital)
-- **Daily Risk**: $500 (10% of portfolio)
+- **Portfolio**: $3,000 (starting capital)
+- **Daily Risk**: $300 (10% of portfolio)
 - **Instrument**: ES/MES (S&P 500 Futures)
 - **Contract**: 1 ($5/point MES)
 
@@ -385,29 +387,34 @@ All of these already exist and work with `method = 'tenx'`:
 
 ## 8. Authentication
 
-- Uses Clerk (invitation-only magic link auth)
-- The 10x panel is admin-only (`admin-only` CSS class)
-- Admin emails: `hjdesai@gmail.com`, `hd@ekantikcapital.com`
-- If building as separate page, include the same Clerk auth gate from `index.html` lines 85-170
+- **No authentication required** — this page is publicly accessible
+- No Clerk integration needed
+- No `auth.js` script inclusion
+- No auth gate HTML
+- The upload section should still be admin-only (hidden by default, toggled via `?admin` URL param or similar simple mechanism)
 
 ---
 
 ## 9. What the Developer Needs to Build
 
-### If embedding in existing page:
-Create a `<div id="panel-tenx" class="execution-panel admin-only" style="display:none;">` in `index.html` after `</div><!-- /panel-options -->` (line 1506). Populate it with all the HTML sections listed above, ensuring every element ID exists. The JS is already complete — no JS changes needed.
+This is a **separate standalone page** — not embedded in the main dashboard.
 
-### If building as separate standalone page:
-1. Create a new HTML file (e.g., `10x.html` or `tenx/index.html`)
-2. Include the same `<head>` section (Tailwind, ECharts, Font Awesome, Clerk)
-3. Include `js/parser.js` and `js/dashboard.js` and `js/auth.js`
-4. Build the page body with all sections from Section 3 above
-5. On page load, call the same initialization flow that loads tenx trades from localStorage/DB and calls `renderTenx()`
-6. The `panel-tenx` div should be the main visible panel (not hidden)
+### Steps:
+1. Create a new HTML file (e.g., `10x/index.html` or `tenx.html`)
+2. Include the same `<head>` section (Tailwind, ECharts, Font Awesome) — **no Clerk**
+3. Include `js/parser.js` and `js/dashboard.js` — **no `js/auth.js`**
+4. **No auth gate** — page loads directly into dashboard content
+5. **No Discord links** anywhere on the page
+6. Build the page body with all sections from Section 3 above
+7. On page load, call the initialization flow that loads tenx trades from localStorage/DB and calls `renderTenx()`
+8. The `panel-tenx` div should be the main visible panel (not hidden)
+9. Upload section hidden by default, shown via `?admin` URL param
 
 ### Key implementation notes:
 - **Every element ID listed in this spec MUST exist** in the HTML or the JS will throw null reference errors
-- Use the Discord panel (`panel-discord`) in `index.html` as your HTML template — adapt colors and IDs
+- Use the Discord panel (`panel-discord`) in the main `index.html` as your HTML template — adapt colors and IDs
 - The trade log uses `renderDiscordTradeLog()` since it's the same Tradovate CSV format
 - Charts are 280-400px height ECharts containers — they auto-resize
 - All toggle functions (`toggleDetailedDashboard`, `toggleEdgeSection`) need corresponding button+container pairs
+- **No authentication** — publicly accessible page
+- **No Discord links** — remove all Discord references from info cards and data transparency notes

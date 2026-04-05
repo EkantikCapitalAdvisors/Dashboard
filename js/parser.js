@@ -14,9 +14,9 @@ const OPTIONS_DEFAULT_RISK = 200; // Default risk per trade ($2 premium × 100 m
 const DEFAULT_STOP_POINTS = 10; // Default stop distance when no stop is specified
 const STARTING_BALANCE = 5000;  // $5,000 portfolio for ECFS Active (2% risk per trade)
 const DISCORD_STARTING_BALANCE = 30000; // $30,000 portfolio for Ekantik Futures
-const TENX_RISK = 500;           // $500 per day (10% of $5k)
+const TENX_RISK = 300;           // $300 per day (10% of $3k)
 const TENX_PPT = 5;             // $5 per point (MES default — supports ES/MES mixed)
-const TENX_STARTING_BALANCE = 5000; // $5,000 portfolio for Ekantik 10x Strategy
+const TENX_STARTING_BALANCE = 3000; // $3,000 portfolio for Ekantik 10x Strategy
 const CORE_PPT = 50;            // $50 per point (ES) — used only for Tradovate parsing normalization
 const CORE_RISK_POINTS = 5;     // Default risk in points when no stop found
 const CORE_COMMISSION_PTS = 0.07; // $3.50 round-trip commission / $50 per point (ES) = 0.07 pts per contract

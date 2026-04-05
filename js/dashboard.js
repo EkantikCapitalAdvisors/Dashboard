@@ -4088,7 +4088,7 @@ function switchPanel(panel) {
     const disclaimerAmt = document.getElementById('disclaimer-portfolio-amount');
     if (disclaimerAmt) {
         if (panel === 'options') disclaimerAmt.textContent = '$10,000 starting portfolio';
-        else if (panel === 'tenx') disclaimerAmt.textContent = '$5,000 starting portfolio';
+        else if (panel === 'tenx') disclaimerAmt.textContent = '$3,000 starting portfolio';
         else disclaimerAmt.textContent = '$30,000 starting portfolio';
     }
 }
