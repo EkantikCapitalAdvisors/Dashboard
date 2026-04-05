@@ -557,7 +557,7 @@ function updateGitHubSyncIndicators() {
 
 // ===== TAB SWITCHING =====
 function switchExecution(method) {
-    // Only Ekantik Futures (discord) exists — no-op for any other method
+    // Only Ekantik Trading (discord) exists — no-op for any other method
     if (method !== 'discord') return;
     // Resize charts after any call
     setTimeout(() => {
@@ -1483,16 +1483,16 @@ function renderFoodChain(method, k, allK, allTrades) {
     // --- Your Strategy Row ---
     const edgeSign = edgeR >= 0 ? '+' : '';
 
-    // Build sorted food chain table (ECFS Active has table, Ekantik Futures has stat boxes)
+    // Build sorted food chain table (ECFS Active has table, Ekantik Trading has stat boxes)
     renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, periodLabel, accentColor, winRate, rr);
 
-    // Also set standalone stat elements (used by Ekantik Futures simplified layout)
+    // Also set standalone stat elements (used by Ekantik Trading simplified layout)
     setEl(`${prefix}-edge-per-trade`, `${edgeSign}${edgeR.toFixed(1)}%R`);
     setEl(`${prefix}-trades-month`, `≈${Math.round(tradesPerMonth)}`);
     setEl(`${prefix}-annual-r`, `≈${annualR.toFixed(0)} R`);
 
     // Summary callout: explicit math so the user knows exactly how Annual R was derived
-    const strategyLabel = method === 'options' ? 'Ekantik Options (SPX)' : 'Ekantik Futures (ES)';
+    const strategyLabel = method === 'options' ? 'Ekantik Options (SPX)' : 'Ekantik Trading (ES)';
     const riskLabel = `$${Math.round(riskBudget)}`;
     const dataAsOf = `<span style="color:#9ca3af;font-weight:normal;"><i class="fas fa-sync-alt" style="font-size:9px;margin-right:3px;"></i>Extrapolated from <strong>${allK.totalTrades} all-time trades</strong> as of ${lastTradeDate} · avg realized risk: ${riskLabel} · updated weekly</span>`;
     setHTML(`${prefix}-summary-text`,
@@ -1767,7 +1767,7 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
         chart.setOption({
             backgroundColor: 'transparent',
             graphic: [{ type: 'text', left: 'center', top: 'middle',
-                style: { text: 'Upload Ekantik Futures data to see actual account performance', fill: '#6b7280', fontSize: 13 }
+                style: { text: 'Upload Ekantik Trading data to see actual account performance', fill: '#6b7280', fontSize: 13 }
             }]
         });
         return;
@@ -1914,7 +1914,7 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
             }
         },
         legend: {
-            data: ['S&P 500 (same period)', 'Ekantik Futures (actual)'],
+            data: ['S&P 500 (same period)', 'Ekantik Trading (actual)'],
             top: 0,
             textStyle: { color: '#9ca3af', fontSize: 10 },
             itemWidth: 12, itemHeight: 8
@@ -1953,7 +1953,7 @@ function renderGrowthComparison(containerId, discordAnnualR, suffix) {
                 areaStyle: null
             },
             {
-                name: 'Ekantik Futures (actual)',
+                name: 'Ekantik Trading (actual)',
                 type: 'line',
                 data: equityValues,
                 smooth: false,
@@ -1986,7 +1986,7 @@ function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, pe
     if (!tbody) return;
 
     const edgeSign = edgeR >= 0 ? '+' : '';
-    const strategyName = method === 'options' ? 'Ekantik Options' : 'Ekantik Futures';
+    const strategyName = method === 'options' ? 'Ekantik Options' : 'Ekantik Trading';
     const icon = method === 'options' ? 'fa-chart-pie' : 'fa-comments';
     const lastDate = getLastTradeDate(state[method].allTrades) || 'latest';
     const totalTrades = state[method].allTrades ? state[method].allTrades.length : 0;
@@ -2019,7 +2019,7 @@ function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, pe
         }
     ];
 
-    // When viewing Options, add Ekantik Futures as a reference row
+    // When viewing Options, add Ekantik Trading as a reference row
     if (method === 'options' && state.discord && state.discord.allTrades && state.discord.allTrades.length > 0) {
         const ecfsAllK = calculateKPIs(state.discord.allTrades, DISCORD_RISK, DISCORD_PPT, DISCORD_STARTING_BALANCE);
         const ecfsEdgeR = ecfsAllK.evActualR;
@@ -2036,7 +2036,7 @@ function renderFoodChainTable(prefix, method, edgeR, tradesPerMonth, annualR, pe
         const ecfsRR = ecfsAvgLoss > 0 ? ecfsAvgWin / ecfsAvgLoss : 0;
         const ecfsKelly = (ecfsRR > 0 && ecfsAllK.winRate > 0) ? ((ecfsAllK.winRate / 100) - ((1 - ecfsAllK.winRate / 100) / ecfsRR)) * 100 / 2 : 0;
         benchmarks.push({
-            name: 'Ekantik Futures (ES)',
+            name: 'Ekantik Trading (ES)',
             edge: `${ecfsEdgeR >= 0 ? '+' : ''}${ecfsEdgeR.toFixed(1)}%R`,
             trades: `≈${Math.round(ecfsTPM)}`,
             annualR: ecfsAnnualR,
@@ -2110,7 +2110,7 @@ function renderFoodChainChart(containerId, k, method) {
 
     const edgeR = k.evActualR;
     const accentColor = method === 'active' ? '#d4af37' : method === 'options' ? '#a855f7' : '#60a5fa';
-    const stratLabel = method === 'active' ? 'ECFS Active' : method === 'options' ? 'Ekantik Options' : 'Ekantik Futures';
+    const stratLabel = method === 'active' ? 'ECFS Active' : method === 'options' ? 'Ekantik Options' : 'Ekantik Trading';
 
     // Benchmark data for the horizontal bar chart
     const benchmarks = [
@@ -2122,10 +2122,10 @@ function renderFoodChainChart(containerId, k, method) {
         { name: stratLabel, edge: edgeR, color: accentColor }
     ];
 
-    // Add Ekantik Futures reference when viewing Options
+    // Add Ekantik Trading reference when viewing Options
     if (method === 'options' && state.discord && state.discord.allTrades && state.discord.allTrades.length > 0) {
         const ecfsK = calculateKPIs(state.discord.allTrades, DISCORD_RISK, DISCORD_PPT, DISCORD_STARTING_BALANCE);
-        benchmarks.push({ name: 'Ekantik Futures', edge: ecfsK.evActualR, color: '#60a5fa' });
+        benchmarks.push({ name: 'Ekantik Trading', edge: ecfsK.evActualR, color: '#60a5fa' });
     }
 
     // Sort by edge
@@ -2429,7 +2429,7 @@ function renderCompareRTable(ak, dk) {
             <tr>
                 <th class="text-left text-gray-400 font-bold px-3 py-2 border-b-2 border-[#d4af37]/20" style="background: rgba(212,175,55,0.05)">Metric</th>
                 <th class="text-right text-[#d4af37] font-bold px-3 py-2 border-b-2 border-[#d4af37]/20" style="background: rgba(212,175,55,0.05)"><i class="fas fa-bolt mr-1"></i>ECFS Active</th>
-                <th class="text-right text-blue-400 font-bold px-3 py-2 border-b-2 border-[#d4af37]/20" style="background: rgba(212,175,55,0.05)"><i class="fas fa-comments mr-1"></i>Ekantik Futures</th>
+                <th class="text-right text-blue-400 font-bold px-3 py-2 border-b-2 border-[#d4af37]/20" style="background: rgba(212,175,55,0.05)"><i class="fas fa-comments mr-1"></i>Ekantik Trading</th>
             </tr>
         </thead><tbody>`;
 
@@ -2449,7 +2449,7 @@ function renderCompareRTable(ak, dk) {
     html += `<div class="mt-3 flex items-center gap-3 text-[10px] text-gray-500 justify-center">
         <span><strong style="color:#d4af37">ECFS:</strong> 1R = $${Math.round(akRisk)} (avg realized)</span>
         <span>|</span>
-        <span><strong style="color:#60a5fa">Ekantik Futures:</strong> 1R = $${Math.round(dkRisk)} (avg realized)</span>
+        <span><strong style="color:#60a5fa">Ekantik Trading:</strong> 1R = $${Math.round(dkRisk)} (avg realized)</span>
         <span>|</span>
         <span><i class="fas fa-trophy text-[#d4af37]"></i> = winner for that metric</span>
     </div>`;
@@ -2476,12 +2476,12 @@ function renderCompareInsights(ak, dk) {
         icon: 'fa-shield-alt',
         color: '#d4af37',
         title: 'Different Risk, Same Edge Framework',
-        text: `ECFS Active avg risk: $${Math.round(akAvgR)}/trade. Ekantik Futures avg risk: $${Math.round(dkAvgR)}/trade. R-normalized metrics tell the real story.`
+        text: `ECFS Active avg risk: $${Math.round(akAvgR)}/trade. Ekantik Trading avg risk: $${Math.round(dkAvgR)}/trade. R-normalized metrics tell the real story.`
     });
 
     // 2. EV comparison in R
     if (ak.evActualR !== dk.evActualR) {
-        const better = ak.evActualR > dk.evActualR ? 'ECFS Active' : 'Ekantik Futures';
+        const better = ak.evActualR > dk.evActualR ? 'ECFS Active' : 'Ekantik Trading';
         const bEV = Math.max(ak.evActualR, dk.evActualR);
         const wEV = Math.min(ak.evActualR, dk.evActualR);
         insights.push({
@@ -2494,7 +2494,7 @@ function renderCompareInsights(ak, dk) {
 
     // 3. Win rate
     if (Math.abs(ak.winRate - dk.winRate) >= 1) {
-        const better = ak.winRate > dk.winRate ? 'ECFS Active' : 'Ekantik Futures';
+        const better = ak.winRate > dk.winRate ? 'ECFS Active' : 'Ekantik Trading';
         insights.push({
             icon: 'fa-trophy',
             color: '#4ade80',
@@ -2507,7 +2507,7 @@ function renderCompareInsights(ak, dk) {
     const akDDR = ak.maxDD / akAvgR;
     const dkDDR = dk.maxDD / dkAvgR;
     if (Math.abs(akDDR - dkDDR) > 0.5) {
-        const betterDD = akDDR < dkDDR ? 'ECFS Active' : 'Ekantik Futures';
+        const betterDD = akDDR < dkDDR ? 'ECFS Active' : 'Ekantik Trading';
         insights.push({
             icon: 'fa-arrow-trend-down',
             color: '#f87171',
@@ -2517,7 +2517,7 @@ function renderCompareInsights(ak, dk) {
     }
 
     // 5. Data confidence
-    const moreData = ak.totalTrades > dk.totalTrades ? 'ECFS Active' : 'Ekantik Futures';
+    const moreData = ak.totalTrades > dk.totalTrades ? 'ECFS Active' : 'Ekantik Trading';
     if (ak.totalTrades !== dk.totalTrades) {
         insights.push({
             icon: 'fa-database',
@@ -3006,7 +3006,7 @@ function renderRadarChart(ak, dk) {
     }
     if (dk) {
         series.push({
-            name: 'Ekantik Futures',
+            name: 'Ekantik Trading',
             type: 'radar',
             data: [{
                 value: [
@@ -3017,7 +3017,7 @@ function renderRadarChart(ak, dk) {
                     dkWinR,
                     dk.tradingDays.length > 0 ? dk.profitableDays / dk.tradingDays.length * 100 : 0
                 ],
-                name: 'Ekantik Futures',
+                name: 'Ekantik Trading',
                 lineStyle: { color: '#60a5fa', width: 2 },
                 areaStyle: { color: 'rgba(96, 165, 250, 0.15)' },
                 itemStyle: { color: '#60a5fa' }
@@ -3029,7 +3029,7 @@ function renderRadarChart(ak, dk) {
         backgroundColor: 'transparent',
         tooltip: { trigger: 'item' },
         legend: {
-            data: ['ECFS Active', 'Ekantik Futures'].filter((_, i) => (i === 0 && ak) || (i === 1 && dk)),
+            data: ['ECFS Active', 'Ekantik Trading'].filter((_, i) => (i === 0 && ak) || (i === 1 && dk)),
             textStyle: { color: '#888', fontSize: 10 },
             bottom: 0
         },
@@ -3677,11 +3677,11 @@ function exportECFSData() {
     showExportToast('ECFS JSON exported — for best results, use the raw Tradovate CSV');
 }
 
-// Export Ekantik Futures data as JSON (the canonical format for GitHub)
+// Export Ekantik Trading data as JSON (the canonical format for GitHub)
 function exportDiscordData() {
     const trades = state.discord.allTrades;
     if (!trades || trades.length === 0) {
-        alert('No Ekantik Futures data to export. Upload an Excel file first.');
+        alert('No Ekantik Trading data to export. Upload an Excel file first.');
         return;
     }
 
@@ -3895,13 +3895,204 @@ function updateSyncStatus(method, ts) {
 let _discordParsedTrades = [];
 
 function switchUploadTab(tab) {
-    const isParser = tab === 'parser';
-    document.getElementById('tab-content-parser').classList.toggle('hidden', !isParser);
-    document.getElementById('tab-content-excel').classList.toggle('hidden', isParser);
+    const tabs = ['parser', 'excel', 'options-inline', 'stocks-inline'];
+    const tabBtnIds = {
+        'parser': 'tab-discord-parser',
+        'excel': 'tab-discord-excel',
+        'options-inline': 'tab-options-inline',
+        'stocks-inline': 'tab-stocks-inline'
+    };
     const activeClass  = 'px-4 py-2 text-sm font-semibold rounded-lg transition-all bg-blue-500/20 border border-blue-400/40 text-blue-300';
     const inactiveClass = 'px-4 py-2 text-sm font-semibold rounded-lg transition-all text-gray-500 hover:text-gray-300';
-    document.getElementById('tab-discord-parser').className = isParser  ? activeClass : inactiveClass;
-    document.getElementById('tab-discord-excel').className  = !isParser ? activeClass : inactiveClass;
+
+    tabs.forEach(t => {
+        const contentEl = document.getElementById(`tab-content-${t}`);
+        const btnEl = document.getElementById(tabBtnIds[t]);
+        if (contentEl) contentEl.classList.toggle('hidden', t !== tab);
+        if (btnEl) btnEl.className = (t === tab) ? activeClass : inactiveClass;
+    });
+}
+
+// ── Options Inline Parser (for combined Ekantik Trading upload) ──
+let _optionsInlineParsed = [];
+
+function livePreviewOptionsInline() {
+    const text = (document.getElementById('options-inline-input') || {}).value || '';
+    const datetime = (document.getElementById('options-inline-datetime') || {}).value || '';
+    const previewEl = document.getElementById('options-inline-preview');
+    const uploadBtn = document.getElementById('options-inline-upload-btn');
+    if (!previewEl) return;
+
+    if (!text.trim()) {
+        previewEl.innerHTML = '<p class="text-gray-600 text-xs text-center mt-8">Enter options trades to preview</p>';
+        if (uploadBtn) uploadBtn.disabled = true;
+        _optionsInlineParsed = [];
+        return;
+    }
+    if (!datetime) {
+        previewEl.innerHTML = '<p class="text-yellow-500 text-xs text-center mt-8"><i class="fas fa-exclamation-triangle mr-1"></i>Set a date &amp; time first</p>';
+        if (uploadBtn) uploadBtn.disabled = true;
+        _optionsInlineParsed = [];
+        return;
+    }
+
+    try {
+        const trades = parseOptionsAlerts(text, datetime);
+        _optionsInlineParsed = trades;
+
+        if (trades.length === 0) {
+            previewEl.innerHTML = '<p class="text-gray-500 text-xs text-center mt-8">No complete trades found yet&hellip;<br><span class="text-[10px] text-gray-600">Need at minimum: ID, Entry, and Result</span></p>';
+            if (uploadBtn) uploadBtn.disabled = true;
+            return;
+        }
+        if (uploadBtn) uploadBtn.disabled = false;
+
+        const rows = trades.map(t => `
+            <tr class="border-b border-gray-700/30 last:border-0">
+                <td class="py-1.5 pr-2 text-xs text-gray-300 font-mono">${t.tradeNum}</td>
+                <td class="py-1.5 pr-2 text-xs text-gray-300">${t.ticker}</td>
+                <td class="py-1.5 pr-2 text-xs ${t.optionType === 'CALL' ? 'text-emerald-400' : 'text-red-400'}">${t.optionType}</td>
+                <td class="py-1.5 pr-2 text-xs text-gray-300">${t.strike}</td>
+                <td class="py-1.5 pr-2 text-xs text-gray-300">$${t.entryPrice.toFixed(2)}</td>
+                <td class="py-1.5 pr-2 text-xs text-gray-500">${t.stopPrice ? '$' + t.stopPrice.toFixed(2) : '—'}</td>
+                <td class="py-1.5 text-xs font-bold ${t.isWin ? 'text-emerald-400' : 'text-red-400'}">${t.dollarPL > 0 ? '+' : ''}$${t.dollarPL}</td>
+            </tr>`).join('');
+
+        previewEl.innerHTML = `
+            <div class="mb-2 flex items-center justify-between">
+                <span class="text-xs text-gray-400 font-semibold">${trades.length} option trade${trades.length > 1 ? 's' : ''} parsed</span>
+                <span class="text-[10px] text-gray-600">${datetime.replace('T',' ')}</span>
+            </div>
+            <table class="w-full"><thead><tr class="border-b border-gray-700/50">
+                <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5 pr-2">#</th>
+                <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5 pr-2">Ticker</th>
+                <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5 pr-2">Type</th>
+                <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5 pr-2">Strike</th>
+                <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5 pr-2">Entry</th>
+                <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5 pr-2">Stop</th>
+                <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5">P&L</th>
+            </tr></thead><tbody>${rows}</tbody></table>`;
+    } catch (err) {
+        previewEl.innerHTML = `<p class="text-red-400 text-xs text-center mt-8">Parse error: ${err.message}</p>`;
+        if (uploadBtn) uploadBtn.disabled = true;
+        _optionsInlineParsed = [];
+    }
+}
+
+async function submitOptionsInline() {
+    if (!_optionsInlineParsed || _optionsInlineParsed.length === 0) return;
+    const btn = document.getElementById('options-inline-upload-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Uploading&hellip;';
+    try {
+        await _handleOptionsParseUpload(_optionsInlineParsed);
+        document.getElementById('options-inline-input').value = '';
+        livePreviewOptionsInline();
+        btn.innerHTML = '<i class="fas fa-check mr-2"></i>Uploaded!';
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-upload mr-2"></i>Upload Trades'; btn.disabled = false; }, 2500);
+    } catch (err) {
+        console.error('[Options Inline] Upload failed:', err);
+        btn.innerHTML = '<i class="fas fa-times mr-2"></i>Error';
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-upload mr-2"></i>Upload Trades'; btn.disabled = false; }, 3000);
+    }
+}
+
+// ── Stocks Inline Parser ──
+let _stocksInlineParsed = [];
+
+function livePreviewStocksInline() {
+    const text = (document.getElementById('stocks-inline-input') || {}).value || '';
+    const datetime = (document.getElementById('stocks-inline-datetime') || {}).value || '';
+    const previewEl = document.getElementById('stocks-inline-preview');
+    const uploadBtn = document.getElementById('stocks-inline-upload-btn');
+    if (!previewEl) return;
+
+    if (!text.trim()) {
+        previewEl.innerHTML = '<p class="text-gray-600 text-xs text-center mt-8">Enter stock trades to preview</p>';
+        if (uploadBtn) uploadBtn.disabled = true;
+        _stocksInlineParsed = [];
+        return;
+    }
+    if (!datetime) {
+        previewEl.innerHTML = '<p class="text-yellow-500 text-xs text-center mt-8"><i class="fas fa-exclamation-triangle mr-1"></i>Set a date &amp; time first</p>';
+        if (uploadBtn) uploadBtn.disabled = true;
+        _stocksInlineParsed = [];
+        return;
+    }
+
+    try {
+        const trades = parseStockAlerts(text, datetime);
+        _stocksInlineParsed = trades;
+
+        if (trades.length === 0) {
+            previewEl.innerHTML = '<p class="text-gray-500 text-xs text-center mt-8">No complete trades found yet&hellip;<br><span class="text-[10px] text-gray-600">Need: ID, ticker, entry price, and Result</span></p>';
+            if (uploadBtn) uploadBtn.disabled = true;
+            return;
+        }
+        if (uploadBtn) uploadBtn.disabled = false;
+
+        const rows = trades.map(t => `
+            <tr class="border-b border-gray-700/30 last:border-0">
+                <td class="py-1.5 pr-2 text-xs text-gray-300 font-mono">${t.tradeNum}</td>
+                <td class="py-1.5 pr-2 text-xs text-gray-300">${t.ticker}</td>
+                <td class="py-1.5 pr-2 text-xs ${t.direction === 'Buy' ? 'text-emerald-400' : 'text-red-400'}">${t.direction}</td>
+                <td class="py-1.5 pr-2 text-xs text-gray-300">${t.qty}</td>
+                <td class="py-1.5 pr-2 text-xs text-gray-300">$${t.entryPrice.toFixed(2)}</td>
+                <td class="py-1.5 pr-2 text-xs text-gray-500">$${t.stopPrice.toFixed(2)}</td>
+                <td class="py-1.5 text-xs font-bold ${t.isWin ? 'text-emerald-400' : 'text-red-400'}">${t.dollarPL > 0 ? '+' : ''}$${t.dollarPL}</td>
+            </tr>`).join('');
+
+        previewEl.innerHTML = `
+            <div class="mb-2 flex items-center justify-between">
+                <span class="text-xs text-gray-400 font-semibold">${trades.length} stock trade${trades.length > 1 ? 's' : ''} parsed</span>
+                <span class="text-[10px] text-gray-600">${datetime.replace('T',' ')}</span>
+            </div>
+            <table class="w-full"><thead><tr class="border-b border-gray-700/50">
+                <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5 pr-2">#</th>
+                <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5 pr-2">Ticker</th>
+                <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5 pr-2">B/S</th>
+                <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5 pr-2">Qty</th>
+                <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5 pr-2">Entry</th>
+                <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5 pr-2">Stop</th>
+                <th class="text-[10px] text-gray-500 font-semibold text-left pb-1.5">P&L</th>
+            </tr></thead><tbody>${rows}</tbody></table>`;
+    } catch (err) {
+        previewEl.innerHTML = `<p class="text-red-400 text-xs text-center mt-8">Parse error: ${err.message}</p>`;
+        if (uploadBtn) uploadBtn.disabled = true;
+        _stocksInlineParsed = [];
+    }
+}
+
+async function submitStocksInline() {
+    if (!_stocksInlineParsed || _stocksInlineParsed.length === 0) return;
+    const btn = document.getElementById('stocks-inline-upload-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Uploading&hellip;';
+    try {
+        // Store stock trades into the discord state (combined view)
+        const existing = state.discord.allTrades;
+        const newTrades = _stocksInlineParsed.map(t => ({
+            ...t,
+            entryTime: t.datetime,
+            exitTime: t.datetime,
+            _tradeType: 'STOCK'
+        }));
+        const existingKeys = new Set(existing.map(t => `${t.tradeNum}|${t.dollarPL}`));
+        const unique = newTrades.filter(t => !existingKeys.has(`${t.tradeNum}|${t.dollarPL}`));
+        state.discord.allTrades = [...existing, ...unique].sort((a, b) =>
+            new Date(a.entryTime || a.datetime || a.date) - new Date(b.entryTime || b.datetime || b.date)
+        );
+        setPeriod('discord', state.discord.currentPeriod || 'alltime');
+
+        document.getElementById('stocks-inline-input').value = '';
+        livePreviewStocksInline();
+        btn.innerHTML = '<i class="fas fa-check mr-2"></i>Uploaded!';
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-upload mr-2"></i>Upload Trades'; btn.disabled = false; }, 2500);
+    } catch (err) {
+        console.error('[Stocks Inline] Upload failed:', err);
+        btn.innerHTML = '<i class="fas fa-times mr-2"></i>Error';
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-upload mr-2"></i>Upload Trades'; btn.disabled = false; }, 3000);
+    }
 }
 
 function setDiscordParserNow() {
@@ -4088,7 +4279,7 @@ function switchPanel(panel) {
     const disclaimerAmt = document.getElementById('disclaimer-portfolio-amount');
     if (disclaimerAmt) {
         if (panel === 'options') disclaimerAmt.textContent = '$10,000 starting portfolio';
-        else if (panel === 'tenx') disclaimerAmt.textContent = '$5,000 starting portfolio';
+        else if (panel === 'tenx') disclaimerAmt.textContent = '$3,000 starting portfolio';
         else disclaimerAmt.textContent = '$30,000 starting portfolio';
     }
 }
