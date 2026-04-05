@@ -13,7 +13,7 @@ const OPTIONS_STARTING_BALANCE = 10000; // $10,000 portfolio for Options strateg
 const OPTIONS_DEFAULT_RISK = 200; // Default risk per trade ($2 premium × 100 multiplier)
 const DEFAULT_STOP_POINTS = 10; // Default stop distance when no stop is specified
 const STARTING_BALANCE = 5000;  // $5,000 portfolio for ECFS Active (2% risk per trade)
-const DISCORD_STARTING_BALANCE = 30000; // $30,000 portfolio for Ekantik Futures
+const DISCORD_STARTING_BALANCE = 30000; // $30,000 portfolio for Ekantik Trading
 const TENX_RISK = 300;           // $300 per day (10% of $3k)
 const TENX_PPT = 5;             // $5 per point (MES default — supports ES/MES mixed)
 const TENX_STARTING_BALANCE = 3000; // $3,000 portfolio for Ekantik 10x Strategy
@@ -1220,7 +1220,7 @@ function parseOptionsAlerts(text, datetimeLocal) {
         } else if (t.stopDelta != null) {
             stopPrice = Math.max(0, t.entryPrice - t.stopDelta);
         } else {
-            stopPrice = Math.max(0, t.entryPrice - 2);
+            stopPrice = Math.max(0, t.entryPrice - 1);
         }
         const riskDollars = Math.abs(t.entryPrice - stopPrice) * 100 || OPTIONS_DEFAULT_RISK;
         const isWin = t.dollarPL > 0;
@@ -1290,5 +1290,213 @@ function optionsTradeToDbRow(t) {
         is_win:        t.isWin,
         outcome:       t.outcome,
         trade_date:    t.date
+    };
+}
+
+// =====================================================
+// STOCK TRADE PARSER
+// =====================================================
+// Supports two formats:
+//
+// FORMAT A: One-liner
+//   ID 01 : Buy 20 MSFT at 400 stop 380
+//   Result: +500
+//
+// FORMAT B: Labeled block
+//   ID: S1
+//   Ticker: MSFT
+//   Action: Buy
+//   Qty: 20
+//   Entry: 400
+//   Stop: 380
+//   Result: +500
+//
+function parseStockAlerts(text, datetimeLocal) {
+    let datetimeStr = '';
+    let dateStr = '';
+    if (datetimeLocal) {
+        const [datePart, timePart] = datetimeLocal.split('T');
+        const [yr, mo, dy] = datePart.split('-').map(Number);
+        const [hh, mm] = (timePart || '00:00').split(':').map(Number);
+        datetimeStr = `${mo}/${dy}/${yr} ${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+        dateStr = `${mo}/${dy}/${yr}`;
+    }
+
+    const tradesMap = {};
+    const tradeOrder = [];
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+
+    for (const line of lines) {
+        // ── One-liner: "ID 01 : Buy 20 MSFT at 400 stop 380" ──
+        const oneLineM = line.match(/^ID\s*(\S+)\s*:\s*(buy|sell|short|long)\s+(\d+)\s+(\w+)\s+(?:at|@)\s*([\d.]+)(?:\s+stop\s*([\d.]+))?/i);
+        if (oneLineM) {
+            const rawId = oneLineM[1].replace(/^#/, '');
+            const tradeId = rawId.toUpperCase().startsWith('S') ? rawId.toUpperCase() : 'S' + rawId;
+            const action = oneLineM[2].toLowerCase();
+            tradesMap[tradeId] = {
+                tradeNum: tradeId,
+                ticker: oneLineM[4].toUpperCase(),
+                direction: (action === 'buy' || action === 'long') ? 'Buy' : 'Sell',
+                qty: parseInt(oneLineM[3]),
+                entryPrice: parseFloat(oneLineM[5]),
+                stopPrice: oneLineM[6] ? parseFloat(oneLineM[6]) : null,
+            };
+            tradeOrder.push(tradeId);
+            continue;
+        }
+
+        // ── Labeled block: "ID: S1" starts a new trade ──
+        const idM = line.match(/^ID\s*:\s*(.+)$/i);
+        if (idM) {
+            const rawId = idM[1].trim().toUpperCase();
+            const tradeId = rawId.startsWith('S') ? rawId : 'S' + rawId.replace(/^#/, '');
+            if (!tradesMap[tradeId]) {
+                tradesMap[tradeId] = { tradeNum: tradeId };
+                tradeOrder.push(tradeId);
+            }
+            // Set current context for subsequent lines
+            tradesMap._current = tradeId;
+            continue;
+        }
+
+        // Subsequent block fields (only if we have a current trade)
+        const currentId = tradesMap._current;
+        if (!currentId || !tradesMap[currentId]) {
+            // Try to attach Result to the last trade in order
+            if (tradeOrder.length > 0) {
+                const lastId = tradeOrder[tradeOrder.length - 1];
+                const resultM = line.match(/^result\s*:\s*([+-])\s*\$?\s*([\d.]+)/i);
+                if (resultM && tradesMap[lastId]) {
+                    tradesMap[lastId].dollarPL = (resultM[1] === '+' ? 1 : -1) * parseFloat(resultM[2]);
+                }
+            }
+            continue;
+        }
+        const current = tradesMap[currentId];
+
+        const tickerM = line.match(/^ticker\s*:\s*(\w+)/i);
+        if (tickerM) { current.ticker = tickerM[1].toUpperCase(); continue; }
+
+        const actionM = line.match(/^(?:action|direction)\s*:\s*(buy|sell|short|long)/i);
+        if (actionM) {
+            const a = actionM[1].toLowerCase();
+            current.direction = (a === 'buy' || a === 'long') ? 'Buy' : 'Sell';
+            continue;
+        }
+
+        const qtyM = line.match(/^(?:qty|quantity|shares)\s*:\s*(\d+)/i);
+        if (qtyM) { current.qty = parseInt(qtyM[1]); continue; }
+
+        const entryM = line.match(/^(?:entry|price|entry\s*price)\s*:\s*\$?\s*([\d.]+)/i);
+        if (entryM) { current.entryPrice = parseFloat(entryM[1]); continue; }
+
+        const stopM = line.match(/^(?:stop|stop\s*price|stop\s*loss|sl)\s*:\s*\$?\s*([\d.]+)/i);
+        if (stopM) { current.stopPrice = parseFloat(stopM[1]); continue; }
+
+        const resultM = line.match(/^result\s*:\s*([+-])\s*\$?\s*([\d.]+)/i);
+        if (resultM) {
+            current.dollarPL = (resultM[1] === '+' ? 1 : -1) * parseFloat(resultM[2]);
+            continue;
+        }
+
+        const notesM = line.match(/^notes?\s*:\s*(.+)$/i);
+        if (notesM) { current.notes = notesM[1].trim(); continue; }
+    }
+
+    // Clean up internal tracking
+    delete tradesMap._current;
+
+    // Also handle "Result:" lines that follow one-liner trades
+    // (They may not have been captured if no block context was set)
+    let lastTradeIdx = -1;
+    for (const line of lines) {
+        const oneLineM = line.match(/^ID\s*\S+\s*:/i);
+        if (oneLineM) {
+            lastTradeIdx++;
+            continue;
+        }
+        const resultM = line.match(/^result\s*:\s*([+-])\s*\$?\s*([\d.]+)/i);
+        if (resultM && lastTradeIdx >= 0 && lastTradeIdx < tradeOrder.length) {
+            const t = tradesMap[tradeOrder[lastTradeIdx]];
+            if (t && t.dollarPL === undefined) {
+                t.dollarPL = (resultM[1] === '+' ? 1 : -1) * parseFloat(resultM[2]);
+            }
+        }
+    }
+
+    // ── Build output ──
+    const result = [];
+    for (const id of tradeOrder) {
+        const t = tradesMap[id];
+        if (t.entryPrice === undefined || t.dollarPL === undefined) continue;
+
+        const qty = t.qty || 1;
+        const entryPrice = t.entryPrice;
+        const stopPrice = t.stopPrice != null ? t.stopPrice : entryPrice * 0.95; // Default 5% stop
+        const riskPerShare = Math.abs(entryPrice - stopPrice);
+        const riskDollars = riskPerShare * qty;
+        const isWin = t.dollarPL > 0;
+
+        result.push({
+            datetime:     datetimeStr,
+            tradeNum:     t.tradeNum,
+            ticker:       t.ticker || 'UNKNOWN',
+            tradeType:    'STOCK',
+            direction:    t.direction || 'Buy',
+            qty:          qty,
+            entryPrice:   entryPrice,
+            stopPrice:    stopPrice,
+            notes:        t.notes || '',
+            pointsPL:     t.dollarPL / qty, // per-share P&L
+            riskPoints:   riskPerShare,
+            dollarPL:     t.dollarPL,
+            riskDollars:  riskDollars,
+            isWin,
+            outcome:      isWin ? 'Win' : 'Loss',
+            date:         dateStr
+        });
+    }
+    return result;
+}
+
+function stockTradeToDbRow(t) {
+    return {
+        datetime:      t.datetime,
+        trade_num:     t.tradeNum,
+        ticker:        t.ticker,
+        trade_type:    'STOCK',
+        direction:     t.direction,
+        qty:           t.qty,
+        entry_price:   t.entryPrice,
+        stop_price:    t.stopPrice,
+        notes:         t.notes,
+        dollar_pl:     t.dollarPL,
+        risk_dollars:  t.riskDollars,
+        is_win:        t.isWin,
+        outcome:       t.outcome,
+        trade_date:    t.date
+    };
+}
+
+function dbRowToStockTrade(row) {
+    const qty = row.qty || 1;
+    const riskDlr = row.risk_dollars || Math.abs(row.entry_price - (row.stop_price || row.entry_price * 0.95)) * qty;
+    return {
+        datetime:     row.datetime,
+        tradeNum:     row.trade_num,
+        ticker:       row.ticker || 'UNKNOWN',
+        tradeType:    'STOCK',
+        direction:    row.direction || 'Buy',
+        qty:          qty,
+        entryPrice:   row.entry_price,
+        stopPrice:    row.stop_price,
+        notes:        row.notes || '',
+        pointsPL:     row.dollar_pl / qty,
+        riskPoints:   Math.abs(row.entry_price - (row.stop_price || row.entry_price * 0.95)),
+        dollarPL:     row.dollar_pl,
+        riskDollars:  riskDlr,
+        isWin:        row.dollar_pl > 0,
+        outcome:      row.dollar_pl > 0 ? 'Win' : 'Loss',
+        date:         row.trade_date
     };
 }
