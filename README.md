@@ -1,5 +1,16 @@
 # Ekantik Capital — Performance Dashboard v2.9
 
+> ## ⚠️ Retired — this site now redirects
+>
+> The live dashboard is the **Cash-Flow Engine dashboard** in the `Accelerator` repo:
+> **https://accelerator.ekantikcapital.com/experiment.html** (source: `Accelerator/experiment.html`,
+> linked from `Accelerator/cash-flow-engine.html`).
+>
+> - `index.html` — redirect stub only (meta refresh + JS `location.replace`, canonical → experiment.html).
+> - `legacy.html` — the full dashboard described below, kept working but `noindex`, with an archive banner.
+>
+> Everything below documents `legacy.html`. New dashboard work belongs in the Accelerator repo.
+
 ## Project Overview
 A professional, data-driven performance dashboard for demonstrating weekly trading performance of **ECFS Active** (MES futures) and **ECFS Selective** (ES futures) trading strategies. Built for Ekantik Capital Advisors LLC.
 
